@@ -172,3 +172,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+cuda-repo-ubuntu2404-12-9-local_12.9.0-575.51.03-1_amd64.deb
