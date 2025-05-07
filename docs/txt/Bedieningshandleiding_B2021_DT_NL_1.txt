@@ -1,0 +1,52 @@
+BEDIENINGSHANDLEIDING B / 2021
+
+
+                  TRANSPORT, INSTALLATIE; INBEDRIJFSTELLING EN ONDERHOUD VAN
+                  DISTRIBUTIETRANSFORMATOREN MET HERMETISCH GESLOTEN KETEL
+              Opgelet: de eenheid is drukloos bij de in het testprotocol aangegeven referentietemperatuur
+                                 – geldt alleen voor hermetisch afgesloten eenheden –
+
+Het document is bedoeld om een overzicht te geven van de transport-, montage-, inbedrijfstellings- en
+onderhoudswerkzaamheden na levering aan de klant. Meer gedetailleerde informatie is op aanvraag verkrijgbaar bij
+SBG Neumark. Informatie over hermetisch gesloten of met gaskussen afgesloten, vrij ademende (met conservator) en
+lastschakelaar-units vindt u hieronder in de tekst.
+Let erop dat wanneer dit wordt aangegeven, de informatie voor het juiste transformatortype wordt gebruikt.
+
+1. Algemene aanwijzingen (hermetisch gesloten eenheden)
+   Hermetische transformatoren zijn volledig afgedicht en hebben geen gaskussen of een conservator om zich aan te passen
+   aan veranderingen in het olievolume als gevolg van temperatuurschommelingen. De geribbelde tank is ontworpen om
+   zich aan te passen aan volumeveranderingen door de elasticiteit van de koelribben.
+   Deze unit heeft normaal gesproken geen oliepeilindicator, omdat het bijvullen en controleren van de koel- en isolatie-
+   vloeistoffen niet nodig is.
+   De tank wordt zodanig gevuld dat bij een gedefinieerde olietemperatuur (hierboven in rood aangegeven) geen onder- of
+   overdruk is aanwezig. Deze olietemperatuur, de maximale olietemperatuurstijging en de temperatuurgradiënt tussen de
+   wikkelingen en de olie worden berekend voor elk keteltype. Om deze reden adviseren wij om na levering van de
+   transformator, de olievuldop NIET te openen, te ontluchten of de doorvoeringen te ontluchten.
+   Voor alle werkzaamheden waarbij de transformatoren moeten worden geopend, bijv. installatie van een overdrukventiel
+   of andere bewakingsapparatuur, de vervanging van doorvoeringen en/of afdichtingen, neem dan de aanwijzingen in
+   hoofdstuk 4 „Onderhoud en instandhouding“, paragraaf 4.5 en 4.6, in acht bij het aftappen of bijvullen van de olie.
+
+2. Transport
+   2.1 Voor het wegtransport moeten altijd voertuigen met luchtvering worden gebruikt.
+   2.2 Bij aankomst van de goederen moet eventuele transportschade worden gemeld aan de vervoerder die
+		     verantwoordelijk is voor de levering.
+   2.3 Lakschade moet onmiddellijk worden hersteld.
+   2.4 Gebruik alleen de hijsogen aan de bovenzijde van het deksel om de transformator op te tillen/neer te laten.
+   2.5 De aan de tank of de rand van het deksel bevestigde bevestigingsbanden dienen uitsluitend voor het beveiligen van
+		     de transformator tijdens het transport en zijn NIET bestemd voor het hijsen van de volledige transformator
+		 (sjorren).
+
+3. Plaatsing en inbedrijfstelling
+   3.0 De exploitant is verantwoordelijk voor het nemen van maatregelen ter bescherming tegen contact met onder
+		      spanning staande onderdelen.
+   3.1 Bevestig zo nodig de transportwielen en verplaats de transformator naar de geplande installatieplek.
+   3.2 Indien de transformator is uitgerust met een oliepeilindicator, moet het oliepeil voor de inbedrijfstelling worden
+		      gecontroleerd en zo nodig worden bijgevuld.
+   3.3 In het geval van een vrij ademende unit, dienen de bijgeleverde luchtontvochtigers te worden gemonteerd.
+		      3.3.1 Zorg er bij aankomst voor dat de vuldop van elke conservator gesloten is.
+		      3.3.2 Controleer de kleur van de droogkorrels in de luchtontvochtiger (oranje is voldoende, indien 2/3 van de korrels
+			           kleurloos is, moet de inhoud worden vervangen).
+		      3.3.3 Plaats de ontluchter.
+		      3.3.4 Vul het oliereservoir van de ontluchter tot het gewenste peil (oliemarkeringen aanwezig).
+   3.4 Aard de transformator aan de aardingsschroef.
+

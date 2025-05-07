@@ -1,0 +1,53 @@
+BEDIENINGSHANDLEIDING B / 2021
+
+   3.5 Aansluitingen voor hoog- en laagspanning:
+ 		     3.5.1 Om de boven- en onderspanning-doorvoeringen aan te sluiten, dient u de aansluitingen te reinigen en de
+			            volgende draaimomenten (zonder smeermiddel) toe te passen
+               Bouten: M 12: 15.5 Nm             Verbindingsstuk met schroef: M 10: 40.0 Nm
+		                      M 20: 52.0 Nm		                                            M 12: 70.0 Nm
+					                                                                              M 16: 110.0 Nm
+			            De draaimomenten en de netaansluitingen moeten voor en na aansluiting door het installatiebedrijf worden
+			            gecontroleerd.
+		      3.5.2 Controleer en verifieer de faseaansluitingen van de doorvoeringen.
+		      3.5.3 Sluit de bovenspanningzijde aan met connectoren indien conische doorvoeringen zijn gemonteerd. Verwijder
+			            de beschermkap/afdekking en controleer of het contact schoon en droog is, steek de stekker in het contact en
+			            draai hem vast.
+		      3.5.4 De netaansluitingen moeten zo worden gemonteerd dat er geen extra trekspanningen op de doorvoeringen
+			            ontstaan.
+		      3.5.5 Als voor de US-doorvoeringen een giethars-monoblock wordt gebruikt, dient met het maximale draaimoment
+			            van 25 Nm te worden gecontroleerd of het monoblock goed vastzit.
+   3.6 Controleer, indien geïnstalleerd, de afstand tussen de bovenste en onderste vonkenhorens (meestal met porseleinen
+		      doorvoeringen): Um = 7,2 kV : 60 mm; 12 kV : 85 mm;
+					                       Um = 17,5 kV : 115 mm; 24 kV : 155 mm;
+		      			                 Um = 36 kV : 220 mm bij NN
+   3.7 Sluit, indien aanwezig, de alarm- en triggersignalen van de hulpinrichtingen (bedieningseenheden, enz.) aan en
+		      controleer deze.
+   3.8 Wanneer transformatoren met verschillende overbrengingsverhoudingen worden geleverd, kan de vereiste
+		      overbrengingsverhouding overeenkomstig het schakelschema, de markering en het typeplaatje worden ingesteld.
+		      Zorg ervoor dat de juiste spanningsverhouding, in overeenstemming met de voedingsspanning, wordt gekozen.
+   3.9 Controleer en ontlucht bij units die niet hermetisch zijn afgesloten het buchholzrelais, de doorvoeringen en de
+		 radiatoren.
+   3.10 Controleer alle afsluitinrichtingen om er zeker van te zijn dat ze in de stand voor normaal bedrijf staan.
+   3.11 Wisselaars kunnen alleen worden bediend wanneer de unit NIET onder spanning staat.
+   3.12 Lastschakelaar
+		      3.12.1 Controleer de motoraandrijving en noteer het aantal schakelcycli op de teller van de lastschakelaar.
+		      3.12.2 Controleer of de indicator van de lastschakelaarpositie dezelfde positie aangeeft als op de motoraandrijving.
+		      3.12.3 Schakel de lastschakelaar door alle standen (van plus- naar min-stand).
+		      3.12.4 Zet de lastschakelaar in de voorkeursstand die overeenkomt met de nominale netspanning. Schakel de
+			            transformator in en luister of u storende geluiden hoort.
+		      3.12.5 Gebruik de lastschakelaar alleen binnen het toegestane spanningsbereik.
+
+4. Onderhouds- en reparatiewerkzaamheden
+   4.1 Controleer de pakkingen en de afdichting van de transformator en draai de schroeven zo nodig iets aan.
+   4.2 Als de unit is uitgerust met een oliepeilindicator, controleer dan regelmatig het oliepeil.
+   4.3 Houd de isolatoren schoon.
+   4.4 Verwijder roest en schilder de betreffende gedeelten of oppervlakken opnieuw.
+   4.5 Olie aftappen
+		     Wanneer voor onderhouds- en reparatiewerkzaamheden de transformator moet worden geopend, moeten de
+		     volgende aanwijzingen worden opgevolgd:
+		     4.5.1 Tap de isolatievloeistof af uit de olieaftapinrichting die op de bodem van de tank is aangebracht.
+			           In het geval van een hermetisch gesloten unit moet de vulbuis gesloten blijven. Wanneer er geen vloeistof
+			           meer uit de unit stroomt, is de tank drukgecompenseerd.
+		     4.5.2 Open de vulopening van het deksel en laat de isolatievloeistof tot ca. 50 mm onder het deksel weglopen
+		     (controleer met een peilstok in de vulbuis om het juiste oliepeil te bepalen).
+

@@ -1,0 +1,40 @@
+OPERATING INSTRUCTION B / 2021
+
+		     4.6.3 Bleed the bushings.
+		     4.6.4. Fill the filling pipe again (to the brim) and close it with cap. Ensure that all other devices are also filled
+			           (where required) and seal it.
+		     4.6.5. Adjust the pressure level by draining a predetermined amount of oil, which is influenced by the oil 		
+			           temperature (tolerance 3 K). The necessary information about oil temperature and the quantity of oil to be
+			           drained are stipulated on the rating plate. The existing oil temperature can be measured with the
+			           thermometer located in the thermometer pocket on the cover. Adjust the oil level with the filling pipe closed/
+			           sealed, by draining the predetermined amount of oil, as stated on the rating plate. Use the oil drain device at
+			           the bottom of the tank to drain the oil.
+  4.7. Please observe the instructions of the protection and control systems.		
+
+5. Oil Samples
+   Occasional tests of oil samples and examination as per BA148 / VDE 0370 are recommended.
+   Minimum breakdown voltage levels are:          New oil:		       ≥ 50 kV		
+		       				                                     Operating oil:   ≥ 30 kV
+   Purification of the oil is necessary at levels less than 30 kV.
+   5.1 Taking Oil Samples at Oil Temperature ≥ Reference Temperature °C
+		      At an oil temperature of ≥ the Reference Temperature the tank operates under excess pressure. An oil sample of
+		      approximately 0.2 l is taken from the oil drainage device. The filling pipe must not be ventilated during this
+		 procedure.
+
+  5.2.   Taking Oil Samples at Oil Temperature < Reference Temperature °C
+		       At an oil temperature of < the Reference Temperature the tank operates under negative pressure.
+		       If the oil sample of approximately 0.2 l is to be taken from the drainage device, ventilate the filling pipe and then
+		       refill according to the instructions given in section 4.5.
+
+
+
+
+SÄCHSISCH-BAYERISCHE STARKSTROM-GERÄTEBAU GMBH
+Ohmstraße 1 • 08496 Neumark • Germany
+Phone   +49 37600 83-0
+Fax     +49 37600 83-330
+e-mail  sbg@sgb-smit.group
+
+
+www.sgb-smit.com
+
