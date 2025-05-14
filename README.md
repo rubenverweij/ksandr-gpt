@@ -12,7 +12,7 @@ python3 -m venv venv
 pip install llama-cpp-python
 
 # for gpu route
-pip3 install torch torchvision torchaudio
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
 ## cuda toolkit
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-ubuntu2404.pin
@@ -26,7 +26,14 @@ sudo apt-get -y install cuda-toolkit-12-9
 # nvidia driver
 sudo apt-get install -y nvidia-open
 
-CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir
+
+export CUDACXX=/usr/local/cuda-12.9/bin/nvcc
+CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir 
+
+# check version
+sudo apt install nvidia-cuda-toolkit
+nvcc --version
+
 
 # for cpu route
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
