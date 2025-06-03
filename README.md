@@ -1,7 +1,7 @@
 
 # Setup environment
 
-Needed shell commands to get VM up and running.
+Needed shell commands to get VM up and running for Ubuntu 24.04.
 
 ```shell
 sudo apt-get update
@@ -45,5 +45,27 @@ pip install chromadb langchain_chroma
 ```
 
 
+# Setup windows machine
 
+```bash
+
+python3 -m venv venv
+source venv/Scripts/activate
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# for pure cpu
+pip3 install torch torchvision torchaudio
+pip install llama-cpp-python
+
+# Download and install Microsoft C++ Build Tools and make sure Desktop development with C++
+
+# Then install llama-cpp-python for gpu mode: 
+set FORCE_CMAKE=1
+set CMAKE_ARGS=-DGGML_CUDA=ON
+pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir
+
+# Finally install on prem
+pip install onprem
+pip install chromadb langchain_chroma
+```
 
