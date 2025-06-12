@@ -1,3 +1,4 @@
+# Nvidia
 ARG CUDA_IMAGE
 FROM nvidia/cuda:12.9.0-devel-ubuntu22.04
 
@@ -31,4 +32,4 @@ WORKDIR /ksandr-gpt
 COPY ./api /ksandr-gpt/api
 
 # Start REPL
-CMD ["fastapi", "run", "api/main.py", "--port", "80"]
+CMD ["fastapi", "run", "api/main.py", "--port", "8000"]

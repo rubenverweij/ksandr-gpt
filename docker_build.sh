@@ -8,19 +8,18 @@ function print_guide() {
 
 }
 
-# Only allow script to run as root
+# Run script als root
 if [ "$EUID" -ne 0 ]
 then
     echo "This script must be run with sudo."
     exit 1
 fi
 
-# Get the directory of the script, and change to it
+# Access de folder and pas het aan
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$script_dir"
 
-# Is the necessary NVIDIA stuff installed? Technically, we could build the image
-# without, but it is assumed that the container image will be used locally.
+# Controleer nvidia-smi anders eerst installeren of alleen cpu versie beschikbaar
 if ! command -v nvidia-smi >/dev/null 2>&1
 then
   echo "The nvidia-smi executable is not present. Are you sure you have an"
@@ -30,7 +29,7 @@ then
   exit
 fi
 
-# Get device CUDA version, and find a supporting image tag, and Torch package index
+# Installeer torch naar op basis van cuda image
 cuda_version=`nvidia-smi | grep -P -o "CUDA Version: \d+(\.\d+)+" | grep -P -o "\d+(\.\d+)+"`
 echo "Detected driver supporting CUDA Version ${cuda_version}"
 tag=`./get_cuda_image_tag ${cuda_version}`

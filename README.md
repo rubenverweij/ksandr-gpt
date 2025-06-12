@@ -7,8 +7,6 @@ De repository bevat code voor het hosten van taalmodellen voor het bevragen van 
 3. Git
 
 
-# Installatie docker omgeving
-
 ```shell
 # Controleer of de cuda toolkit al aanwezig is
 nvidia-smi | grep -P -o "CUDA Version: \d+(\.\d+)+" | grep -P -o "\d+(\.\d+)+"
@@ -26,13 +24,20 @@ gcc --version
 apt install docker.io
 
 # Maak de image
-docker build -t ksandr-gpt:0.5 .
+docker build -t ksandr-gpt:0.XX .
 
 # Start de container
-docker run -d -p 80:80 ksandr-gpt:0.5 --cap-add SYS_RESOURCE -e USE_MLOCK=0 --gpus=all -v ~/onprem_data:/root/onprem_data
-sudo docker run -d -p 80:80 --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v ~/onprem_data:/root/onprem_data ksandr-gpt:0.5
-docker run -i -t ksandr-gpt:0.5 /bin/bash
+docker run -d -p 8000:8000 --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v ~/onprem_data:/root/onprem_data ksandr-gpt:0.XX -v ~/ksandr_texts:/root/ksandr_texts --port 8000
+docker run -i -t ksandr-gpt:0.XX /bin/bash
 ```
+
+Vervolgens kan de api worden getest:
+
+```python
+
+
+```
+
 
 # Installatie linux host
 

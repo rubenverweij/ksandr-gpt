@@ -8,11 +8,12 @@ from fastapi import FastAPI
 app = FastAPI()
 
 llm = LLM(default_model="llama")
+llm.ingest("/root/ksandr_texts")
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
 
 @app.get("/ask/")
