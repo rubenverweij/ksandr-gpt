@@ -39,10 +39,11 @@ Vervolgens kunnen documenten worden geupload:
 ```shell
 python3 api/ingest_docs.py -path /root/ksandr_texts/
 
-curl -X 'POST' \
-  'http://0.0.0.0:8000/ask?prompt=Hebben%20transformatoren%20een%20overzetverhouding%3F' \
-  -H 'accept: application/json' \
-  -d ''
+prompt="Heeft EATON transformatorkabels voor de Magenfix schakelinstallatie?"
+curl -X POST \
+  "http://localhost:8080/ask?prompt=$(echo "$prompt" | jq -s -R -r @uri)" \
+  -H "accept: application/json" \
+  -d ""
 
 watch -n 0.5 nvidia-smi
 ```
