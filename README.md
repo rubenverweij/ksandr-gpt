@@ -27,8 +27,8 @@ apt install docker.io
 docker build -t ksandr-gpt:0.XX .
 
 # Start de container
-docker run --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v ~/onprem_data:/root/onprem_data -v ~/ksandr_texts:/root/ksandr_texts -i -t ksandr-gpt:0.XX /bin/bash 
-docker run -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v ~/onprem_data:/root/onprem_data -v ~/ksandr_texts:/root/ksandr_texts -p 8000:8000 ksandr-gpt:0.XX 
+docker run --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_texts -i -t ksandr-gpt:0.XX /bin/bash 
+docker run -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_texts -p 8000:8080 ksandr-gpt:0.XX 
 
 # Kopieer aantal documenten
 docker cp docs/txt/ <container name>:/root/ksandr_texts/
@@ -40,7 +40,7 @@ Vervolgens kunnen documenten worden geupload:
 python3 api/ingest_docs.py -path /root/ksandr_texts/
 
 curl -X 'POST' \
-  'http://127.0.0.1:8000/ask?prompt=Hebben%20transformatoren%20een%20overzetverhouding%3F' \
+  'http://0.0.0.0:8000/ask?prompt=Hebben%20transformatoren%20een%20overzetverhouding%3F' \
   -H 'accept: application/json' \
   -d ''
 
