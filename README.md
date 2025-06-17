@@ -27,15 +27,18 @@ apt install docker.io
 docker build -t ksandr-gpt:0.XX .
 
 # Start de container
-docker run -d -p 8000:8000 --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v ~/onprem_data:/root/onprem_data ksandr-gpt:0.XX -v ~/ksandr_texts:/root/ksandr_texts --port 8000
-docker run -i -t ksandr-gpt:0.XX /bin/bash
+docker run --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v ~/onprem_data:/root/onprem_data -v ~/ksandr_texts:/root/ksandr_texts -i -t ksandr-gpt:0.XX /bin/bash 
+docker run -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v ~/onprem_data:/root/onprem_data -v ~/ksandr_texts:/root/ksandr_texts -p 8000:8000 ksandr-gpt:0.XX 
+
 ```
 
 Vervolgens kan de api worden getest:
 
-```python
+```shell
 
 
+
+watch -n 0.5 nvidia-smi
 ```
 
 
@@ -83,23 +86,17 @@ pip install chromadb langchain_chroma
 # Installatie windows host
 
 ```bash 
-
 python3 -m venv venv
 source venv/Scripts/activate
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
-
-# for pure cpu
-pip3 install torch torchvision torchaudio
 pip install llama-cpp-python
 
-# Download and install Microsoft C++ Build Tools and make sure Desktop development with C++
-
-# Then install llama-cpp-python for gpu mode: 
+# Download en installeer Microsoft C++ Build Tools
 set FORCE_CMAKE=1
 set CMAKE_ARGS=-DGGML_CUDA=ON
 pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir
 
-# Finally install on prem
+# Installeer onprem
 pip install onprem
 pip install chromadb langchain_chroma
 ```

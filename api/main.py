@@ -8,7 +8,6 @@ from fastapi import FastAPI
 app = FastAPI()
 
 llm = LLM(default_model="llama")
-llm.ingest("/root/ksandr_texts")
 
 
 @app.get("/health")
@@ -16,6 +15,11 @@ def health_check():
     return {"status": "ok"}
 
 
-@app.get("/ask/")
-def prompt(prompt: str):
+@app.post("/ask")
+def ask_question(prompt: str):
     return llm.ask(prompt)
+
+
+@app.post("/chat")
+def chat_with_llm(prompt: str):
+    return llm.chat(prompt)

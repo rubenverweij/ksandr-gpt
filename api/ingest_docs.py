@@ -1,0 +1,11 @@
+from onprem import LLM
+import argparse
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Ingest documents to ksandr vector database"
+    )
+    parser.add_argument("-path", help="path to text files")
+    args = parser.parse_args()
+    llm = LLM(default_model="llama")
+    llm.ingest(args.path)

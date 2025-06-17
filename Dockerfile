@@ -1,4 +1,4 @@
-# Nvidia
+# NVIDIA cuda als basis image
 ARG CUDA_IMAGE
 FROM nvidia/cuda:12.9.0-devel-ubuntu22.04
 
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get upgrade -y \
     && mkdir -p /etc/OpenCL/vendors \
     && echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
 
-# Build related env vars
+# Omgevingsvariabelen
 ENV CUDA_DOCKER_ARCH=all
 ENV LLAMA_CUBLAS=1
 
