@@ -38,6 +38,12 @@ Vervolgens kunnen documenten worden geupload:
 
 ```shell
 python3 api/ingest_docs.py -path /root/ksandr_texts/
+
+curl -X 'POST' \
+  'http://127.0.0.1:8000/ask?prompt=Hebben%20transformatoren%20een%20overzetverhouding%3F' \
+  -H 'accept: application/json' \
+  -d ''
+
 watch -n 0.5 nvidia-smi
 ```
 
