@@ -30,14 +30,14 @@ docker build -t ksandr-gpt:0.XX .
 docker run --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v ~/onprem_data:/root/onprem_data -v ~/ksandr_texts:/root/ksandr_texts -i -t ksandr-gpt:0.XX /bin/bash 
 docker run -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v ~/onprem_data:/root/onprem_data -v ~/ksandr_texts:/root/ksandr_texts -p 8000:8000 ksandr-gpt:0.XX 
 
+# Kopieer aantal documenten
+docker cp docs/txt/ <container name>:/root/ksandr_texts/
 ```
 
-Vervolgens kan de api worden getest:
+Vervolgens kunnen documenten worden geupload:
 
 ```shell
-
-
-
+python3 api/ingest_docs.py -path /root/ksandr_texts/
 watch -n 0.5 nvidia-smi
 ```
 
