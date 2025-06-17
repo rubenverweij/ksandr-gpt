@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-llm = LLM(default_model="llama")
+llm = LLM(default_model="llama", n_gpu_layers=-1)
 
 
 @app.get("/health")
