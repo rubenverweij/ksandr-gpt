@@ -27,7 +27,7 @@ apt install docker.io
 docker build -t ksandr-gpt:0.XX .
 
 # Start de container
-docker run --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_texts -i -t ksandr-gpt:0.XX /bin/bash 
+docker run --network host --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_texts -i -t ksandr-gpt:0.XX /bin/bash 
 
 docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_texts -p 8000:8080 ksandr-gpt:0.XX 
 
@@ -40,9 +40,9 @@ Vervolgens kunnen documenten worden geupload:
 ```shell
 python3 api/ingest_docs.py -path /root/ksandr_texts/
 
-prompt="Heeft EATON transformatorkabels voor de Magenfix schakelinstallatie?"
+prompt="Wat zijn leveranciers van transformatoren"
 curl -X POST \
-  "http://localhost:8080/ask?prompt=$(echo "$prompt" | jq -s -R -r @uri)" \
+  "http://localhost:8080/chat?prompt=$(echo "$prompt" | jq -s -R -r @uri)" \
   -H "accept: application/json" \
   -d ""
 

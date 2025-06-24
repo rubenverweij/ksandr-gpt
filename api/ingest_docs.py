@@ -7,5 +7,5 @@ if __name__ == "__main__":
     )
     parser.add_argument("-path", help="path to text files")
     args = parser.parse_args()
-    llm = LLM(default_model="llama", n_gpu_layers=-1)
+    llm = LLM(n_gpu_layers=-1)
     llm.ingest(args.path)
