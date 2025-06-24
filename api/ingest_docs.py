@@ -8,4 +8,4 @@ if __name__ == "__main__":
     parser.add_argument("-path", help="path to text files")
     args = parser.parse_args()
     llm = LLM(n_gpu_layers=-1)
-    llm.ingest(args.path)
+    llm.ingest(args.path, chunk_size=1500)

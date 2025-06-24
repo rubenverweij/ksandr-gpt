@@ -14,7 +14,7 @@ llm = LLM(n_gpu_layers=-1)
 
 class AskRequest(BaseModel):
     prompt: str
-    permission: Optional[List[int]] = None
+    permission: Optional[List[str]] = None
     aad: Optional[List[int]] = None
 
 
@@ -42,7 +42,11 @@ def ask(request: AskRequest):
         filter_obj = filters[0]
     else:
         filter_obj = {"$and": filters}
-    return llm._ask(prompt=request.prompt, filters=filter_obj, table_k=0)
+
+    try:
+        return llm._ask(prompt=request.prompt, filters=filter_obj, table_k=0)
+    except Exception as e:
+        return {"error": str(e), "filter": filter_obj}
 
 
 @app.post("/chat")
@@ -65,4 +69,7 @@ def chat(request: AskRequest):
     else:
         filter_obj = {"$and": filters}
 
-    return llm.chat(prompt=request.prompt, filters=filter_obj, table_k=0)
+    try:
+        return llm.chat(prompt=request.prompt, filters=filter_obj, table_k=0)
+    except Exception as e:
+        return {"error": str(e), "filter": filter_obj}
