@@ -40,11 +40,14 @@ Vervolgens kunnen documenten worden geupload:
 ```shell
 python3 api/ingest_docs.py -path /root/ksandr_texts/
 
-prompt="Wat zijn leveranciers van transformatoren"
-curl -X POST \
-  "http://localhost:8080/chat?prompt=$(echo "$prompt" | jq -s -R -r @uri)" \
-  -H "accept: application/json" \
-  -d ""
+curl -X POST http://localhost:8080/ask \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-d '{
+  "prompt": "Wat gebeurt er als een 10kV patroon aangesproken wordt",
+  "permission": ["cat-1"],
+  "aad": ["10535"]
+}'
 
 watch -n 0.5 nvidia-smi
 ```
