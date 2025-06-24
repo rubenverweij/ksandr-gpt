@@ -29,7 +29,7 @@ docker build -t ksandr-gpt:0.XX .
 # Start de container
 docker run --network host --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_texts -i -t ksandr-gpt:0.XX /bin/bash 
 
-docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_texts -p 8000:8080 ksandr-gpt:0.XX 
+docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_texts ksandr-gpt:0.XX 
 
 # Kopieer aantal documenten
 docker cp docs/txt/ <container name>:/root/ksandr_texts/
