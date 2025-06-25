@@ -39,7 +39,7 @@ def _build_filter(
                 permissions.append(f"{category}_{id_}")
     if not permissions:
         return {"table": False}
-    return {"permission": {"$in": permissions}}
+    return {"permission_and_type": {"$in": permissions}}
 
 
 @app.get("/health")
