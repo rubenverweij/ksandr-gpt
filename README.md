@@ -42,12 +42,16 @@ python3 api/ingest_docs.py -path /root/ksandr_texts/
 
 curl -X POST http://localhost:8080/ask \
 -H "Content-Type: application/json" \
--H "Accept: application/json" \
 -d '{
-  "prompt": "Wat gebeurt er als een 10kV patroon aangesproken wordt",
-  "permission": ["cat-1"],
-  "aad": ["10535"]
+  "prompt": "Is boomvorming op de isolatie van schakelstangen te verwachten?",
+  "permission": {
+    "aads": {
+      "cat-1": [2061]
+    }
+  }
 }'
+
+
 
 watch -n 0.5 nvidia-smi
 ```
