@@ -11,14 +11,21 @@ app = FastAPI()
 llm = LLM(n_gpu_layers=-1)
 
 
-DEFAULT_QA_PROMPT = """Use the following pieces of context delimited by three backticks to answer the question at the end. 
-If you don't know the answer, just say that you don't know, don't try to make up an answer. 
-Always respond in Dutch.
+DEFAULT_QA_PROMPT = """
 
-```{context}```
+Je bent een behulpzame en feitelijke assistent. Gebruik uitsluitend de onderstaande context om de vraag van de gebruiker te beantwoorden. 
 
-Question: {question}
-Nuttig antwoord:"""
+Geef altijd een antwoord in het Nederlands. Als het antwoord niet expliciet in de context staat, geef dan aan: "Het antwoord is niet beschikbaar in de aangeleverde context."
+
+[CONTEXT]
+{context}
+
+[VRAAG]
+{question}
+
+[ANTWOORD]
+
+"""
 
 
 class AskRequest(BaseModel):
@@ -50,11 +57,15 @@ def health_check():
 @app.post("/ask")
 def ask(request: AskRequest):
     filter_obj = _build_filter(request.permission)
+    source_max = getattr(request, "source_max", None)
+    score_threshold = getattr(request, "score_threshold", None)
     try:
         return llm._ask(
             question=request.prompt,
             filters=filter_obj,
             table_k=0,
+            k=source_max,
+            score_threshold=score_threshold,
             qa_template=DEFAULT_QA_PROMPT,
         )
     except Exception as e:
