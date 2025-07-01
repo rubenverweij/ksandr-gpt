@@ -3,7 +3,7 @@ ARG CUDA_IMAGE
 FROM nvidia/cuda:12.9.0-devel-ubuntu22.04
 
 WORKDIR /ksandr-gpt
-COPY ../api /ksandr-gpt/api
+COPY ./ingest /ksandr-gpt/api
 
 RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y git build-essential \
