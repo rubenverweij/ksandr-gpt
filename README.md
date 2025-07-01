@@ -27,18 +27,18 @@ apt install docker.io
 docker build -t ksandr-gpt:0.XX .
 
 # Start de container
-docker run --network host --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_texts -i -t ksandr-gpt:0.XX /bin/bash 
+docker run --network host --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files -i -t ksandr-gpt:0.XX /bin/bash 
 
-docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_texts ksandr-gpt:0.XX 
+docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt:0.XX 
 
 # Kopieer aantal documenten
-docker cp docs/txt/ <container name>:/root/ksandr_texts/
+docker cp docs/txt/ <container name>:/root/ksandr_files/
 ```
 
 Vervolgens kunnen documenten worden geupload:
 
 ```shell
-python3 api/ingest_docs.py -path /root/ksandr_texts/
+python3 api/ingest_docs.py -path /root/ksandr_files/
 
 curl -X POST http://localhost:8080/ask \
 -H "Content-Type: application/json" \
@@ -50,9 +50,6 @@ curl -X POST http://localhost:8080/ask \
     }
   }
 }'
-
-
-
 watch -n 0.5 nvidia-smi
 ```
 
