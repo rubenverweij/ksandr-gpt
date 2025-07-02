@@ -22,7 +22,7 @@ RUN python3 -m pip install --upgrade pip wheel setuptools
 RUN python3 -m pip install torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/cu128
 
-COPY ../requirements.txt /ksandr-gpt/requirements.txt
+COPY ./requirements.txt /ksandr-gpt/requirements.txt
 RUN python3 -m pip install -r /ksandr-gpt/requirements.txt
 
 # Install llama-cpp-python (with CUDA)
