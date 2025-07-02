@@ -23,13 +23,13 @@ gcc --version
 # Installeer docker
 apt install docker.io
 
-# Maak de image
+# Maak de api image and start een container
 docker build -t ksandr-gpt:0.XX .
-
-# Start de container
-docker run --network host --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files -i -t ksandr-gpt:0.XX /bin/bash 
-
 docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt:0.XX 
+
+# Maak de ingest image en start de container
+docker build -t ksandr-ingest:0.XX .
+docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-ingest:0.1 
 
 # Kopieer aantal documenten
 docker cp docs/txt/ <container name>:/root/ksandr_files/
@@ -52,6 +52,10 @@ curl -X POST http://localhost:8080/ask \
 }'
 watch -n 0.5 nvidia-smi
 ```
+
+# Troubleshooting
+
+1. wanneer `docker build -t ksandr-gpt:0.XX .` niet lukt omdat packages niet gevonden kunnen worden kan een herstart van docker noodzakelijk zijn: `sudo service docker restart`
 
 
 # Installatie linux host
