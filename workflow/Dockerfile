@@ -28,5 +28,5 @@ RUN python3 -m pip install -r /ksandr-gpt/requirements.txt
 # Install llama-cpp-python (with CUDA)
 RUN CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python
 RUN python3 -m pip install onprem chromadb langchain_chroma 
-RUN echo "0 0 * * * python3 /api/ingest_docs.py -vector_db_path /root/onprem_data/vectordb/dense -documents_path /root/ksandr_files/ -chunk_size 400 >> /app/cron.log 2>&1" > /etc/cron.d/ksandr-ingest-cron-job
+RUN echo "0 0 * * * python3 api/ingest_docs.py -vector_db_path /root/onprem_data/vectordb/dense -documents_path /root/ksandr_files/ -chunk_size 400 >> /app/cron.log 2>&1" > /etc/cron.d/ksandr-ingest-cron-job
 CMD ["cron", "-f"]
