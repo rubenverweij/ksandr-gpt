@@ -16,7 +16,7 @@ def update_document(page_content: str, metadata: dict, doc_id: str):
     """
     try:
         # Initialize and load the vector database
-        llm = LLM(n_gpu_layers=-1)
+        llm = LLM(n_gpu_layers=-1, embedding_model_kwargs={"device": "cuda"})
         vector_db = llm.load_vectordb()
 
         # Get all document IDs from the database

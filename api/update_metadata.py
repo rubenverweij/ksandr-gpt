@@ -31,15 +31,18 @@ def extract_file_data(file_path: str) -> Dict[str, Union[int, str]]:
 
 def update_metadata() -> None:
     """Update metadata for documents by extracting aad, permission, and filename."""
-    llm = LLM(n_gpu_layers=-1)
+    llm = LLM(n_gpu_layers=-1, embedding_model_kwargs={"device": "cuda"})
     database = llm.load_vectordb()
-    ids = database.get().get("ids", [])
+    ids = database.get()["ids"]
+    docs = []
     for index, doc_id in enumerate(ids):
-        existing_doc = database.get_by_ids([doc_id])[0]
-        metadata = extract_file_data(existing_doc.metadata.get("source", ""))
-        print(f"{index}/{len(ids)} updating doc {doc_id} with metadata: {metadata}")
-        existing_doc.metadata.update(metadata)
-        database.update_document(document_id=doc_id, document=existing_doc)
+        selected_document = database.get_by_ids([doc_id])[0]
+        metadata = extract_file_data(file_path=selected_document.metadata["source"])
+        selected_document.metadata.update(metadata)
+        docs.append(selected_document)
+        if index % 1000 == 0:
+            print(f"{index}/{len(ids)} updating doc {doc_id} with metadata: {metadata}")
+    database.update_documents(ids=ids, documents=docs)
 
 
 if __name__ == "__main__":
