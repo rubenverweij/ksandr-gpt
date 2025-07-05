@@ -49,7 +49,9 @@ if __name__ == "__main__":
     except OSError as e:
         print(f"Error: {e.strerror} - {e.filename}")
 
-    llm = LLM(n_gpu_layers=-1, embedding_model_kwargs={"device": "cuda"})
+    llm = LLM(
+        n_gpu_layers=-1, embedding_model_kwargs={"device": "cuda"}, store_type="sparse"
+    )
     llm.ingest(source_directory=args.documents_path, chunk_size=args.chunk_size)
     print("Done ingesting documents, start adjusting metadata")
 

@@ -8,7 +8,9 @@ from onprem import LLM
 from fastapi import FastAPI
 
 app = FastAPI()
-llm = LLM(n_gpu_layers=-1, embedding_model_kwargs={"device": "cuda"})
+llm = LLM(
+    n_gpu_layers=-1, embedding_model_kwargs={"device": "cuda"}, store_type="sparse"
+)
 
 
 DEFAULT_QA_PROMPT = """
