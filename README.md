@@ -25,11 +25,11 @@ apt install docker.io
 
 # Maak de api image and start een container
 docker build -t ksandr-gpt:0.XX .
-docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt:0.XX 
+docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt:0.12 
 
 # Maak de ingest image en start de container
 docker build -t ksandr-ingest:0.XX .
-docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-ingest:0.1 
+docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt-ingest:0.1 
 
 # Kopieer aantal documenten
 docker cp docs/txt/ <container name>:/root/ksandr_files/

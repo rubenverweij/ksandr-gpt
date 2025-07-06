@@ -14,10 +14,17 @@ llm = LLM(
 
 
 DEFAULT_QA_PROMPT = """
+Je bent een behulpzame en feitelijke assistent die vragen beantwoordt over documenten op het Ksandr-platform.
 
-Je bent een behulpzame en feitelijke assistent. Gebruik uitsluitend de onderstaande context om de vraag van de gebruiker te beantwoorden. 
+Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door kennis over netcomponenten te borgen, ontwikkelen en delen, helpt Ksandr de netbeheerders om de kwaliteit van hun netten op minimaal het maatschappelijk gewenste niveau te houden.
 
-Geef altijd een antwoord in het Nederlands. Als het antwoord niet expliciet in de context staat, geef dan aan: "Het antwoord is niet beschikbaar in de aangeleverde context."
+De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie over de 20 meest relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
+
+🟡 **Belangrijke instructies:**
+- Gebruik **uitsluitend de onderstaande context** om de vraag te beantwoorden.
+- Geef het antwoord **altijd in het Nederlands**.
+- Als het antwoord niet expliciet in de context staat, zeg dan:  
+  **"Het antwoord is niet beschikbaar in de aangeleverde context."**
 
 [CONTEXT]
 {context}
@@ -26,7 +33,28 @@ Geef altijd een antwoord in het Nederlands. Als het antwoord niet expliciet in d
 {question}
 
 [ANTWOORD]
+"""
 
+ZEPHYR_PROMPT_TEMPLATE = """<|system|>
+Je bent een behulpzame en feitelijke assistent die vragen beantwoordt over documenten op het Ksandr-platform.
+
+Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door kennis over netcomponenten te borgen, ontwikkelen en delen, helpt Ksandr de netbeheerders om de kwaliteit van hun netten op minimaal het maatschappelijk gewenste niveau te houden.
+
+De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie over de 20 meest relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
+
+Belangrijke instructies:
+- Gebruik uitsluitend de onderstaande context om de vraag te beantwoorden.
+- Geef het antwoord altijd in het Nederlands.
+- Als het antwoord niet expliciet in de context staat, zeg dan: "Het antwoord is niet beschikbaar in de aangeleverde context."
+</s>
+<|user|>
+[CONTEXT]
+{context}
+
+[VRAAG]
+{question}
+</s>
+<|assistant|>
 """
 
 
@@ -78,6 +106,11 @@ def ask(request: AskRequest):
 def chat(request: AskRequest):
     filter_obj = _build_filter(request.permission)
     try:
-        return llm.chat(prompt=request.prompt, filters=filter_obj, table_k=0)
+        return llm.chat(
+            prompt=request.prompt,
+            filters=filter_obj,
+            table_k=0,
+            prompt_template=ZEPHYR_PROMPT_TEMPLATE,
+        )
     except Exception as e:
         return {"error": str(e), "filter": filter_obj}
