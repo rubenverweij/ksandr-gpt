@@ -41,6 +41,9 @@ if __name__ == "__main__":
     parser.add_argument("-vector_db_path", help="path to vector db", type=str)
     parser.add_argument("-documents_path", help="path to text files", type=str)
     parser.add_argument("-chunk_size", help="ingest chunk size", default=300, type=int)
+    parser.add_argument(
+        "-chunk_overlap", help="ingest overlap chunk size", default=100, type=int
+    )
     args = parser.parse_args()
 
     try:
@@ -52,7 +55,11 @@ if __name__ == "__main__":
     llm = LLM(
         n_gpu_layers=-1, embedding_model_kwargs={"device": "cuda"}, store_type="sparse"
     )
-    llm.ingest(source_directory=args.documents_path, chunk_size=args.chunk_size)
+    llm.ingest(
+        source_directory=args.documents_path,
+        chunk_size=args.chunk_size,
+        chunk_overlap=args.chunk_overlap,
+    )
     print("Done ingesting documents, start adjusting metadata")
 
     database = llm.load_vectordb()

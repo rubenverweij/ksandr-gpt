@@ -5,6 +5,7 @@ TAALMODEL API KSANDR
 from typing import List, Dict, Optional, Any
 from pydantic import BaseModel
 from onprem import LLM
+from onprem.pipelines import Summarizer
 from fastapi import FastAPI
 
 app = FastAPI()
@@ -64,6 +65,11 @@ class AskRequest(BaseModel):
     aad: Optional[List[int]] = None
 
 
+class SummaryRequest(BaseModel):
+    doc_path: str
+    concept: str
+
+
 def _build_filter(
     permission_data: Optional[Dict[str, Dict[str, List[int]]]],
 ) -> Dict[str, Any]:
@@ -114,3 +120,15 @@ def chat(request: AskRequest):
         )
     except Exception as e:
         return {"error": str(e), "filter": filter_obj}
+
+
+@app.post("/summarise")
+def summarise(request: SummaryRequest):
+    try:
+        summ = Summarizer(llm)
+        summary, sources = summ.summarize_by_concept(
+            request.doc_path, concept_description=request.concept
+        )
+        return summary
+    except Exception as e:
+        return {"error": str(e)}
