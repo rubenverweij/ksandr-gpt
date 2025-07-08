@@ -46,6 +46,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    STORE_TYPE = "sparse"
+
     try:
         shutil.rmtree(args.vector_db_path)
         print(f"Directory '{args.vector_db_path}' removed successfully.")
@@ -53,7 +55,9 @@ if __name__ == "__main__":
         print(f"Error: {e.strerror} - {e.filename}")
 
     llm = LLM(
-        n_gpu_layers=-1, embedding_model_kwargs={"device": "cuda"}, store_type="sparse"
+        n_gpu_layers=-1,
+        embedding_model_kwargs={"device": "cuda"},
+        store_type=STORE_TYPE,
     )
     llm.ingest(
         source_directory=args.documents_path,
@@ -62,14 +66,26 @@ if __name__ == "__main__":
     )
     print("Done ingesting documents, start adjusting metadata")
 
-    database = llm.load_vectordb()
-    ids = database.get()["ids"]
-    docs = []
-    for index, doc_id in enumerate(ids):
-        selected_document = database.get_by_ids([doc_id])[0]
-        metadata = extract_file_data(file_path=selected_document.metadata["source"])
-        selected_document.metadata.update(metadata)
-        docs.append(selected_document)
-        if index % 1000 == 0:
-            print(f"{index}/{len(ids)} updating doc {doc_id} with metadata: {metadata}")
-    database.update_documents(ids=ids, documents=docs)
+    if STORE_TYPE == "sparse":
+        database = llm.load_vectorstore()
+        docs = []
+        for selected_document in database.get_all_docs():
+            metadata = extract_file_data(file_path=selected_document["source"])
+            selected_document.update(metadata)
+            docs.append(selected_document)
+        database.update_documents(doc_dicts=docs)
+    else:
+        # In case it is dense
+        database = llm.load_vectordb()
+        ids = database.get()["ids"]
+        docs = []
+        for index, doc_id in enumerate(ids):
+            selected_document = database.get_by_ids([doc_id])[0]
+            metadata = extract_file_data(file_path=selected_document.metadata["source"])
+            selected_document.metadata.update(metadata)
+            docs.append(selected_document)
+            if index % 1000 == 0:
+                print(
+                    f"{index}/{len(ids)} updating doc {doc_id} with metadata: {metadata}"
+                )
+        database.update_documents(ids=ids, documents=docs)

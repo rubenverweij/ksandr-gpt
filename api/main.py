@@ -58,6 +58,8 @@ Belangrijke instructies:
 <|assistant|>
 """
 
+SUMMARY_PROMPT = """Wat zegt de volgende context in het Nederlands met betrekking tot "{concept_description}"? \n\nCONTEXT:\n{text}"""
+
 
 class AskRequest(BaseModel):
     prompt: str
