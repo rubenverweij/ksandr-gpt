@@ -129,7 +129,9 @@ def summarise(request: SummaryRequest):
     try:
         summ = Summarizer(llm)
         summary, sources = summ.summarize_by_concept(
-            request.doc_path, concept_description=request.concept
+            request.doc_path,
+            concept_description=request.concept,
+            summary_prompt=SUMMARY_PROMPT,
         )
         return summary
     except Exception as e:
