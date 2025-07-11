@@ -15,7 +15,10 @@ from fastapi import FastAPI
 
 app = FastAPI()
 llm = LLM(
-    n_gpu_layers=-1, embedding_model_kwargs={"device": "cuda"}, store_type="sparse"
+    n_gpu_layers=-1,
+    embedding_model_kwargs={"device": "cuda"},
+    store_type="sparse",
+    verbose=False,
 )
 
 
@@ -146,52 +149,48 @@ def summarise(request: SummaryRequest):
 class StreamPrinter(io.StringIO):
     def __init__(self):
         super().__init__()
-        self.buffer = []
+        self._buffer = asyncio.Queue()
 
     def write(self, s):
-        self.buffer.append(s)
+        # Called when something is printed
+        self._buffer.put_nowait(s)
 
-    def get_stream(self):
-        while self.buffer:
-            yield self.buffer.pop(0)
+    def flush(self):
+        pass  # optional depending on how print() is used
+
+    async def stream(self):
+        while True:
+            s = await self._buffer.get()
+            yield s
 
 
 @app.post("/ask_stream")
-def ask_stream(request: AskRequest):
-    try:
-        return StreamingResponse(
-            streaming_generator(request=request), media_type="text/plain"
-        )
-    except Exception as e:
-        return {"error": str(e)}
-
-
-async def streaming_generator(request: AskRequest):
-    filter_obj = _build_filter(request.permission)
-    source_max = getattr(request, "source_max", None)
-    score_threshold = getattr(request, "score_threshold", None)
-    original_stdout = sys.stdout
-    capture = StreamPrinter()
-    sys.stdout = capture
-    try:
-        task = asyncio.create_task(
-            llm._ask(
-                question=request.prompt,
-                filters=filter_obj,
-                table_k=0,
-                k=source_max,
-                score_threshold=score_threshold,
-                qa_template=DEFAULT_QA_PROMPT,
+async def ask_stream(request: AskRequest):
+    async def stream():
+        original_stdout = sys.stdout
+        printer = StreamPrinter()
+        sys.stdout = printer  # redirect prints to our buffer
+        try:
+            loop = asyncio.get_running_loop()
+            task = loop.run_in_executor(
+                None,
+                lambda: llm._ask(
+                    question=request.prompt,
+                    filters=_build_filter(request.permission),
+                    table_k=0,
+                    k=getattr(request, "source_max", None),
+                    score_threshold=getattr(request, "score_threshold", None),
+                    qa_template=DEFAULT_QA_PROMPT,
+                ),
             )
-        )
+            while not task.done():
+                try:
+                    yield await asyncio.wait_for(printer._buffer.get(), timeout=0.1)
+                except asyncio.TimeoutError:
+                    continue
+            while not printer._buffer.empty():
+                yield await printer._buffer.get()
+        finally:
+            sys.stdout = original_stdout
 
-        while not task.done():
-            await asyncio.sleep(0.05)
-            for item in capture.get_stream():
-                yield item
-
-        # yield any final buffer
-        for item in capture.get_stream():
-            yield item
-    finally:
-        sys.stdout = original_stdout
+    return StreamingResponse(stream(), media_type="text/plain")
