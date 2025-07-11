@@ -2,6 +2,11 @@
 TAALMODEL API KSANDR
 """
 
+import io
+from starlette.responses import StreamingResponse
+import asyncio
+import sys
+
 from typing import List, Dict, Optional, Any
 from pydantic import BaseModel
 from onprem import LLM
@@ -136,3 +141,57 @@ def summarise(request: SummaryRequest):
         return summary
     except Exception as e:
         return {"error": str(e)}
+
+
+class StreamPrinter(io.StringIO):
+    def __init__(self):
+        super().__init__()
+        self.buffer = []
+
+    def write(self, s):
+        self.buffer.append(s)
+
+    def get_stream(self):
+        while self.buffer:
+            yield self.buffer.pop(0)
+
+
+@app.post("/ask_stream")
+def ask_stream(request: AskRequest):
+    try:
+        return StreamingResponse(
+            streaming_generator(request=request), media_type="text/plain"
+        )
+    except Exception as e:
+        return {"error": str(e)}
+
+
+async def streaming_generator(request: AskRequest):
+    filter_obj = _build_filter(request.permission)
+    source_max = getattr(request, "source_max", None)
+    score_threshold = getattr(request, "score_threshold", None)
+    original_stdout = sys.stdout
+    capture = StreamPrinter()
+    sys.stdout = capture
+    try:
+        task = asyncio.create_task(
+            llm._ask(
+                question=request.prompt,
+                filters=filter_obj,
+                table_k=0,
+                k=source_max,
+                score_threshold=score_threshold,
+                qa_template=DEFAULT_QA_PROMPT,
+            )
+        )
+
+        while not task.done():
+            await asyncio.sleep(0.05)
+            for item in capture.get_stream():
+                yield item
+
+        # yield any final buffer
+        for item in capture.get_stream():
+            yield item
+    finally:
+        sys.stdout = original_stdout
