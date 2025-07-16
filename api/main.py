@@ -80,18 +80,23 @@ class SummaryRequest(BaseModel):
     concept: str
 
 
-def _build_filter(
-    permission_data: Optional[Dict[str, Dict[str, List[int]]]],
-) -> Dict[str, Any]:
+def _build_filter(permission_data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if not permission_data:
         return {"table": False}
     permissions = []
-    for source in permission_data:
-        for category, ids in permission_data[source].items():
-            for id_ in ids:
-                permissions.append(f"{category}_{id_}")
-    if not permissions:
-        return {"table": False}
+    for source, value in permission_data.items():
+        if isinstance(value, dict):
+            for category, ids in value.items():
+                for id_ in ids:
+                    permissions.append(f"{category}_{id_}")
+        elif isinstance(value, list):
+            for id_ in value:
+                permissions.append(f"{source}_{id_}")
+        elif isinstance(value, bool):
+            if value:
+                permissions.append(f"{source}_true")
+            else:
+                permissions.append(f"{source}_false")
     return {"permission_and_type": {"$in": permissions}}
 
 

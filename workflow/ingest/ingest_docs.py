@@ -4,29 +4,36 @@ from onprem import LLM
 import os
 from typing import Dict, Union
 
-
 VALID_PERMISSIONS = {"cat-1", "cat-2"}
 
 
 def extract_file_data(file_path: str) -> Dict[str, Union[int, str]]:
-    """Extract 'aad', 'permission', and 'filename' from a path."""
+    """Extract 'type', 'permission', and 'filename' from a path."""
     parts = file_path.strip("/").split("/")
     result = {
-        "aad": -1,
-        "permission": "cat-3",
+        "type": "",
+        "permission": "",
         "filename": "",
     }
-    if "aads" in parts:
-        try:
-            aads_index = parts.index("aads")
-            result["aad"] = int(parts[aads_index + 1])
-            permission = parts[aads_index + 2]
-            result["permission"] = (
-                permission if permission in VALID_PERMISSIONS else "cat-3"
-            )
-        except (IndexError, ValueError):
-            pass
-    result["permission_and_type"] = f"{result['permission']}_{result['aad']}"
+    data_groups = ["aads", "general", "documents", "groups", "ese", "esg", "rmd", "dga"]
+    for group in data_groups:
+        if group in parts:
+            try:
+                result["type"] = group
+                if group == "aads":
+                    aads_index = parts.index("aads")
+                    result["permission"] = (
+                        parts[aads_index + 2]
+                        if len(parts) > aads_index + 2
+                        else "cat-3"
+                    )
+                elif group in ["documents", "groups", "rmd", "dga"]:
+                    result["permission"] = str(parts[parts.index(group) + 1])
+                elif group in ["ese", "esg", "general"]:
+                    result["permission"] = "true"
+            except (IndexError, ValueError):
+                pass
+    result["permission_and_type"] = f"{result['permission']}_{result['type']}"
     result["filename"] = os.path.splitext(os.path.basename(file_path))[0]
     return result
 
