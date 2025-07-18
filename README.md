@@ -25,7 +25,7 @@ apt install docker.io
 
 # Maak de api image and start een container
 docker build -t ksandr-gpt:0.XX .
-docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt:0.12 
+docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt:0.18
 
 # Maak de ingest image en start de container
 docker build -t ksandr-ingest:0.XX .
@@ -40,23 +40,56 @@ Vervolgens kunnen documenten worden geupload:
 ```shell
 python3 api/ingest_docs.py -path /root/ksandr_files/
 
-curl -X POST http://localhost:8080/ask \
+curl -X POST http://localhost:8080/ask_stream \
 -H "Content-Type: application/json" \
 -d '{
-  "prompt": "Is boomvorming op de isolatie van schakelstangen te verwachten?",
-  "permission": {
+  "prompt": "Welke nederlandse netbeheerders hebben een LK ELA12 schakelinstallatie?",
+   "permission": {
     "aads": {
-      "cat-1": [2061]
+      "cat-1": [10535]
     }
   }
 }'
+
+curl -X POST http://localhost:8080/ask_stream \
+-H "Content-Type: application/json" \
+-d '{
+  "prompt": "Wat zijn ageing assets?",
+  "permission": {
+    "aads": {
+      "cat-1": [2061]
+    },
+    "documents": [1, 2],
+    "groups": [1, 2],
+    "ese": true,
+    "esg": false,
+    "rmd": [1, 2],
+    "dga": [1, 2]
+  }
+}'
+
+curl -X POST http://localhost:8080/ask \
+-H "Content-Type: application/json" \
+-d '{
+  "prompt": "Wat weet je van de testopstelling klassiek en Lamke sonde"
+}'
+
+
+curl -X POST http://localhost:8080/summarise \
+-H "Content-Type: application/json" \
+-d '{
+  "doc_path": "/root/ksandr_files/aads/2061/cat-1/documents/13866.txt",
+  "concept": "Geregistreerde storingen"
+}'
+
+
 watch -n 0.5 nvidia-smi
 ```
 
 # Troubleshooting
 
-1. wanneer `docker build -t ksandr-gpt:0.XX .` niet lukt omdat packages niet gevonden kunnen worden kan een herstart van docker noodzakelijk zijn: `sudo service docker restart`
-
+1. Wanneer `docker build -t ksandr-gpt:0.XX .` niet lukt omdat packages niet gevonden kunnen worden kan een herstart van docker noodzakelijk zijn: `sudo service docker restart`
+2. Wanneer een container geen response geeft `docker stop <container_id>`. Het `container_id` is te vinden met `docker ps`. Daarna `docker start` of start een nieuwe container `docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt:<versie>`
 
 # Installatie linux host
 

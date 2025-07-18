@@ -7,7 +7,7 @@ from starlette.responses import StreamingResponse
 import asyncio
 import sys
 
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Union
 from pydantic import BaseModel
 from onprem import LLM
 from onprem.pipelines import Summarizer
@@ -71,8 +71,7 @@ SUMMARY_PROMPT = """Wat zegt de volgende context in het Nederlands met betrekkin
 
 class AskRequest(BaseModel):
     prompt: str
-    permission: Optional[Dict[str, Dict[str, List[int]]]] = None
-    aad: Optional[List[int]] = None
+    permission: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]] = None
 
 
 class SummaryRequest(BaseModel):
