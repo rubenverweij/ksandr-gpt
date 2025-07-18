@@ -79,7 +79,9 @@ class SummaryRequest(BaseModel):
     concept: str
 
 
-def _build_filter(permission_data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def _build_filter(
+    permission_data: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]],
+) -> Dict[str, Any]:
     if not permission_data:
         return {"table": False}
     permissions = []
@@ -87,15 +89,15 @@ def _build_filter(permission_data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         if isinstance(value, dict):
             for category, ids in value.items():
                 for id_ in ids:
-                    permissions.append(f"{category}_{id_}")
+                    permissions.append(f"{id_}_{category}")
         elif isinstance(value, list):
             for id_ in value:
-                permissions.append(f"{source}_{id_}")
+                permissions.append(f"{id_}_{source}")
         elif isinstance(value, bool):
             if value:
-                permissions.append(f"{source}_true")
+                permissions.append(f"true_{source}")
             else:
-                permissions.append(f"{source}_false")
+                permissions.append(f"false_{source}")
     return {"permission_and_type_k": {"$in": permissions}}
 
 
@@ -112,7 +114,7 @@ def ask(request: AskRequest):
     try:
         return llm._ask(
             question=request.prompt,
-            filters=filter_obj,
+            # filters=filter_obj, FIXME filter object aanpassen aan sparse db
             table_k=0,
             k=source_max,
             score_threshold=score_threshold,
@@ -128,7 +130,7 @@ def chat(request: AskRequest):
     try:
         return llm.chat(
             prompt=request.prompt,
-            filters=filter_obj,
+            # filters=filter_obj,
             table_k=0,
             prompt_template=ZEPHYR_PROMPT_TEMPLATE,
         )
@@ -140,7 +142,7 @@ def chat(request: AskRequest):
 def summarise(request: SummaryRequest):
     try:
         summ = Summarizer(llm)
-        summary, sources = summ.summarize_by_concept(
+        summary, _ = summ.summarize_by_concept(
             request.doc_path,
             concept_description=request.concept,
             summary_prompt=SUMMARY_PROMPT,
