@@ -16,24 +16,39 @@ def extract_file_data(file_path: str) -> Dict[str, Union[int, str]]:
         "filename": "",
     }
     data_groups = ["aads", "general", "documents", "groups", "ese", "esg", "rmd", "dga"]
-    for group in data_groups:
-        if group in parts:
+    if len(parts) >= 3:
+        third_part = parts[2]
+        if third_part in data_groups:
+            result["type"] = third_part
             try:
-                result["type"] = group
-                if group == "aads":
+                if third_part == "aads":
                     aads_index = parts.index("aads")
                     result["permission"] = (
                         parts[aads_index + 2]
                         if len(parts) > aads_index + 2
                         else "cat-3"
                     )
-                elif group in ["documents", "groups", "rmd", "dga"]:
-                    result["permission"] = str(parts[parts.index(group) + 1])
-                elif group in ["ese", "esg", "general"]:
+                    result["permission_and_type"] = (
+                        f"{result['permission']}_{parts[aads_index + 1]}"
+                    )
+                elif third_part in ["documents", "groups", "rmd", "dga"]:
+                    result["permission"] = str(parts[parts.index(third_part) + 1])
+                    result["permission_and_type"] = (
+                        f"{result['permission']}_{result['type']}"
+                    )
+                elif third_part in ["ese", "esg", "general"]:
                     result["permission"] = "true"
+                    result["permission_and_type"] = (
+                        f"{result['permission']}_{result['type']}"
+                    )
             except (IndexError, ValueError):
                 pass
-    result["permission_and_type"] = f"{result['permission']}_{result['type']}"
+
+    if not result["type"]:
+        result["type"] = "unknown"
+    if not result["permission"]:
+        result["permission"] = "undefined"
+
     result["filename"] = os.path.splitext(os.path.basename(file_path))[0]
     return result
 
