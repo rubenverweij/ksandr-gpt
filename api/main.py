@@ -96,7 +96,7 @@ def _build_filter(permission_data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
                 permissions.append(f"{source}_true")
             else:
                 permissions.append(f"{source}_false")
-    return {"permission_and_type": {"$in": permissions}}
+    return {"permission_and_type_k": {"$in": permissions}}
 
 
 @app.get("/health")
