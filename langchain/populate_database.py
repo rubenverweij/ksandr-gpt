@@ -100,6 +100,7 @@ def calculate_chunk_ids(chunks: List[Document]) -> List[Document]:
 
 def add_to_chroma(chunks: List[Document]) -> None:
     """Add new document chunks to the ChromaDB database."""
+    batch_size = 4000
     db = Chroma(
         persist_directory=str(CHROMA_PATH),
         embedding_function=get_embedding_function(),
@@ -108,12 +109,16 @@ def add_to_chroma(chunks: List[Document]) -> None:
     existing_items = db.get(include=[])
     existing_ids = set(existing_items["ids"])
     print(f"📦 Existing documents in DB: {len(existing_ids)}")
-
     new_chunks = [chunk for chunk in chunks if chunk.metadata["id"] not in existing_ids]
 
     if new_chunks:
-        print(f"👉 Adding {len(new_chunks)} new documents.")
-        db.add_documents(new_chunks)
+        print(
+            f"👉 Adding {len(new_chunks)} new documents in batches of {batch_size}..."
+        )
+        for i in range(0, len(new_chunks), batch_size):
+            batch = new_chunks[i : i + batch_size]
+            db.add_documents(batch)
+            print(f"   ✅ Added batch {i // batch_size + 1} ({len(batch)} docs)")
         db.persist()
         print("✅ Database updated.")
     else:

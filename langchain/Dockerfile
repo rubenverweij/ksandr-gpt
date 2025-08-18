@@ -24,5 +24,5 @@ RUN python3 -m pip install torch torchvision torchaudio \
 
 # Install llama-cpp-python (with CUDA)
 RUN CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python
-RUN python3 -m pip install chromadb langchain_chroma 
+RUN python3 -m pip install chromadb langchain_chroma sentence-transformers langchain langchain-huggingface langchain-community
 CMD ["tail", "-f", "/dev/null"]
