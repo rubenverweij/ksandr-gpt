@@ -11,7 +11,7 @@ from langchain_community.vectorstores import Chroma
 from get_embedding_function import get_embedding_function
 
 
-CHROMA_PATH = Path("chroma")
+CHROMA_PATH = Path("/root/onprem_data/chroma")
 SOURCE_DIR = Path("/root/ksandr_files")
 
 
