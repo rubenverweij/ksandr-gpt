@@ -2,6 +2,7 @@ import argparse
 import os
 from typing import List, Tuple
 
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.vectorstores import Chroma
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.llms import LlamaCpp
@@ -15,13 +16,17 @@ CHROMA_PATH = "chroma"
 DEFAULT_MODEL_PATH = "/root/onprem_data/models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
 
 PROMPT_TEMPLATE = """
-Answer the question based only on the following context:
+Je bent een behulpzame, nauwkeurige en feitelijke assistent van het Ksandr data platform. Je taak is om vragen te beantwoorden over documenten die beschikbaar zijn op het Ksandr-platform. 
+Documenten worden in de context aangeduid aadDocumentId en documentId, de 'url' is de locatie van het document bijvoorbeeld '/aad-document/10' en /download-aad-file-system-document/12803. Je kan verwijzen naar de url waarden die je tegenkomt in de context.
+Gebruik voor specifieke vragen uitsluitend de onderstaande context om de vraag te beantwoorden. Als het antwoord niet in de context staat, zeg dan eerlijk dat je het niet weet.
 
+Context:
 {context}
 
----
+Vraag:
+{question}
 
-Answer the question based on the above context: {question}
+Antwoord:
 """
 
 
@@ -44,11 +49,11 @@ def query_rag(query_text: str, model_path: str) -> str:
 
     # Prepare the DB.
     embedding_function = get_embedding_function()
-    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
+    db = Chroma(persist_directory="chroma/", embedding_function=embedding_function)
 
     # Search the DB.
     results: List[Tuple[Document, float]] = db.similarity_search_with_score(
-        query_text, k=20
+        query_text, k=10
     )
     if not results:
         print("⚠️ No relevant documents found in the database.")
@@ -69,21 +74,15 @@ def query_rag(query_text: str, model_path: str) -> str:
         model_path=model_path,
         max_tokens=500,
         n_gpu_layers=-1,
-        n_ctx=20000,
+        n_ctx=8096,
         verbose=False,
+        streaming=True,
+        callbacks=[StreamingStdOutCallbackHandler()],
     )
 
-    # Run inference
-    response_text = model.invoke(prompt)
-
-    # Gather sources
-    sources = [doc.metadata.get("id") for doc, _ in results if doc.metadata.get("id")]
-
-    # Output
-    formatted_response = f"📝 Response:\n{response_text}\n\n📚 Sources:\n{sources}"
-    print(formatted_response)
-
-    return response_text
+    return model.invoke(prompt), [
+        doc.metadata.get("id") for doc, _ in results if doc.metadata.get("id")
+    ]
 
 
 if __name__ == "__main__":
