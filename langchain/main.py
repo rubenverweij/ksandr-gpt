@@ -3,7 +3,6 @@ from pydantic import BaseModel
 import os
 from typing import List, Tuple
 from langchain.memory.chat_message_histories import RedisChatMessageHistory
-from langchain.memory import ConversationBufferMemory
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.vectorstores import Chroma
 from langchain.prompts import ChatPromptTemplate
@@ -11,6 +10,7 @@ from langchain_community.llms import LlamaCpp
 from langchain.schema import Document
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from get_embedding_function import get_embedding_function
+from langchain_core.chat_history import BaseChatMessageHistory
 
 # 🔧 Configuratie
 REDIS_URL = "redis://redis-server:6379"
@@ -58,15 +58,11 @@ class LimitedRedisChatMessageHistory(RedisChatMessageHistory):
         return {"history": [msg.decode("utf-8") for msg in messages]}
 
 
-# Haal gebruikersgeheugen op (alleen de laatste twee vragen)
-def get_user_memory(user_id: str) -> ConversationBufferMemory:
-    redis_history = LimitedRedisChatMessageHistory(
-        session_id=user_id, url=REDIS_URL, max_messages=2
-    )
-    return ConversationBufferMemory(
-        memory_key="history",
-        chat_memory=redis_history,
-        return_messages=True,
+def get_session_history(user_id: str) -> BaseChatMessageHistory:
+    return LimitedRedisChatMessageHistory(
+        session_id=user_id,
+        url=REDIS_URL,
+        max_messages=2,
     )
 
 
@@ -89,11 +85,7 @@ def load_model(model_path: str) -> LlamaCpp:
     )
 
 
-# 🧠+📚 Combineer context uit vector DB met geheugen om vraag te beantwoorden
 def query_rag(query_text: str, user_id: str, model: LlamaCpp) -> str:
-    # Haal het gebruikersgeheugen op (alleen de laatste twee vragen)
-    memory = get_user_memory(user_id)
-
     # Zoek naar relevante documenten via Chroma
     embedding_function = get_embedding_function()
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
@@ -105,23 +97,30 @@ def query_rag(query_text: str, user_id: str, model: LlamaCpp) -> str:
         print("⚠️ Geen relevante documenten gevonden in de database.")
         return "Geen relevante bronnen gevonden, probeer de vraag te verduidelijken."
 
-    # Bouw de context op uit de gevonden documenten
+    # Bouw de context op
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _ in results])
 
-    # Format de prompt met context en vraag
+    # Format de prompt
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
     prompt = prompt_template.format(context=context_text, question=query_text)
 
-    # Start een conversatie met geheugen
+    # Maak een runnable met message history
     conversation = RunnableWithMessageHistory(
-        llm=model,
-        memory=memory,
-        verbose=False,
+        runnable=model,
+        get_session_history=get_session_history,
     )
 
-    # Stream en retourneer het antwoord
-    response = conversation.predict(input=prompt)
-    return response
+    # Stream tokens
+    response_text = ""
+    for chunk in conversation.stream(
+        {"input": prompt}, config={"configurable": {"session_id": user_id}}
+    ):
+        if "output" in chunk:
+            token = chunk["output"]
+            print(token, end="", flush=True)  # stdout live
+            response_text += token
+
+    return response_text
 
 
 # Laad het model bij de opstart van de FastAPI-app
