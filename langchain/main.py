@@ -1,18 +1,15 @@
-import argparse
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import os
 from typing import List, Tuple
-
-
 from langchain.memory.chat_message_histories import RedisChatMessageHistory
 from langchain.memory import ConversationBufferMemory
-
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.vectorstores import Chroma
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.llms import LlamaCpp
 from langchain.schema import Document
 from langchain_core.runnables.history import RunnableWithMessageHistory
-
 from get_embedding_function import get_embedding_function
 
 # 🔧 Configuratie
@@ -36,7 +33,17 @@ Vraag:
 Antwoord:
 """
 
+app = FastAPI()
 
+
+# Pydantic model voor de inkomende verzoek body
+class QueryRequest(BaseModel):
+    query_text: str
+    user_id: str
+    model_path: str = DEFAULT_MODEL_PATH  # Optioneel, standaard model pad
+
+
+# Beperkte Redis geschiedenis om de laatste N berichten (alleen vragen) op te slaan
 class LimitedRedisChatMessageHistory(RedisChatMessageHistory):
     def __init__(self, session_id: str, url: str, max_messages: int = 2):
         super().__init__(session_id=session_id, url=url)
@@ -51,6 +58,7 @@ class LimitedRedisChatMessageHistory(RedisChatMessageHistory):
         return {"history": [msg.decode("utf-8") for msg in messages]}
 
 
+# Haal gebruikersgeheugen op (alleen de laatste twee vragen)
 def get_user_memory(user_id: str) -> ConversationBufferMemory:
     redis_history = LimitedRedisChatMessageHistory(
         session_id=user_id, url=REDIS_URL, max_messages=2
@@ -62,7 +70,7 @@ def get_user_memory(user_id: str) -> ConversationBufferMemory:
     )
 
 
-# 🤖 Initialiseert het taalmodel met streaming
+# 🤖 Initialiseer het taalmodel met streaming
 def load_model(model_path: str) -> LlamaCpp:
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"❌ Modelbestand niet gevonden: {model_path}")
@@ -83,7 +91,7 @@ def load_model(model_path: str) -> LlamaCpp:
 
 # 🧠+📚 Combineer context uit vector DB met geheugen om vraag te beantwoorden
 def query_rag(query_text: str, user_id: str, model: LlamaCpp) -> str:
-    # Haal gebruikersgeheugen op
+    # Haal het gebruikersgeheugen op (alleen de laatste twee vragen)
     memory = get_user_memory(user_id)
 
     # Zoek naar relevante documenten via Chroma
@@ -116,30 +124,23 @@ def query_rag(query_text: str, user_id: str, model: LlamaCpp) -> str:
     return response
 
 
-# 🚀 Entry point van het script
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Stel een vraag aan het Ksandr-platform via RAG + geheugen."
-    )
-    parser.add_argument("query_text", type=str, help="De gebruikersvraag.")
-    parser.add_argument(
-        "--user-id", type=str, required=True, help="Unieke gebruikers- of sessie-ID."
-    )
-    parser.add_argument(
-        "--model-path",
-        type=str,
-        default=DEFAULT_MODEL_PATH,
-        help="Pad naar het LLaMA-model.",
-    )
-
-    args = parser.parse_args()
-
-    # Initialiseert het model
-    model = load_model(args.model_path)
-
-    # Voer de query uit
-    query_rag(query_text=args.query_text, user_id=args.user_id, model=model)
+# Laad het model bij de opstart van de FastAPI-app
+@app.on_event("startup")
+async def startup_event():
+    model_path = DEFAULT_MODEL_PATH
+    app.state.model = load_model(model_path)
+    print("Model succesvol geladen!")
 
 
-if __name__ == "__main__":
-    main()
+@app.post("/ask")
+async def ask_question(request: QueryRequest):
+    try:
+        model = app.state.model
+        response = query_rag(
+            query_text=request.query_text, user_id=request.user_id, model=model
+        )
+        return {"response": response}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Er is een fout opgetreden: {str(e)}"
+        )
