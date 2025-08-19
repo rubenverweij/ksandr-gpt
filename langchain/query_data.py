@@ -48,7 +48,7 @@ def query_rag(query_text: str, model_path: str) -> str:
 
     # Search the DB.
     results: List[Tuple[Document, float]] = db.similarity_search_with_score(
-        query_text, k=5
+        query_text, k=20
     )
     if not results:
         print("⚠️ No relevant documents found in the database.")
@@ -67,9 +67,9 @@ def query_rag(query_text: str, model_path: str) -> str:
 
     model = LlamaCpp(
         model_path=model_path,
-        max_tokens=2500,
+        max_tokens=500,
         n_gpu_layers=-1,
-        n_ctx=4096,
+        n_ctx=20000,
         verbose=False,
     )
 
