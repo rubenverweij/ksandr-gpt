@@ -7,23 +7,21 @@ COPY ./ingest /ksandr-gpt/api
 
 RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y git build-essential \
-    python3 python3-pip gcc wget cron \
+    python3 python3-pip gcc wget \
     ocl-icd-opencl-dev opencl-headers clinfo \
     libclblast-dev libopenblas-dev \
     && mkdir -p /etc/OpenCL/vendors \
     && echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
 
-# Environment variables
+# Omgevingsvariabelen
 ENV CUDA_DOCKER_ARCH=all
 ENV LLAMA_CUBLAS=1
 
-# Install dependencies
+# Installeer dependencies
 RUN python3 -m pip install --upgrade pip wheel setuptools
 RUN python3 -m pip install torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/cu128
-
-COPY ./requirements.txt /ksandr-gpt/requirements.txt
-RUN python3 -m pip install -r /ksandr-gpt/requirements.txt
+RUN python3 -m pip install --upgrade pytest cmake scikit-build 
 
 # Install llama-cpp-python (with CUDA)
 RUN CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python

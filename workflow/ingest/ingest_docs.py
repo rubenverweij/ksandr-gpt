@@ -68,7 +68,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    STORE_TYPE = "sparse"
+    STORE_TYPE = "dense"
 
     try:
         shutil.rmtree(args.vector_db_path)
