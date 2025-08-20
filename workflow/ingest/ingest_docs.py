@@ -63,12 +63,11 @@ if __name__ == "__main__":
     parser.add_argument("-vector_db_path", help="path to vector db", type=str)
     parser.add_argument("-documents_path", help="path to text files", type=str)
     parser.add_argument("-chunk_size", help="ingest chunk size", default=300, type=int)
+    parser.add_argument("-store", help="store type", default="sparse", type=str)
     parser.add_argument(
         "-chunk_overlap", help="ingest overlap chunk size", default=100, type=int
     )
     args = parser.parse_args()
-
-    STORE_TYPE = "dense"
 
     try:
         shutil.rmtree(args.vector_db_path)
@@ -79,7 +78,7 @@ if __name__ == "__main__":
     llm = LLM(
         n_gpu_layers=-1,
         embedding_model_kwargs={"device": "cuda"},
-        store_type=STORE_TYPE,
+        store_type=args.store,
     )
     llm.ingest(
         source_directory=args.documents_path,
@@ -88,7 +87,7 @@ if __name__ == "__main__":
     )
     print("Done ingesting documents, start adjusting metadata")
 
-    if STORE_TYPE == "sparse":
+    if args.store == "sparse":
         database = llm.load_vectorstore()
         docs = []
         for selected_document in database.get_all_docs():
@@ -98,7 +97,7 @@ if __name__ == "__main__":
         database.update_documents(doc_dicts=docs)
     else:
         # In case it is dense
-        database = llm.load_vectordb()
+        database = llm.load_vectorstore()
         ids = database.get()["ids"]
         docs = []
         for index, doc_id in enumerate(ids):
