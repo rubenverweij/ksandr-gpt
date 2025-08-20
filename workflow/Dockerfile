@@ -7,7 +7,7 @@ COPY ./ingest /ksandr-gpt/api
 
 RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y git build-essential \
-    python3 python3-pip gcc wget \
+    python3 python3-pip gcc wget cron \
     ocl-icd-opencl-dev opencl-headers clinfo \
     libclblast-dev libopenblas-dev \
     && mkdir -p /etc/OpenCL/vendors \
