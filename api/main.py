@@ -17,6 +17,8 @@ app = FastAPI()
 llm = LLM(
     n_gpu_layers=-1,
     embedding_model_kwargs={"device": "cuda"},
+    temperature=0.4,
+    rag_num_source_docs=10,
     store_type="sparse",
     verbose=False,
 )
