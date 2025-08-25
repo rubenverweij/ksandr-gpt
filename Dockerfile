@@ -31,6 +31,4 @@ RUN python3 -m pip install --upgrade onprem chromadb langchain_chroma fastapi[st
 WORKDIR /ksandr-gpt
 COPY ./api /ksandr-gpt/api
 
-# Start REPL
-ENTRYPOINT ["fastapi", "run", "api/main.py"]
-CMD ["--temperature", "0.8", "--source_max", "2", "--score_threshold", "0.6", "--store_type", "sparse", "--port", "8080"]
+CMD ["fastapi", "run", "api/main.py", "--temperature", "0.8", "--source_max", "2", "--score_threshold", "0.6", "--store_type", "sparse", "--port", "8080"]
