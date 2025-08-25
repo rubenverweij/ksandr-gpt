@@ -17,8 +17,9 @@ app = FastAPI()
 llm = LLM(
     n_gpu_layers=-1,
     embedding_model_kwargs={"device": "cuda"},
-    temperature=0.4,
-    rag_num_source_docs=10,
+    temperature=0.2,
+    rag_num_source_docs=6,
+    rag_score_threshold=0.8,
     store_type="sparse",
     verbose=False,
 )
@@ -32,10 +33,10 @@ Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door 
 De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie over de 20 meest relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
 
 🟡 **Belangrijke instructies:**
-- Gebruik **uitsluitend de onderstaande context** om de vraag te beantwoorden.
-- Geef het antwoord **altijd in het Nederlands**.
-- Als het antwoord niet expliciet in de context staat, zeg dan:  
-  **"Het antwoord is niet beschikbaar in de aangeleverde context."**
+- Geef kort en bondig het antwoord in het Nederlands.
+- Als het antwoord niet duidelijk in de context staat, zeg dan:  
+  **"Ik weet het antwoord niet."**
+- Gebruik uitsluitend de onderstaande context om de vraag te beantwoorden:
 
 [CONTEXT]
 {context}
