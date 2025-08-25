@@ -32,4 +32,4 @@ WORKDIR /ksandr-gpt
 COPY ./api /ksandr-gpt/api
 
 # Start REPL
-CMD ["fastapi", "run", "api/main.py", "--port", "8080"]
+CMD ["fastapi", "run", "api/main.py", "--temperature", 0.8, "--source_max", 2, "--score_threshold", 0.6, "--store_type", "sparse", "--port", "8080"]
