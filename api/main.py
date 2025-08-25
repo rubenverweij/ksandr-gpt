@@ -6,52 +6,26 @@ import io
 from starlette.responses import StreamingResponse
 import asyncio
 import sys
-import argparse
-
+import os
 from typing import List, Dict, Optional, Any, Union
 from pydantic import BaseModel
 from onprem import LLM
 from onprem.pipelines import Summarizer
 from fastapi import FastAPI
 
+TEMPERATURE = float(os.getenv("TEMPERATURE", 0.8))
+SOURCE_MAX = int(os.getenv("SOURCE_MAX", 2))
+SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.6))
+STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="TAALMODEL API Configurations")
-    parser.add_argument(
-        "--temperature",
-        type=float,
-        default=0.8,
-        help="Parameter which influences the creativity of the model",
-    )
-    parser.add_argument(
-        "--source_max",
-        type=int,
-        default=6,
-        help="Maximum number of source documents for RAG",
-    )
-    parser.add_argument(
-        "--score_threshold", type=float, default=0.8, help="Threshold for RAG score"
-    )
-    parser.add_argument(
-        "--store_type",
-        type=str,
-        choices=["dense", "sparse"],
-        default="sparse",
-        help="Data store type",
-    )
-    args = parser.parse_args()
-    return args
-
-
-args = parse_args()
 app = FastAPI()
 llm = LLM(
     n_gpu_layers=-1,
     embedding_model_kwargs={"device": "cuda"},
-    temperature=args.temperature,
-    rag_num_source_docs=args.source_max,
-    rag_score_threshold=args.score_threshold,
-    store_type=args.store_type,
+    temperature=TEMPERATURE,
+    rag_num_source_docs=SOURCE_MAX,
+    rag_score_threshold=SCORE_THRESHOLD,
+    store_type=STORE_TYPE,
     verbose=False,
 )
 
