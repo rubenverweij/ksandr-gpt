@@ -38,10 +38,10 @@ Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door 
 De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie over de 20 meest relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
 
 🟡 **Belangrijke instructies:**
-- Geef kort en bondig het antwoord in het Nederlands.
-- Als het antwoord niet duidelijk in de context staat, zeg dan:  
-  **"Ik weet het antwoord niet."**
-- Gebruik uitsluitend de onderstaande context om de vraag te beantwoorden:
+- Beantwoord de vraag kort en bondig in het Nederlands.
+- Gebruik uitsluitend de onderstaande context. Voeg geen externe kennis of aannames toe.
+- Als het antwoord niet in de context staat, zeg dan: **"Ik weet het antwoord niet."**
+- Indien mogelijk, verwijs puntgewijs kort naar de relevante passage in de context.
 
 [CONTEXT]
 {context}
@@ -140,7 +140,7 @@ def chat(request: AskRequest):
             prompt=request.prompt,
             # filters=filter_obj,
             table_k=0,
-            prompt_template=ZEPHYR_PROMPT_TEMPLATE,
+            prompt_template=DEFAULT_QA_PROMPT,
         )
     except Exception as e:
         return {"error": str(e), "filter": filter_obj}
