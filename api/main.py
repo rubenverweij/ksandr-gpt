@@ -40,9 +40,11 @@ Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door 
 De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie over de 20 meest relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
 
 🟡 **Belangrijke instructies:**
-- Verbeter spelling en grammatica, schrijf in correct Nederlands
+- Verbeter spelling en grammatica, schrijf in correct Nederlands.
 - Gebruik uitsluitend de onderstaande context. Voeg geen externe kennis of aannames toe.
-- Als het antwoord niet in de context staat, zeg dan eenmalig: **"Ik weet het antwoord niet."**
+- Beantwoord kort en bondig in maximaal 3 zinnen.
+- Als de context geen relevant antwoord bevat, zeg **precies één keer**: **"Ik weet het antwoord niet."**.
+- Herhaal de vraag niet en herhaal de fallback niet.
 
 [CONTEXT]
 {context}
@@ -50,8 +52,9 @@ De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AAD�
 [VRAAG]
 {question}
 
-[ANTWOORD] Geef één kort en bondig antwoord, zonder de vraag te herhalen:
+[ANTWOORD]
 """
+
 
 SUMMARY_PROMPT = """Wat zegt de volgende context in het Nederlands met betrekking tot "{concept_description}"? \n\nCONTEXT:\n{text}"""
 
