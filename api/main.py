@@ -20,7 +20,8 @@ STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
 
 app = FastAPI()
 llm = LLM(
-    model_id="Qwen/Qwen3-30B-A3B-Instruct-2507",
+    model_url="Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
+    model_download_path="/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77",
     n_gpu_layers=-1,
     embedding_model_kwargs={"device": "cuda"},
     temperature=TEMPERATURE,
