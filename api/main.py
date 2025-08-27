@@ -44,7 +44,7 @@ De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AADâ
 - Gebruik uitsluitend de onderstaande context. Voeg geen externe kennis of aannames toe.
 - Beantwoord kort en bondig in maximaal 3 zinnen.
 - Als de context geen relevant antwoord bevat, zeg **precies Ã©Ã©n keer**: **"Ik weet het antwoord niet."**.
-- Herhaal de vraag niet en herhaal de fallback niet.
+- Herhaal de vraag niet en gebruik het label [ANTWOORD] **niet** in je antwoord.
 
 [CONTEXT]
 {context}
@@ -52,7 +52,7 @@ De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AADâ
 [VRAAG]
 {question}
 
-[ANTWOORD]
+Antwoord hieronder:
 """
 
 
