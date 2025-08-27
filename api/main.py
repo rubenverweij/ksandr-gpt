@@ -45,6 +45,7 @@ De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AAD�
 - Beantwoord kort en bondig in maximaal 3 zinnen.
 - Als de context geen relevant antwoord bevat, zeg **precies één keer**: **"Ik weet het antwoord niet."**.
 - Herhaal de vraag niet en gebruik het label [ANTWOORD] **niet** in je antwoord.
+- Vermijd elke vorm van herhaling.
 
 [CONTEXT]
 {context}
@@ -55,6 +56,22 @@ De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AAD�
 Antwoord hieronder:
 """
 
+DEFAULT_QA_PROMPT_NON_RAG = """
+Je bent een behulpzame en feitelijke assistent die vragen beantwoordt van specialisten die werken voor bedrijven in de energiesector, voornamelijk netbeheerders.
+
+Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door kennis over netcomponenten te borgen, ontwikkelen en delen, helpt Ksandr de netbeheerders om de kwaliteit van hun netten op minimaal het maatschappelijk gewenste niveau te houden.
+
+De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie over de 20 meest relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
+
+🟡 **Belangrijke instructies:**
+- Schrijf in correct Nederlands.
+- Herhaal de vraag niet en vermijd alle vormen van herhaling.
+
+[VRAAG]
+{question}
+
+Antwoord hieronder:
+"""
 
 SUMMARY_PROMPT = """Wat zegt de volgende context in het Nederlands met betrekking tot "{concept_description}"? \n\nCONTEXT:\n{text}"""
 
@@ -114,6 +131,17 @@ def ask(request: AskRequest):
         return {"error": str(e), "filter": filter_obj}
 
 
+@app.post("/prompt")
+def prompt(request: AskRequest):
+    filter_obj = _build_filter(request.permission)
+    try:
+        return llm.prompt(
+            prompt=request.prompt, prompt_template=DEFAULT_QA_PROMPT_NON_RAG
+        )
+    except Exception as e:
+        return {"error": str(e), "filter": filter_obj}
+
+
 @app.post("/chat")
 def chat(request: AskRequest):
     filter_obj = _build_filter(request.permission)
@@ -136,6 +164,18 @@ def summarise(request: SummaryRequest):
             request.doc_path,
             concept_description=request.concept,
             summary_prompt=SUMMARY_PROMPT,
+        )
+        return summary
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/summarise_simple")
+def summarise_simple(request: SummaryRequest):
+    try:
+        summ = Summarizer(llm)
+        summary, _ = summ.summarize(
+            request.doc_path,
         )
         return summary
     except Exception as e:
