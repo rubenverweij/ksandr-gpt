@@ -20,6 +20,7 @@ STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
 
 app = FastAPI()
 llm = LLM(
+    model_id="Qwen/Qwen3-30B-A3B-Instruct-2507",
     n_gpu_layers=-1,
     embedding_model_kwargs={"device": "cuda"},
     temperature=TEMPERATURE,
@@ -38,7 +39,8 @@ Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door 
 De meeste vragen gaan over zogenoemde componenten in Ageing Asset Dossiers (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie over de 20 meest relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
 
 🟡 **Belangrijke instructies:**
-- Beantwoord de vraag kort en bondig in het Nederlands.
+- Beantwoord de vraag kort en bondig, herhaal niet. 
+- Verbeter spelling en grammatica, schrijf in correct Nederlands
 - Gebruik uitsluitend de onderstaande context. Voeg geen externe kennis of aannames toe.
 - Als het antwoord niet in de context staat, zeg dan: **"Ik weet het antwoord niet."**
 - Indien mogelijk, verwijs puntgewijs kort naar de relevante passage in de context.
