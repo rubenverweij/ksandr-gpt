@@ -45,6 +45,7 @@ De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AA
 - Wees kort en bondig.
 - Vermijd herhaling.
 - Als de onderstaande context geen tekst bevat zeg dan: "Ik weet het antwoord niet."
+- Beantwoord alleen de gestelde vraag. Negeer andere vragen in de context. Gebruik uitsluitend de context. Maak geen aannames.
 
 [CONTEXT]
 {context}
