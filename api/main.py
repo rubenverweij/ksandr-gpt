@@ -131,7 +131,7 @@ def ask(request: AskRequest):
     source_max = getattr(request, "source_max", None)
     score_threshold = getattr(request, "score_threshold", None)
     try:
-        return llm._ask(
+        response = llm._ask(
             question=request.prompt,
             # filters=filter_obj, FIXME filter object aanpassen aan sparse db
             table_k=0,
@@ -139,6 +139,11 @@ def ask(request: AskRequest):
             score_threshold=score_threshold,
             qa_template=DEFAULT_QA_PROMPT,
         )
+        if not response.get("source_documents"):
+            response["answer"] = (
+                "Ik weet het antwoord helaas niet, misschien kan je de vraag anders formuleren?"
+            )
+        return response
     except Exception as e:
         return {"error": str(e), "filter": filter_obj}
 
