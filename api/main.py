@@ -2,23 +2,27 @@
 TAALMODEL API KSANDR
 """
 
-import io
-from starlette.responses import StreamingResponse
 import asyncio
-import sys
-import os
+from fastapi import FastAPI
+from starlette.responses import StreamingResponse
 from typing import List, Dict, Optional, Any, Union
 from pydantic import BaseModel
 from onprem import LLM
 from onprem.pipelines import Summarizer
-from fastapi import FastAPI
+import sys
+import io
+import os
 
+# Wachtrij in geheugen tot 3 requests gelijktijdig
+request_queue = asyncio.Queue()
+semaphore = asyncio.Semaphore(5)
+
+app = FastAPI()
 TEMPERATURE = float(os.getenv("TEMPERATURE", 0.8))
 SOURCE_MAX = int(os.getenv("SOURCE_MAX", 2))
 SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.6))
 STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
 
-app = FastAPI()
 llm = LLM(
     model_url="Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
     model_download_path="/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77",
@@ -30,7 +34,6 @@ llm = LLM(
     store_type=STORE_TYPE,
     verbose=False,
 )
-
 
 DEFAULT_QA_PROMPT = """
 <|im_start|>system
@@ -60,29 +63,6 @@ Vraag:
 <|im_start|>assistant
 
 """
-
-
-# DEFAULT_QA_PROMPT = """
-# Je bent een behulpzame en feitelijke assistent die vragen beantwoordt over documenten op het Ksandr-platform.
-
-# Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door kennis over netcomponenten te borgen, ontwikkelen en delen, helpt Ksandr de netbeheerders om de kwaliteit van hun netten op het gewenste maatschappelijk niveau te houden.
-
-# De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie van relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
-
-# **Belangrijke instructies bij de beantwoording:**
-# - Verbeter spelling en grammatica.
-# - Gebruik correct en helder Nederlands.
-# - Wees kort en bondig.
-# - Vermijd herhaling.
-# - Als de onderstaande context geen tekst bevat zeg dan: "Ik weet het antwoord niet."
-# - Beantwoord alleen de gestelde vraag. Negeer andere vragen in de context. Gebruik uitsluitend de context. Maak geen aannames.
-
-# [CONTEXT]
-# {context}
-
-# [VRAAG]
-# {question}
-# """
 
 
 SUMMARY_PROMPT = """Wat zegt de volgende context in het Nederlands met betrekking tot "{concept_description}"? \n\nCONTEXT:\n{text}"""
@@ -120,13 +100,8 @@ def _build_filter(
     return {"permission_and_type_k": {"$in": permissions}}
 
 
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
-
-
-@app.post("/ask")
-def ask(request: AskRequest):
+def process_request(request: AskRequest):
+    """Function that processes the request. This simulates the async task processing."""
     filter_obj = _build_filter(request.permission)
     source_max = getattr(request, "source_max", None)
     score_threshold = getattr(request, "score_threshold", None)
@@ -146,6 +121,27 @@ def ask(request: AskRequest):
         return response
     except Exception as e:
         return {"error": str(e), "filter": filter_obj}
+
+
+async def request_worker():
+    """Worker to process requests one at a time from the queue."""
+    while True:
+        request = await request_queue.get()
+        response = process_request(request)
+        request.queue.put_nowait(response)
+
+
+@app.post("/ask")
+async def ask(request: AskRequest):
+    async with semaphore:
+        response = await process_request(request)
+        return response
+
+
+@app.lifespan("startup")
+async def startup():
+    """Start the request processing worker when the app starts."""
+    asyncio.create_task(request_worker())
 
 
 @app.post("/prompt")
