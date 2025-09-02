@@ -99,19 +99,23 @@ def _build_filter(
     return {"permission_and_type_k": {"$in": permissions}}
 
 
-def process_request(request: AskRequest):
-    """Verwerkt het verzoek en retourneert het resultaat."""
+async def process_request(request: AskRequest):
+    """Function that processes the request. This simulates the async task processing."""
     filter_obj = _build_filter(request.permission)
     source_max = getattr(request, "source_max", None)
     score_threshold = getattr(request, "score_threshold", None)
+
     try:
-        response = llm._ask(
-            question=request.prompt,
-            # filters=filter_obj, FIXME filter object aanpassen aan sparse db
-            table_k=0,
-            k=source_max,
-            score_threshold=score_threshold,
-            qa_template=DEFAULT_QA_PROMPT,
+        response = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: llm._ask(
+                question=request.prompt,
+                # filters=filter_obj, FIXME filter object aanpassen aan sparse db
+                table_k=0,
+                k=source_max,
+                score_threshold=score_threshold,
+                qa_template=DEFAULT_QA_PROMPT,
+            ),
         )
         if not response.get("source_documents"):
             response["answer"] = (
