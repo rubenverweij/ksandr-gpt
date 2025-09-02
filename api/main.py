@@ -9,20 +9,25 @@ from typing import List, Dict, Optional, Any, Union
 from pydantic import BaseModel
 from onprem import LLM
 from onprem.pipelines import Summarizer
-import sys
 import io
 import os
+import sys
 
-# Wachtrij in geheugen tot 3 requests gelijktijdig
+
+# Wachtrijen voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
+prompt_queue = asyncio.Queue()
+summarize_queue = asyncio.Queue()
 semaphore = asyncio.Semaphore(5)
-
 app = FastAPI()
+
+# Configuratie variabelen
 TEMPERATURE = float(os.getenv("TEMPERATURE", 0.8))
 SOURCE_MAX = int(os.getenv("SOURCE_MAX", 2))
 SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.6))
 STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
 
+# Initialisatie van het taalmodel
 llm = LLM(
     model_url="Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
     model_download_path="/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77",
@@ -56,14 +61,10 @@ De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AA
 <|im_start|>user
 Context:
 {context}
-
 Vraag:
 {question}
 <|im_end|>
-<|im_start|>assistant
-
 """
-
 
 SUMMARY_PROMPT = """Wat zegt de volgende context in het Nederlands met betrekking tot "{concept_description}"? \n\nCONTEXT:\n{text}"""
 
@@ -81,6 +82,7 @@ class SummaryRequest(BaseModel):
 def _build_filter(
     permission_data: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]],
 ) -> Dict[str, Any]:
+    """Bouwt een filter op basis van de opgegeven permissies."""
     if not permission_data:
         return {"table": False}
     permissions = []
@@ -93,15 +95,12 @@ def _build_filter(
             for id_ in value:
                 permissions.append(f"{id_}_{source}")
         elif isinstance(value, bool):
-            if value:
-                permissions.append(f"true_{source}")
-            else:
-                permissions.append(f"false_{source}")
+            permissions.append(f"{'true' if value else 'false'}_{source}")
     return {"permission_and_type_k": {"$in": permissions}}
 
 
 def process_request(request: AskRequest):
-    """Function that processes the request. This simulates the async task processing."""
+    """Verwerkt het verzoek en retourneert het resultaat."""
     filter_obj = _build_filter(request.permission)
     source_max = getattr(request, "source_max", None)
     score_threshold = getattr(request, "score_threshold", None)
@@ -124,7 +123,7 @@ def process_request(request: AskRequest):
 
 
 async def request_worker():
-    """Worker to process requests one at a time from the queue."""
+    """Worker om verzoeken één voor één uit de wachtrij te verwerken."""
     while True:
         request = await request_queue.get()
         response = process_request(request)
@@ -133,6 +132,7 @@ async def request_worker():
 
 @app.post("/ask")
 async def ask(request: AskRequest):
+    """Verwerk het verzoek van de gebruiker."""
     async with semaphore:
         response = await process_request(request)
         return response
@@ -140,38 +140,34 @@ async def ask(request: AskRequest):
 
 @app.lifespan("startup")
 async def startup():
-    """Start the request processing worker when the app starts."""
+    """Start de request-verwerkingsworkers bij het opstarten van de app."""
     asyncio.create_task(request_worker())
+    asyncio.create_task(prompt_worker())
+    asyncio.create_task(summarize_worker())
 
 
-@app.post("/prompt")
-def prompt(request: AskRequest):
+async def process_prompt_request(request: AskRequest):
+    """Verwerkt een prompt-verzoek."""
     filter_obj = _build_filter(request.permission)
     try:
-        return llm.prompt(prompt=request.prompt)
+        return await llm.prompt(prompt=request.prompt)
     except Exception as e:
         return {"error": str(e), "filter": filter_obj}
 
 
-@app.post("/chat")
-def chat(request: AskRequest):
-    filter_obj = _build_filter(request.permission)
-    try:
-        return llm.chat(
-            prompt=request.prompt,
-            # filters=filter_obj,
-            table_k=0,
-            prompt_template=DEFAULT_QA_PROMPT,
-        )
-    except Exception as e:
-        return {"error": str(e), "filter": filter_obj}
+async def prompt_worker():
+    """Worker voor prompt-verzoeken."""
+    while True:
+        request = await prompt_queue.get()
+        response = await process_prompt_request(request)
+        request.queue.put_nowait(response)
 
 
-@app.post("/summarise")
-def summarise(request: SummaryRequest):
+async def process_summarize_request(request: SummaryRequest):
+    """Verwerkt een samenvattingsverzoek."""
     try:
         summ = Summarizer(llm)
-        summary, _ = summ.summarize_by_concept(
+        summary, _ = await summ.summarize_by_concept(
             request.doc_path,
             concept_description=request.concept,
             summary_prompt=SUMMARY_PROMPT,
@@ -181,16 +177,26 @@ def summarise(request: SummaryRequest):
         return {"error": str(e)}
 
 
-@app.post("/summarise_simple")
-def summarise_simple(request: SummaryRequest):
-    try:
-        summ = Summarizer(llm)
-        summary, _ = summ.summarize(
-            request.doc_path,
-        )
-        return summary
-    except Exception as e:
-        return {"error": str(e)}
+async def summarize_worker():
+    """Worker voor samenvattingsverzoeken."""
+    while True:
+        request = await summarize_queue.get()
+        response = await process_summarize_request(request)
+        request.queue.put_nowait(response)
+
+
+@app.post("/prompt")
+async def prompt(request: AskRequest):
+    """Voeg het prompt-verzoek toe aan de wachtrij."""
+    await prompt_queue.put(request)
+    return {"status": "Request is being processed"}
+
+
+@app.post("/summarise")
+async def summarise(request: SummaryRequest):
+    """Voeg het samenvattingsverzoek toe aan de wachtrij."""
+    await summarize_queue.put(request)
+    return {"status": "Request is being processed"}
 
 
 class StreamPrinter(io.StringIO):
