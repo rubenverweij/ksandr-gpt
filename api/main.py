@@ -138,7 +138,7 @@ async def ask(request: AskRequest):
         return response
 
 
-@app.lifespan("startup")
+@app.on_event("startup")
 async def startup():
     """Start de request-verwerkingsworkers bij het opstarten van de app."""
     asyncio.create_task(request_worker())
