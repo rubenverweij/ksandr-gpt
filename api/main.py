@@ -58,7 +58,8 @@ De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AA
 - Beantwoord alleen de gestelde vraag. Negeer andere vragen in de context. Gebruik uitsluitend de context. Maak geen aannames.
 
 <|im_end|>
-<|im_start|>user
+<|im_start|>
+
 Context:
 {context}
 Vraag:
@@ -130,7 +131,7 @@ async def request_worker():
     """Worker om verzoeken één voor één uit de wachtrij te verwerken."""
     while True:
         request = await request_queue.get()
-        response = process_request(request)
+        response = await process_request(request)
         request.queue.put_nowait(response)
 
 
@@ -138,16 +139,17 @@ async def request_worker():
 async def ask(request: AskRequest):
     """Verwerk het verzoek van de gebruiker."""
     async with semaphore:
-        response = await process_request(request)
-        return response
+        await request_queue.put(request)  # Put the request in the queue for processing
+        return {"message": "Request is being processed"}
 
 
 @app.on_event("startup")
 async def startup():
     """Start de request-verwerkingsworkers bij het opstarten van de app."""
-    asyncio.create_task(request_worker())
-    asyncio.create_task(prompt_worker())
-    asyncio.create_task(summarize_worker())
+    for _ in range(5):  # Spawn 5 workers for concurrent processing
+        asyncio.create_task(request_worker())
+        # asyncio.create_task(prompt_worker())
+        # asyncio.create_task(summarize_worker())
 
 
 async def process_prompt_request(request: AskRequest):
