@@ -21,16 +21,15 @@ def clean_html(value):
     # Als het een dictionary is, pas dezelfde bewerking toe op elk item en verwijder lege items
     elif isinstance(value, dict):
         cleaned_dict = {k: clean_html(v) for k, v in value.items()}
-        # Verwijder items die None zijn (bijv. als ze leeg of null waren)
         return {k: v for k, v in cleaned_dict.items() if v is not None}
 
-    # Als het een lijst is, pas dezelfde bewerking toe op elk item en verwijder lege items
+    # Als het een lijst is, pas dezelfde bewerking toe op elk item
     elif isinstance(value, list):
         cleaned_list = [clean_html(v) for v in value]
-        # Verwijder items die None zijn (bijv. als ze leeg of null waren)
-        return [v for v in cleaned_list if v is not None]
-
-    # Als het een ander type is (int, float, enz.), laat het dan zoals het is
+        cleaned_list = [v for v in cleaned_list if v is not None]
+        if not cleaned_list:
+            return None
+        return cleaned_list
     else:
         return value
 
@@ -50,9 +49,10 @@ def clean_json_in_directory(directory):
                 print(f"Bestand opgeschoond: {file_path}")
 
 
+# Hoofdfunctie om de commandoregelargumenten te verwerken
 def main():
     parser = argparse.ArgumentParser(
-        description="Verwijder HTML-tags uit JSON-bestanden in een opgegeven directory."
+        description="Verwijder HTML-tags en verwijder lege of 'null' waarden uit JSON-bestanden."
     )
     parser.add_argument(
         "directory",
