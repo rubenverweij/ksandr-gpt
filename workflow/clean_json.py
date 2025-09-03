@@ -31,90 +31,56 @@ AADS = {
 
 # Functie om HTML-tags uit de waarde te verwijderen, lege waarden te verwijderen, onnodige spaties te verwijderen, en "tags" attributen te verwijderen
 def clean_html(value):
-    # Vervang None (null in JSON) met de opgegeven tekst
-    if value is None:
+    if value is None or value == "" or value == [] or value == {}:
         return None
 
-    # Verwijder lege waarden zoals lege strings, lege lijsten, en lege dictionaries
-    elif value == "" or value == [] or value == {}:
-        return None
-
-    # Als het een string is, haal de HTML-tags eruit en verwijder onnodige spaties
-    elif isinstance(value, str):
+    if isinstance(value, str):
         # Verwijder HTML-tags
         cleaned_value = BeautifulSoup(value, "html.parser").get_text(separator=" ")
         # Verwijder onnodige spaties (aan begin, eind en tussenin)
-        cleaned_value = re.sub(r"\s+", " ", cleaned_value).strip()
-        return cleaned_value
+        return re.sub(r"\s+", " ", cleaned_value).strip()
 
-    # Als het een dictionary is, pas dezelfde bewerking toe op elk item en verwijder lege items
-    elif isinstance(value, dict):
+    if isinstance(value, dict):
         # Verwijder "tags" sleutel als het aanwezig is
-        if "tags" in value:
-            del value["tags"]
+        value.pop("tags", None)
+        return {k: clean_html(v) for k, v in value.items() if clean_html(v) is not None}
 
-        # Pas de bewerkingen toe op de resterende items
-        cleaned_dict = {k: clean_html(v) for k, v in value.items()}
-        # Verwijder items die None zijn (bijv. als ze leeg of null waren)
-        return {k: v for k, v in cleaned_dict.items() if v is not None}
+    if isinstance(value, list):
+        cleaned_list = [clean_html(v) for v in value if clean_html(v) is not None]
+        return cleaned_list if cleaned_list else None
 
-    # Als het een lijst is, pas dezelfde bewerking toe op elk item
-    elif isinstance(value, list):
-        cleaned_list = [clean_html(v) for v in value]
-        # Verwijder items die None zijn en zorg ervoor dat lege lijsten ook worden verwijderd
-        cleaned_list = [v for v in cleaned_list if v is not None]
-        # Verwijder de lijst zelf als deze leeg is
-        if not cleaned_list:
-            return None
-        return cleaned_list
-
-    # Als het een ander type is (int, float, enz.), laat het dan zoals het is
-    else:
-        return value
+    return value  # Voor andere types zoals int, float, etc.
 
 
 # Functie om de sleutels van de eerste en tweede niveau te hernoemen op basis van het pad van het bestand
 def rename_json_keys_based_on_file_path(json_data, file_path):
-    # Haal het vijfde element uit het pad (bijv. "2061")
     directory_parts = file_path.split(os.sep)
-    aad = directory_parts[5]
-    if aad in AADS.keys():
-        new_key_prefix = AADS[aad]  # Het 5e element is op index 4
-        if "fail-types" in directory_parts:
-            new_key_prefix = f"faaltype {AADS[aad]}"
+
+    if len(directory_parts) > 5:
+        aad = directory_parts[5]
     else:
-        new_key_prefix = ""
+        aad = ""
+        print(f"Warning: Invalid path structure, 'aad' not found in {file_path}")
+
+    new_key_prefix = AADS.get(aad, "")
+    if "fail-types" in directory_parts:
+        new_key_prefix = f"faaltype {new_key_prefix}" if new_key_prefix else ""
 
     print(f"Nieuwe key {new_key_prefix} voor aad: {aad}")
 
-    # Functie om sleutels te hernoemen op basis van de nieuwe prefix
     def rename_keys(data, level=1):
         if isinstance(data, dict):
             renamed_data = {}
             for key, value in data.items():
-                # Bij het eerste en tweede niveau, hernoem de sleutel
-                if "fail-types" in directory_parts:
-                    if level <= 1:
-                        if len(new_key_prefix) > 0:
-                            new_key = f"{key} {new_key_prefix}"  # Gebruik de prefix voor hernoemen
-                        else:
-                            new_key = key
-                else:
-                    if level <= 2:
-                        if len(new_key_prefix) > 0:
-                            new_key = f"{key} {new_key_prefix}"  # Gebruik de prefix voor hernoemen
-                        else:
-                            new_key = key
-                    else:
-                        new_key = key  # Andere niveaus behouden de originele sleutel
+                new_key = (
+                    f"{key} {new_key_prefix}" if level <= 2 and new_key_prefix else key
+                )
                 renamed_data[new_key] = rename_keys(value, level + 1)
             return renamed_data
         elif isinstance(data, list):
             return [rename_keys(item, level) for item in data]
-        else:
-            return data
+        return data
 
-    # Pas de hernoeming toe
     return rename_keys(json_data)
 
 
@@ -126,8 +92,20 @@ def clean_json_in_directory(directory):
                 file_path = os.path.join(root, file)
                 print(f"Verwerken bestand: {file_path}")
 
-                with open(file_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
+                # Check for empty file
+                if os.stat(file_path).st_size == 0:
+                    print(f"Skipping empty file: {file_path}")
+                    continue  # Skip empty files
+
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                except json.JSONDecodeError as e:
+                    print(f"Error reading JSON from {file_path}: {e}")
+                    continue
+                except Exception as e:
+                    print(f"Unexpected error with {file_path}: {e}")
+                    continue
 
                 # Het hernoemen van de keys op basis van het pad van het bestand
                 renamed_data = rename_json_keys_based_on_file_path(data, file_path)
@@ -143,22 +121,15 @@ def clean_json_in_directory(directory):
 
 # Hoofdfunctie om de commandoregelargumenten te verwerken
 def main():
-    # Argument parser aanmaken
     parser = argparse.ArgumentParser(
         description="Verwijder HTML-tags, onnodige spaties, verwijder lege of 'null' waarden, verwijder 'tags' attributen en hernoem de sleutels van JSON-bestanden."
     )
-
-    # Voeg een argument toe voor de directory
     parser.add_argument(
         "directory",
         type=str,
         help="Pad naar de directory waar de JSON-bestanden zich bevinden",
     )
-
-    # Haal de argumenten op
     args = parser.parse_args()
-
-    # Roep de functie aan met de opgegeven directory
     clean_json_in_directory(args.directory)
 
 
