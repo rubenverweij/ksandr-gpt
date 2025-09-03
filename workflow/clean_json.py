@@ -53,7 +53,6 @@ def clean_html(value):
     return value  # Voor andere types zoals int, float, etc.
 
 
-# Functie om de sleutels van de eerste en tweede niveau te hernoemen op basis van het pad van het bestand
 def rename_json_keys_based_on_file_path(json_data, file_path):
     directory_parts = file_path.split(os.sep)
 
@@ -75,9 +74,14 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
         if isinstance(data, dict):
             renamed_data = {}
             for key, value in data.items():
-                if "fail-types" in directory_parts and level == 1:
-                    # Alleen op niveau 1 de prefix toevoegen als we 'fail-types' hebben
-                    new_key = f"{key} {new_key_prefix}" if new_key_prefix else key
+                # Controleer of we in een 'fail-types' pad zijn en of we op niveau 1 zitten
+                if "fail-types" in directory_parts:
+                    # Prefix alleen toevoegen op niveau 1 als we 'fail-types' in het pad hebben
+                    new_key = (
+                        f"{key} {new_key_prefix}"
+                        if level <= 1 and new_key_prefix
+                        else key
+                    )
                 else:
                     # Voor andere gevallen: prefix toepassen op niveau 1 en 2
                     new_key = (
@@ -86,6 +90,7 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
                         else key
                     )
 
+                # Verwerk de waarde (die mogelijk een geneste structuur heeft)
                 renamed_data[new_key] = rename_keys(value, level + 1)
             return renamed_data
         elif isinstance(data, list):
