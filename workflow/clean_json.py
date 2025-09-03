@@ -106,8 +106,12 @@ def split_json_by_level_2(json_data, base_file_path):
             # Controleer of de waarde op niveau 2 zit
             if isinstance(value, dict):  # We splitsen alleen niveau 2 attributen
                 # Maak een nieuw bestand per niveau 2 attribuut
-                split_file = {key: value}
-                split_files.append((key, split_file))
+                split_file = {
+                    key: value
+                }  # Zorg dat dit een dictionary is met key en waarde
+                split_files.append(
+                    (key, split_file)
+                )  # Voeg een tuple toe met key en de bijbehorende data
     return split_files
 
 
@@ -145,13 +149,27 @@ def clean_json_in_directory(directory):
 
                 # Als de JSON gesplitst is, slaan we meerdere bestanden op
                 if split_data:
-                    for key, split_json in split_data:
-                        # Opslaan van de gesplitste JSON in een nieuw bestand
-                        split_file_name = f"{file.split('.')[0]}_{key}.json"
-                        split_file_path = os.path.join(root, split_file_name)
-                        with open(split_file_path, "w", encoding="utf-8") as f:
-                            json.dump(split_json, f, ensure_ascii=False, indent=2)
-                        print(f"Bestand opgesplitst en opgeslagen: {split_file_path}")
+                    # Controleer of split_data een lijst van tuples is
+                    if isinstance(split_data, list) and all(
+                        isinstance(item, tuple) and len(item) == 2
+                        for item in split_data
+                    ):
+                        for key, split_json in split_data:
+                            if key is not None:  # We slaan alleen niet-None keys op
+                                # Opslaan van de gesplitste JSON in een nieuw bestand
+                                split_file_name = f"{file.split('.')[0]}_{key}.json"
+                                split_file_path = os.path.join(root, split_file_name)
+                                with open(split_file_path, "w", encoding="utf-8") as f:
+                                    json.dump(
+                                        split_json, f, ensure_ascii=False, indent=2
+                                    )
+                                print(
+                                    f"Bestand opgesplitst en opgeslagen: {split_file_path}"
+                                )
+                    else:
+                        print(
+                            f"Fout: split_data heeft niet de verwachte structuur voor {file_path}"
+                        )
                 else:
                     # Als er geen splitsing was, slaan we het bestand op in dezelfde locatie
                     with open(file_path, "w", encoding="utf-8") as f:
