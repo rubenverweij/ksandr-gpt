@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 import re
+import string
 from bs4 import BeautifulSoup
 
 
@@ -157,7 +158,17 @@ def clean_json_in_directory(directory):
                         for key, split_json in split_data:
                             if key is not None:  # We slaan alleen niet-None keys op
                                 # Opslaan van de gesplitste JSON in een nieuw bestand
-                                split_file_name = f"{file.split('.')[0]}_{key}.json"
+                                cleaned_filename = key.translate(
+                                    str.maketrans(
+                                        {
+                                            " ": "_",
+                                            **{char: "" for char in string.punctuation},
+                                        }
+                                    )
+                                )
+                                split_file_name = (
+                                    f"{file.split('.')[0]}_{cleaned_filename}.json"
+                                )
                                 split_file_path = os.path.join(root, split_file_name)
                                 with open(split_file_path, "w", encoding="utf-8") as f:
                                     json.dump(
