@@ -5,6 +5,30 @@ import re
 from bs4 import BeautifulSoup
 
 
+AADS = {
+    "10535": "LK ELA12 schakelinstallatie",
+    "10536": "ABB VD4 vaccuum vermogensschakelaar",
+    "10540": "Eaton L-SEP installatie",
+    "10542": "Siemens NXplusC schakelaar",
+    "10545": "Siemens 8DJH schakelaar",
+    "10546": "Eaton FMX schakelinstallatie",
+    "1555": "Merlin Gerin RM6 schakelaar",
+    "1556": "Hazemeijer CONEL schakelinstallatie",
+    "1557": "Eaton 10 kV COQ schakelaar",
+    "1558": "Eaton Capitole schakelaar",
+    "2059": "Eaton Xiria schakelinstallatie",
+    "2061": "Eaton Holec SVS schakelaar",
+    "2963": "MS/LS distributie transformator",
+    "318": "Eaton Magnefix MD/MF schakelinstallatie",
+    "655": "ABB DR12 schakelaar",
+    "8825": "ABB Safe schakelinstallatie",
+    "8827": "kabelmoffen",
+    "9026": "Eaton MMS schakelinstallatie",
+    "9027": "ABB BBC DB10 schakelaar",
+    "9028": "HS MS vermogens transformator",
+}
+
+
 # Functie om HTML-tags uit de waarde te verwijderen, lege waarden te verwijderen, onnodige spaties te verwijderen, en "tags" attributen te verwijderen
 def clean_html(value):
     # Vervang None (null in JSON) met de opgegeven tekst
@@ -49,6 +73,38 @@ def clean_html(value):
         return value
 
 
+# Functie om de sleutels van de eerste en tweede niveau te hernoemen op basis van het pad van het bestand
+def rename_json_keys_based_on_file_path(json_data, file_path):
+    # Haal het vijfde element uit het pad (bijv. "2061")
+    directory_parts = file_path.split(os.sep)
+
+    if directory_parts[4] in AADS.keys():
+        new_key_prefix = AADS[directory_parts[4]]  # Het 5e element is op index 4
+    else:
+        new_key_prefix = ""
+
+    # Functie om sleutels te hernoemen op basis van de nieuwe prefix
+    def rename_keys(data, level=1):
+        if isinstance(data, dict):
+            renamed_data = {}
+            for key, value in data.items():
+                # Bij het eerste en tweede niveau, hernoem de sleutel
+                if level <= 2:
+                    if len(new_key_prefix) > 0:
+                        new_key = f"{key} {new_key_prefix}"  # Gebruik de prefix voor hernoemen
+                else:
+                    new_key = key  # Andere niveaus behouden de originele sleutel
+                renamed_data[new_key] = rename_keys(value, level + 1)
+            return renamed_data
+        elif isinstance(data, list):
+            return [rename_keys(item, level) for item in data]
+        else:
+            return data
+
+    # Pas de hernoeming toe
+    return rename_keys(json_data)
+
+
 # Functie om door een directory te lopen en alle JSON-bestanden te verwerken
 def clean_json_in_directory(directory):
     for root, dirs, files in os.walk(directory):
@@ -60,8 +116,11 @@ def clean_json_in_directory(directory):
                 with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
+                # Het hernoemen van de keys op basis van het pad van het bestand
+                renamed_data = rename_json_keys_based_on_file_path(data, file_path)
+
                 # Opschonen van het JSON-bestand
-                cleaned_data = clean_html(data)
+                cleaned_data = clean_html(renamed_data)
 
                 # Opslaan van de opgeschoonde JSON in dezelfde directory
                 with open(file_path, "w", encoding="utf-8") as f:
@@ -73,7 +132,7 @@ def clean_json_in_directory(directory):
 def main():
     # Argument parser aanmaken
     parser = argparse.ArgumentParser(
-        description="Verwijder HTML-tags, onnodige spaties, verwijder lege of 'null' waarden en verwijder 'tags' attributen uit JSON-bestanden."
+        description="Verwijder HTML-tags, onnodige spaties, verwijder lege of 'null' waarden, verwijder 'tags' attributen en hernoem de sleutels van JSON-bestanden."
     )
 
     # Voeg een argument toe voor de directory
