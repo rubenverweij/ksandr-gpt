@@ -60,7 +60,9 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
         aad = directory_parts[5]
     else:
         aad = ""
-        print(f"Warning: Invalid path structure, 'aad' not found in {file_path}")
+        print(
+            f"Waarschuwing: Ongeldige padstructuur, 'aad' niet gevonden in {file_path}"
+        )
 
     new_key_prefix = AADS.get(aad, "")
     if "fail-types" in directory_parts:
@@ -72,9 +74,17 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
         if isinstance(data, dict):
             renamed_data = {}
             for key, value in data.items():
-                new_key = (
-                    f"{key} {new_key_prefix}" if level <= 2 and new_key_prefix else key
-                )
+                if "fail-types" in directory_parts and level == 1:
+                    # Alleen op niveau 1 de prefix toevoegen als we 'fail-types' hebben
+                    new_key = f"{key} {new_key_prefix}" if new_key_prefix else key
+                else:
+                    # Voor andere gevallen: prefix toepassen op niveau 1 en 2
+                    new_key = (
+                        f"{key} {new_key_prefix}"
+                        if level <= 2 and new_key_prefix
+                        else key
+                    )
+
                 renamed_data[new_key] = rename_keys(value, level + 1)
             return renamed_data
         elif isinstance(data, list):
@@ -82,6 +92,23 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
         return data
 
     return rename_keys(json_data)
+
+
+# Functie om de JSON te splitsen op basis van het tweede niveau attribuut
+def split_json_by_level_2(json_data, base_file_path):
+    # Alleen uitvoeren als we geen "fail-types" in het bestandspad hebben
+    if "fail-types" in base_file_path:
+        return [json_data]  # Geen splitsing nodig voor "fail-types" bestanden
+
+    split_files = []
+    if isinstance(json_data, dict):
+        for key, value in json_data.items():
+            # Controleer of de waarde op niveau 2 zit
+            if isinstance(value, dict):  # We splitsen alleen niveau 2 attributen
+                # Maak een nieuw bestand per niveau 2 attribuut
+                split_file = {key: value}
+                split_files.append((key, split_file))
+    return split_files
 
 
 # Functie om door een directory te lopen en alle JSON-bestanden te verwerken
@@ -92,31 +119,44 @@ def clean_json_in_directory(directory):
                 file_path = os.path.join(root, file)
                 print(f"Verwerken bestand: {file_path}")
 
-                # Check for empty file
+                # Controleren of het bestand leeg is
                 if os.stat(file_path).st_size == 0:
-                    print(f"Skipping empty file: {file_path}")
-                    continue  # Skip empty files
+                    print(f"Bestand overgeslagen (leeg): {file_path}")
+                    continue  # Sla lege bestanden over
 
                 try:
                     with open(file_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
                 except json.JSONDecodeError as e:
-                    print(f"Error reading JSON from {file_path}: {e}")
+                    print(f"Fout bij het lezen van JSON uit {file_path}: {e}")
                     continue
                 except Exception as e:
-                    print(f"Unexpected error with {file_path}: {e}")
+                    print(f"Onverwachte fout bij {file_path}: {e}")
                     continue
 
-                # Het hernoemen van de keys op basis van het pad van het bestand
+                # Het hernoemen van de sleutels op basis van het pad van het bestand
                 renamed_data = rename_json_keys_based_on_file_path(data, file_path)
 
                 # Opschonen van het JSON-bestand
                 cleaned_data = clean_html(renamed_data)
 
-                # Opslaan van de opgeschoonde JSON in dezelfde directory
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(cleaned_data, f, ensure_ascii=False, indent=2)
-                print(f"Bestand opgeschoond: {file_path}")
+                # Opsplitsen van de JSON op niveau 2 als er geen "fail-types" is
+                split_data = split_json_by_level_2(cleaned_data, file_path)
+
+                # Als de JSON gesplitst is, slaan we meerdere bestanden op
+                if split_data:
+                    for key, split_json in split_data:
+                        # Opslaan van de gesplitste JSON in een nieuw bestand
+                        split_file_name = f"{file.split('.')[0]}_{key}.json"
+                        split_file_path = os.path.join(root, split_file_name)
+                        with open(split_file_path, "w", encoding="utf-8") as f:
+                            json.dump(split_json, f, ensure_ascii=False, indent=2)
+                        print(f"Bestand opgesplitst en opgeslagen: {split_file_path}")
+                else:
+                    # Als er geen splitsing was, slaan we het bestand op in dezelfde locatie
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        json.dump(cleaned_data, f, ensure_ascii=False, indent=2)
+                    print(f"Bestand opgeschoond: {file_path}")
 
 
 # Hoofdfunctie om de commandoregelargumenten te verwerken
