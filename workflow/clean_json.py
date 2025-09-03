@@ -4,14 +4,33 @@ import argparse
 from bs4 import BeautifulSoup
 
 
-# Functie om HTML-tags uit de waarde te verwijderen
+# Functie om HTML-tags uit de waarde te verwijderen en lege of null waarden te verwijderen
 def clean_html(value):
-    if isinstance(value, str):
+    # Vervang None (null in JSON) met de opgegeven tekst
+    if value is None:
+        return None
+
+    # Verwijder lege waarden zoals lege strings, lege lijsten, en lege dictionaries
+    elif value == "" or value == [] or value == {}:
+        return None
+
+    # Als het een string is, haal de HTML-tags eruit
+    elif isinstance(value, str):
         return BeautifulSoup(value, "html.parser").get_text(separator=" ")
+
+    # Als het een dictionary is, pas dezelfde bewerking toe op elk item en verwijder lege items
     elif isinstance(value, dict):
-        return {k: clean_html(v) for k, v in value.items()}
+        cleaned_dict = {k: clean_html(v) for k, v in value.items()}
+        # Verwijder items die None zijn (bijv. als ze leeg of null waren)
+        return {k: v for k, v in cleaned_dict.items() if v is not None}
+
+    # Als het een lijst is, pas dezelfde bewerking toe op elk item en verwijder lege items
     elif isinstance(value, list):
-        return [clean_html(v) for v in value]
+        cleaned_list = [clean_html(v) for v in value]
+        # Verwijder items die None zijn (bijv. als ze leeg of null waren)
+        return [v for v in cleaned_list if v is not None]
+
+    # Als het een ander type is (int, float, enz.), laat het dan zoals het is
     else:
         return value
 
