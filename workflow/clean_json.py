@@ -99,7 +99,7 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
 def split_json_by_level_2(json_data, base_file_path):
     # Alleen uitvoeren als we geen "fail-types" in het bestandspad hebben
     if "fail-types" in base_file_path:
-        return [json_data]  # Geen splitsing nodig voor "fail-types" bestanden
+        return None  # Geen splitsing nodig voor "fail-types" bestanden
 
     split_files = []
     if isinstance(json_data, dict):
