@@ -1,23 +1,19 @@
-"""
-TAALMODEL API KSANDR
-"""
-
 import asyncio
-from fastapi import FastAPI
-from typing import List, Dict, Optional, Any, Union
-from pydantic import BaseModel
-from onprem import LLM
-import os
+import time
 import uuid
+import os
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import Dict, Optional, Union, List, Any
+from onprem import LLM
 
-
-# Wachtrijen voor gelijktijdige verwerking van verzoeken
+# Configuratie voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
 semaphore = asyncio.Semaphore(5)
 app = FastAPI()
 request_responses = {}
 
-# Configuratie variabelen
+# Configuratievariabelen
 TEMPERATURE = float(os.getenv("TEMPERATURE", 0.8))
 SOURCE_MAX = int(os.getenv("SOURCE_MAX", 2))
 SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.6))
@@ -64,17 +60,18 @@ Vraag:
 """
 
 
+# Vraagmodel
 class AskRequest(BaseModel):
     prompt: str
     permission: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]] = None
 
     class Config:
-        extra = "allow"
+        extra = "allow"  # Sta extra velden toe
 
 
+# Verwerkt het verzoek en haalt de reactie op
 async def process_request(request: AskRequest):
-    """Function that processes the request. This simulates the async task processing."""
-    # filter_obj = _build_filter(request.permission)
+    """Verwerkt een verzoek asynchroon."""
     source_max = getattr(request, "source_max", None)
     score_threshold = getattr(request, "score_threshold", None)
 
@@ -83,7 +80,6 @@ async def process_request(request: AskRequest):
             None,
             lambda: llm._ask(
                 question=request.prompt,
-                # filters=filter_obj, FIXME filter object aanpassen aan sparse db
                 table_k=0,
                 k=source_max,
                 score_threshold=score_threshold,
@@ -92,43 +88,55 @@ async def process_request(request: AskRequest):
         )
         if not response.get("source_documents"):
             response["answer"] = (
-                "Ik weet het antwoord helaas niet, misschien kan je de vraag anders formuleren?"
+                "Ik weet het antwoord helaas niet, probeer je vraag anders te formuleren."
             )
         return response
     except Exception as e:
         return {"error": str(e)}
 
 
+# Worker voor het verwerken van verzoeken in de wachtrij
 async def request_worker():
-    """Worker to process requests one by one."""
+    """Verwerkt verzoeken één voor één."""
     while True:
         request = await request_queue.get()
         async with semaphore:
             response = await process_request(request)
-            request["response"] = response
+            end_time = time.time()
+            duration = end_time - request_responses[request.id]["start_time"]
+            request_responses[request.id].update(
+                {
+                    "status": "completed",
+                    "response": response,
+                    "end_time": end_time,
+                    "time_duration": duration,
+                }
+            )
 
 
 @app.post("/ask")
 async def ask(request: AskRequest):
-    """Handles incoming requests."""
-    request_id = str(uuid.uuid4())
-    request["id"] = request_id
-    await request_queue.put(request)
-    request_responses[request_id] = {"status": "processing"}
-    return {"message": "Request is being processed", "request_id": request_id}
+    """Verwerkt binnenkomende verzoeken."""
+    request.id = str(uuid.uuid4())  # Genereer een uniek ID
+    await request_queue.put(request)  # Voeg het verzoek toe aan de wachtrij
+    request_responses[request.id] = {"status": "processing", "start_time": time.time()}
+    return {"message": "Verzoek wordt verwerkt", "request_id": request.id}
 
 
 @app.get("/status/{request_id}")
 async def get_status(request_id: str):
-    """Check the status of a request."""
+    """Check de status en het resultaat van een verzoek."""
     if request_id in request_responses:
-        return request_responses[request_id]
-    return {"message": "Request not found"}
+        response_data = request_responses[request_id]
+        if response_data["status"] == "completed":
+            return request_responses[request_id]
+        return {"status": "processing"}
+    return {"message": "Verzoek niet gevonden"}
 
 
 @app.on_event("startup")
 async def startup():
-    """Start the worker to process requests sequentially"""
+    """Start de worker om verzoeken sequentieel te verwerken."""
     asyncio.create_task(request_worker())
 
 
