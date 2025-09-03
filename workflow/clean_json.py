@@ -92,6 +92,8 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
                 if level <= 2:
                     if len(new_key_prefix) > 0:
                         new_key = f"{key} {new_key_prefix}"  # Gebruik de prefix voor hernoemen
+                    else:
+                        new_key = key
                 else:
                     new_key = key  # Andere niveaus behouden de originele sleutel
                 renamed_data[new_key] = rename_keys(value, level + 1)
