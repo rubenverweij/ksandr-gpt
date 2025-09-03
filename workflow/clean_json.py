@@ -83,6 +83,8 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
     else:
         new_key_prefix = ""
 
+    print(f"Nieuwe key {new_key_prefix} voor aad: {directory_parts[4]}")
+
     # Functie om sleutels te hernoemen op basis van de nieuwe prefix
     def rename_keys(data, level=1):
         if isinstance(data, dict):
