@@ -78,12 +78,12 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
     # Haal het vijfde element uit het pad (bijv. "2061")
     directory_parts = file_path.split(os.sep)
 
-    if directory_parts[4] in AADS.keys():
+    if directory_parts[5] in AADS.keys():
         new_key_prefix = AADS[directory_parts[4]]  # Het 5e element is op index 4
     else:
         new_key_prefix = ""
 
-    print(f"Nieuwe key {new_key_prefix} voor aad: {directory_parts[4]}")
+    print(f"Nieuwe key {new_key_prefix} voor aad: {directory_parts[5]}")
 
     # Functie om sleutels te hernoemen op basis van de nieuwe prefix
     def rename_keys(data, level=1):
