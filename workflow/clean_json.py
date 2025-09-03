@@ -80,6 +80,8 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
     aad = directory_parts[5]
     if aad in AADS.keys():
         new_key_prefix = AADS[aad]  # Het 5e element is op index 4
+        if "fail_types" in directory_parts:
+            new_key_prefix = f"faaltype {AADS[aad]}"
     else:
         new_key_prefix = ""
 
@@ -91,13 +93,20 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
             renamed_data = {}
             for key, value in data.items():
                 # Bij het eerste en tweede niveau, hernoem de sleutel
-                if level <= 2:
-                    if len(new_key_prefix) > 0:
-                        new_key = f"{key} {new_key_prefix}"  # Gebruik de prefix voor hernoemen
-                    else:
-                        new_key = key
+                if "fail_types" in directory_parts:
+                    if level <= 1:
+                        if len(new_key_prefix) > 0:
+                            new_key = f"{key} {new_key_prefix}"  # Gebruik de prefix voor hernoemen
+                        else:
+                            new_key = key
                 else:
-                    new_key = key  # Andere niveaus behouden de originele sleutel
+                    if level <= 2:
+                        if len(new_key_prefix) > 0:
+                            new_key = f"{key} {new_key_prefix}"  # Gebruik de prefix voor hernoemen
+                        else:
+                            new_key = key
+                    else:
+                        new_key = key  # Andere niveaus behouden de originele sleutel
                 renamed_data[new_key] = rename_keys(value, level + 1)
             return renamed_data
         elif isinstance(data, list):
