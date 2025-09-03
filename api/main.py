@@ -11,6 +11,7 @@ from onprem import LLM
 from onprem.pipelines import Summarizer
 import io
 import os
+import uuid
 import sys
 
 
@@ -20,6 +21,7 @@ prompt_queue = asyncio.Queue()
 summarize_queue = asyncio.Queue()
 semaphore = asyncio.Semaphore(5)
 app = FastAPI()
+request_responses = {}
 
 # Configuratie variabelen
 TEMPERATURE = float(os.getenv("TEMPERATURE", 0.8))
@@ -102,7 +104,7 @@ def _build_filter(
 
 async def process_request(request: AskRequest):
     """Function that processes the request. This simulates the async task processing."""
-    filter_obj = _build_filter(request.permission)
+    # filter_obj = _build_filter(request.permission)
     source_max = getattr(request, "source_max", None)
     score_threshold = getattr(request, "score_threshold", None)
 
@@ -124,32 +126,34 @@ async def process_request(request: AskRequest):
             )
         return response
     except Exception as e:
-        return {"error": str(e), "filter": filter_obj}
+        return {"error": str(e)}
 
 
 async def request_worker():
-    """Worker om verzoeken één voor één uit de wachtrij te verwerken."""
+    """Worker to process requests one by one."""
     while True:
         request = await request_queue.get()
-        response = await process_request(request)
-        request.queue.put_nowait(response)
+        async with semaphore:
+            response = await process_request(request)
+            request["response"] = response
 
 
 @app.post("/ask")
-async def ask(request: AskRequest):
-    """Verwerk het verzoek van de gebruiker."""
-    async with semaphore:
-        await request_queue.put(request)  # Put the request in the queue for processing
-        return {"message": "Request is being processed"}
+async def ask(request: dict):
+    """Handles incoming requests."""
+    request_id = str(uuid.uuid4())
+    request["id"] = request_id
+    await request_queue.put(request)
+    request_responses[request_id] = {"status": "processing"}
+    return {"message": "Request is being processed", "request_id": request_id}
 
 
-@app.on_event("startup")
-async def startup():
-    """Start de request-verwerkingsworkers bij het opstarten van de app."""
-    for _ in range(5):  # Spawn 5 workers for concurrent processing
-        asyncio.create_task(request_worker())
-        # asyncio.create_task(prompt_worker())
-        # asyncio.create_task(summarize_worker())
+@app.get("/status/{request_id}")
+async def get_status(request_id: str):
+    """Check the status of a request."""
+    if request_id in request_responses:
+        return request_responses[request_id]
+    return {"message": "Request not found"}
 
 
 async def process_prompt_request(request: AskRequest):
