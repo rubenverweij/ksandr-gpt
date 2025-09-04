@@ -85,7 +85,7 @@ async def process_request(request: AskRequest):
             None,
             lambda: llm._ask(
                 question=request.prompt,
-                filters={"type_id_k": relevant_filter_list},
+                filters={"type_id": relevant_filter_list},
                 table_k=0,
                 k=source_max,
                 score_threshold=score_threshold,
