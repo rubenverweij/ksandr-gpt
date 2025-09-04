@@ -12,8 +12,10 @@ def extract_file_data(file_path: str) -> Dict[str, Union[int, str]]:
     parts = file_path.strip("/").split("/")
     result = {
         "type": "",
+        "type_id": "na",
         "permission": "",
         "filename": "",
+        "permission_and_type": "",
     }
     data_groups = ["aads", "general", "documents", "groups", "ese", "esg", "rmd", "dga"]
     if len(parts) >= 3:
@@ -31,6 +33,7 @@ def extract_file_data(file_path: str) -> Dict[str, Union[int, str]]:
                     result["permission_and_type"] = (
                         f"{result['permission']}_{parts[aads_index + 1]}"
                     )
+                    result["type_id"] = parts[aads_index + 1]
                 elif third_part in ["documents", "groups", "rmd", "dga"]:
                     result["permission"] = str(parts[parts.index(third_part) + 1])
                     result["permission_and_type"] = (
@@ -84,6 +87,7 @@ if __name__ == "__main__":
         source_directory=args.documents_path,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
+        batch_size=4000,
     )
     print("Done ingesting documents, start adjusting metadata")
 
