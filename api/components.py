@@ -35,6 +35,7 @@ algemene_woorden = [
     "hazemeijer",
     "lk",
 ]
+
 specifieke_componenten = [
     "db10",
     "bcc",
@@ -78,14 +79,15 @@ def vind_relevante_componenten(vraag, componenten_dict):
                 gevonden_sleutels.append(sleutel)
                 break
 
-    if not gevonden_sleutels:
-        for sleutel, waarde in componenten_dict.items():
-            for woord in algemene_woorden:
-                if woord in waarde.lower() and woord in vraag:
-                    gevonden_sleutels.append(sleutel)
-                    break
+    # FIXME kan nog niet omgaan met verschillende dossiers
+    # if not gevonden_sleutels:
+    #     for sleutel, waarde in componenten_dict.items():
+    #         for woord in algemene_woorden:
+    #             if woord in waarde.lower() and woord in vraag:
+    #                 gevonden_sleutels.append(sleutel)
+    #                 break
 
-    return gevonden_sleutels + ["na"]
+    return gevonden_sleutels[0] if len(gevonden_sleutels) == 1 else "na"
 
 
 if __name__ == "__main__":

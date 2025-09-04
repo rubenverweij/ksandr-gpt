@@ -85,7 +85,7 @@ async def process_request(request: AskRequest):
             None,
             lambda: llm._ask(
                 question=request.prompt,
-                filters={"type_id": {"$in": relevant_filter_list}},
+                filters={"type_id_k": relevant_filter_list},
                 table_k=0,
                 k=source_max,
                 score_threshold=score_threshold,
@@ -98,7 +98,7 @@ async def process_request(request: AskRequest):
             )
         return response
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": str(e), "filter": relevant_filter_list}
 
 
 # Worker voor het verwerken van verzoeken in de wachtrij
