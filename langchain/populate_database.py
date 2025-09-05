@@ -12,7 +12,7 @@ from get_embedding_function import get_embedding_function
 
 
 CHROMA_PATH = Path("/root/onprem_data/chroma")
-SOURCE_DIR = Path("/root/ksandr_files")
+SOURCE_DIR = Path("/root/ksandr_files_aads")
 
 
 def main() -> None:
@@ -68,8 +68,8 @@ def load_documents(directory: Path) -> List[Document]:
 def split_documents(documents: List[Document]) -> List[Document]:
     """Split documents into smaller chunks for embedding."""
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=800,
-        chunk_overlap=80,
+        chunk_size=400,
+        chunk_overlap=100,
         length_function=len,
         is_separator_regex=False,
     )

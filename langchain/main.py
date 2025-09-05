@@ -1,13 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
-from typing import List, Tuple
 from langchain.memory.chat_message_histories import RedisChatMessageHistory
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.vectorstores import Chroma
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.llms import LlamaCpp
-from langchain.schema import Document
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from get_embedding_function import get_embedding_function
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -19,10 +17,10 @@ DEFAULT_MODEL_PATH = "/root/onprem_data/models/Meta-Llama-3.1-8B-Instruct-Q4_K_M
 
 # 📄 Prompt template voor de assistent
 PROMPT_TEMPLATE = """
-Je bent een behulpzame, nauwkeurige en feitelijke assistent van het Ksandr data platform. Je taak is om vragen te beantwoorden over documenten die beschikbaar zijn op het Ksandr-platform. 
-Documenten worden in de context aangeduid met aadDocumentId en documentId. De 'url' is de locatie van het document, bijvoorbeeld '/aad-document/10' of '/download-aad-file-system-document/12803'. 
-Je mag verwijzen naar de url-waarden die je tegenkomt in de context.
-Gebruik uitsluitend de onderstaande context om de vraag te beantwoorden en herhaal niet. Als het antwoord niet in de context staat, zeg dan eerlijk dat je het niet weet.
+
+Je bent een behulpzame, nauwkeurige en feitelijke assistent van het Ksandr data platform. 
+
+
 
 Context:
 {context}
@@ -85,22 +83,12 @@ def load_model(model_path: str) -> LlamaCpp:
     )
 
 
-def query_rag(query_text: str, user_id: str, model: LlamaCpp) -> str:
+def query_rag(query_text: str, user_id: str, model: LlamaCpp, database: Chroma) -> str:
     # Zoek naar relevante documenten via Chroma
-    embedding_function = get_embedding_function()
-    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
-    results: List[Tuple[Document, float]] = db.similarity_search_with_score(
-        query_text, k=10
-    )
-
-    if not results:
-        print("⚠️ Geen relevante documenten gevonden in de database.")
-        return "Geen relevante bronnen gevonden, probeer de vraag te verduidelijken."
+    results = database.similarity_search_with_score(query_text, k=10)
 
     # Bouw de context op
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _ in results])
-
-    # Format de prompt
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
     prompt = prompt_template.format(context=context_text, question=query_text)
 
@@ -127,16 +115,22 @@ def query_rag(query_text: str, user_id: str, model: LlamaCpp) -> str:
 @app.on_event("startup")
 async def startup_event():
     model_path = DEFAULT_MODEL_PATH
+    embedding_function = get_embedding_function()
+    app.state.database = Chroma(
+        persist_directory=CHROMA_PATH, embedding_function=embedding_function
+    )
     app.state.model = load_model(model_path)
-    print("Model succesvol geladen!")
+    print("Model en database succesvol geladen!")
 
 
 @app.post("/ask")
-async def ask_question(request: QueryRequest):
+async def ask(request: QueryRequest):
     try:
-        model = app.state.model
         response = query_rag(
-            query_text=request.query_text, user_id=request.user_id, model=model
+            query_text=request.query_text,
+            user_id=request.user_id,
+            model=app.state.model,
+            database=app.state.database,
         )
         return {"response": response}
     except Exception as e:
