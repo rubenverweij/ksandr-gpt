@@ -12,7 +12,7 @@ from get_embedding_function import get_embedding_function
 
 
 CHROMA_PATH = Path("/root/onprem_data/chroma")
-SOURCE_DIR = Path("/root/ksandr_files_aads")
+SOURCE_DIR = Path("/root/ksandr_files")
 
 
 def main() -> None:

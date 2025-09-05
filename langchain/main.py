@@ -20,8 +20,6 @@ PROMPT_TEMPLATE = """
 
 Je bent een behulpzame, nauwkeurige en feitelijke assistent van het Ksandr data platform. 
 
-
-
 Context:
 {context}
 
