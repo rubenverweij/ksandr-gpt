@@ -11,7 +11,7 @@ from get_embedding_function import get_embedding_function
 from langchain_core.chat_history import BaseChatMessageHistory
 
 # 🔧 Configuratie
-REDIS_URL = "redis://redis-server:6379"
+REDIS_URL = "redis://localhost:6379"
 CHROMA_PATH = "/root/onprem_data/chroma"
 DEFAULT_MODEL_PATH = "/root/onprem_data/models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
 
