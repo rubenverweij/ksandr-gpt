@@ -116,7 +116,6 @@ def add_to_chroma(chunks: List[Document]) -> None:
             batch = new_chunks[i : i + batch_size]
             db.add_documents(batch)
             print(f"   ✅ Added batch {i // batch_size + 1} ({len(batch)} docs)")
-        db.persist()
         print("✅ Database updated.")
     else:
         print("✅ No new documents to add.")
