@@ -46,7 +46,6 @@ check_status() {
         # If status is completed, print the full response
         if [ "$status" = "completed" ]; then
             echo "Status: completed"
-            echo "Full Response:"
             echo "$response" |sed 's/$/\\n/' | tr -d '\n' | sed -e 's/“/"/g' -e 's/”/"/g' | sed '$ s/\\n$//' | jq -r '.response.answer'  # Print the full response JSON
             break
         fi

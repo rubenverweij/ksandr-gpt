@@ -48,11 +48,8 @@ def load_documents(directory: Path) -> List[Document]:
         try:
             with file_path.open("r", encoding="utf-8") as f:
                 content = json.load(f)
-
-            # Ensure content is a string, since Document expects text
             if not isinstance(content, str):
                 content = json.dumps(content, ensure_ascii=False, indent=2)
-
             documents.append(
                 Document(page_content=content, metadata={"file_path": str(file_path)})
             )
@@ -69,7 +66,7 @@ def split_documents(documents: List[Document]) -> List[Document]:
     """Split documents into smaller chunks for embedding."""
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=400,
-        chunk_overlap=100,
+        chunk_overlap=200,
         length_function=len,
         is_separator_regex=False,
     )
