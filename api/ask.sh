@@ -41,13 +41,13 @@ check_status() {
         response=$(curl -s -X GET http://localhost:8080/status/"$request_id")
 
         # Extract the status from the response using grep
-	status=$(echo "$response" | jq -r '.status')
+	    status=$(echo "$response" | sed 's/[\x00-\x1F]//g' | jq -r '.status')
 
         # If status is completed, print the full response
         if [ "$status" = "completed" ]; then
             echo "Status: completed"
             echo "Full Response:"
-            echo "$response" | jq -r '.response.answer'  # Print the full response JSON
+            echo "$response" | sed 's/[\x00-\x1F]//g' | jq -r '.response.answer'  # Print the full response JSON
             break
         fi
 
