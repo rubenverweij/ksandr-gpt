@@ -193,70 +193,98 @@ def clean_json_in_directory(directory):
                     print(f"Bestand opgeschoond: {file_path}")
 
     # Faalvormen samenvoegen
-    combineer_faalvormen(directory)
+    combine_json_files_for_aads(directory)
 
 
-def combineer_faalvormen(base_dir: str):
+def combine_json_files_for_aads(base_dir: str):
     """
-    Verwerkt alle JSON-bestanden in de opgegeven base_dir en slaat de beschrijvingen op per AAD-nummer
-    en per cat-1 of cat-2. De beschrijvingen worden opgeslagen in tekstbestanden per AAD-nummer
-    en per categorie.
+    Loops through AAD numbers and categories, processes all main.json files under 'fail-types',
+    and creates a combined file with descriptions from all fail-types.
 
-    :param base_dir: Basis directory waar de AAD-mappen zich bevinden
+    :param base_dir: The root directory where AADs are located.
     """
-    # Door alle directories in de base_dir lopen
-    for root, _, files in os.walk(base_dir):
-        if "fail-types" in root:
-            # Verkrijg het AAD-nummer uit het pad
-            parts = root.split(os.sep)
-            if len(parts) > 5:
-                aad_nummer = parts[5]
-                cat_type = parts[6]  # 'cat-1' of 'cat-2'
+    # Get the list of AAD numbers and categories dynamically
+    aad_list, categories = get_aad_list_and_categories(base_dir)
 
-                # Bestandsnaam voor het AAD-nummer en categorie
-                output_file = f"faalvormen_{cat_type}_{aad_nummer}.txt"
-                beschrijvingen = []  # Lijst voor de beschrijvingen van dit AAD-nummer
-                description_number = 0
+    for aad_number in aad_list:
+        for category in categories:
+            # Set the path for the current category and AAD
+            category_path = os.path.join(
+                base_dir, str(aad_number), category, "fail-types"
+            )
 
-                # Loop door de bestanden in de 'fail-types' directory
-                for file in files:
-                    if file == "main.json":
-                        json_path = os.path.join(root, file)
+            # Check if fail-types directory exists for the given AAD and category
+            if os.path.exists(category_path):
+                output_file = f"faalvormen_{aad_number}_{category}.txt"
+                descriptions = []  # List to store all descriptions for the AAD/category combination
+                faalvorm_count = 0
 
+                # Loop through all subdirectories (fail-types)
+                for fail_type_folder in os.listdir(category_path):
+                    fail_type_path = os.path.join(
+                        category_path, fail_type_folder, "main.json"
+                    )
+
+                    # Check if main.json exists in this fail-type folder
+                    if os.path.isfile(fail_type_path):
                         try:
-                            with open(json_path, "r", encoding="utf-8") as f:
+                            with open(fail_type_path, "r", encoding="utf-8") as f:
                                 data = json.load(f)
 
-                                # Verwerk de beschrijvingen in het JSON-bestand
+                                # Process all descriptions in the JSON file
                                 for key, value in data.items():
                                     if key.startswith("Beschrijving faalvorm"):
-                                        if len(beschrijvingen) == 0:
-                                            titel = key.replace(
+                                        if len(descriptions) == 0:
+                                            title = key.replace(
                                                 "Beschrijving ", ""
                                             ).strip()
-                                        beschrijving = value.get(
+                                            descriptions.append(f"{title}\n")
+
+                                        description = value.get(
                                             "Beschrijving", ""
                                         ).strip()
-                                        if beschrijving:
-                                            beschrijvingen.append(f"faalvorm {titel}\n")
-                                            beschrijvingen.append(
-                                                f"{description_number}) {beschrijving.strip()}"
+
+                                        if description:
+                                            descriptions.append(
+                                                f"{faalvorm_count}. {description}\n"
                                             )
-                                            description_number += 1
 
                         except Exception as e:
-                            print(f"Fout bij verwerken van {json_path}: {e}")
+                            print(f"Fout bij verwerken van {fail_type_path}: {e}")
 
-                # Als er beschrijvingen zijn gevonden, schrijf ze naar het bestand
-                if beschrijvingen:
-                    output_path = os.path.join(
-                        base_dir, "aads", aad_nummer, cat_type, output_file
-                    )
-                    with open(output_path, "w", encoding="utf-8") as f:
-                        f.write("\n".join(beschrijvingen))
-                    print(f"✔ Beschrijvingen opgeslagen in '{output_path}'")
+                # If descriptions were found, write them to a file
+                if descriptions:
+                    with open(output_file, "w", encoding="utf-8") as f:
+                        f.write("\n".join(descriptions))
+                    print(f"✔ Beschrijvingen opgeslagen in '{output_file}'")
                 else:
-                    print(f"Geen beschrijvingen gevonden voor AAD {aad_nummer}.")
+                    print(
+                        f"Geen beschrijvingen gevonden voor AAD {aad_number} en categorie {category}."
+                    )
+            else:
+                print(
+                    f"De directory 'fail-types' bestaat niet voor AAD {aad_number} en categorie {category}."
+                )
+
+
+def get_aad_list_and_categories(base_dir: str):
+    """
+    Dynamically retrieves the AAD numbers and categories from the directory structure.
+
+    :param base_dir: The root directory where AADs are located.
+    :return: A tuple of (aad_list, categories)
+    """
+    aad_list = set()
+    categories = set()
+    for root, _, _ in os.walk(base_dir):
+        if "fail-types" in root:
+            parts = root.split(os.sep)
+            if len(parts) > 3:
+                aad_number = parts[5]  # AAD number is at index 3
+                category = parts[6]  # Category (e.g., cat-1, cat-2) is at index 4
+                aad_list.add(aad_number)
+                categories.add(category)
+    return list(aad_list), list(categories)
 
 
 # Hoofdfunctie om de commandoregelargumenten te verwerken
