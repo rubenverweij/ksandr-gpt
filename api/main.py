@@ -136,14 +136,20 @@ async def ask(request: AskRequest):
     request.id = str(uuid.uuid4())  # Genereer een uniek ID
     await request_queue.put(request)  # Voeg het verzoek toe aan de wachtrij
     start_time = time.time()
-    request_responses[request.id] = {"status": "processing", "start_time": start_time}
+    in_queue = request_queue.qsize()
+    request_responses[request.id] = {
+        "status": "processing",
+        "start_time": start_time,
+        "in_queue": in_queue,
+        "start_time_formatted": datetime.fromtimestamp(start_time).strftime(
+            "%H:%M:%S %d-%m-%Y"
+        ),
+    }
     return {
         "message": "Verzoek wordt verwerkt",
         "request_id": request.id,
-        "in_queue": request_queue.qsize(),
-        "start_time": {
-            datetime.fromtimestamp(start_time).strftime("%H:%M:%S %d-%m-%Y")
-        },
+        "in_queue": in_queue,
+        "start_time": datetime.fromtimestamp(start_time).strftime("%H:%M:%S %d-%m-%Y"),
     }
 
 

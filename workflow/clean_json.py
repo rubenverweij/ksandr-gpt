@@ -192,8 +192,8 @@ def clean_json_in_directory(directory):
                         json.dump(cleaned_data, f, ensure_ascii=False, indent=2)
                     print(f"Bestand opgeschoond: {file_path}")
 
-                # Faalvormen samenvoegen
-                combineer_faalvormen(directory)
+    # Faalvormen samenvoegen
+    combineer_faalvormen(directory)
 
 
 def combineer_faalvormen(base_dir: str):
@@ -216,6 +216,7 @@ def combineer_faalvormen(base_dir: str):
                 # Bestandsnaam voor het AAD-nummer en categorie
                 output_file = f"faalvormen_{cat_type}_{aad_nummer}.txt"
                 beschrijvingen = []  # Lijst voor de beschrijvingen van dit AAD-nummer
+                description_number = 0
 
                 # Loop door de bestanden in de 'fail-types' directory
                 for file in files:
@@ -227,31 +228,21 @@ def combineer_faalvormen(base_dir: str):
                                 data = json.load(f)
 
                                 # Verwerk de beschrijvingen in het JSON-bestand
-                                faalvorm_count = (
-                                    0  # Telling voor aantal faalvormen in dit bestand
-                                )
                                 for key, value in data.items():
                                     if key.startswith("Beschrijving faalvorm"):
-                                        titel = key.replace("Beschrijving ", "").strip()
+                                        if len(beschrijvingen) == 0:
+                                            titel = key.replace(
+                                                "Beschrijving ", ""
+                                            ).strip()
                                         beschrijving = value.get(
                                             "Beschrijving", ""
                                         ).strip()
-
                                         if beschrijving:
-                                            faalvorm_count += 1  # Verhoog de telling voor iedere beschrijving
                                             beschrijvingen.append(f"faalvorm {titel}\n")
-                                            description_number = 1
-                                            for desc in beschrijving.split("\n"):
-                                                beschrijvingen.append(
-                                                    f"{description_number}) {desc.strip()}"
-                                                )
-                                                description_number += 1
-
-                                # Voeg de telling van de faalvormen toe
-                                beschrijvingen.insert(
-                                    0,
-                                    f"Aantal faalvormen {titel}: {faalvorm_count}\n",
-                                )
+                                            beschrijvingen.append(
+                                                f"{description_number}) {beschrijving.strip()}"
+                                            )
+                                            description_number += 1
 
                         except Exception as e:
                             print(f"Fout bij verwerken van {json_path}: {e}")
