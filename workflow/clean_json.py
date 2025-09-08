@@ -219,7 +219,7 @@ def combine_json_files_for_aads(base_dir: str):
                     category_path, f"faalvormen_{aad_number}_{category}.txt"
                 )
                 descriptions = []  # List to store all descriptions for the AAD/category combination
-                faalvorm_count = 0
+                faalvorm_count = 1
 
                 # Loop through all subdirectories (fail-types)
                 for fail_type_folder in os.listdir(category_path):
@@ -238,9 +238,11 @@ def combine_json_files_for_aads(base_dir: str):
                                     if key.startswith("Beschrijving faalvorm"):
                                         if len(descriptions) == 0:
                                             title = key.replace(
-                                                "Beschrijving ", ""
+                                                "Beschrijving faalvorm", ""
                                             ).strip()
-                                            descriptions.append(f"{title}\n")
+                                            descriptions.append(
+                                                f"Opsomming lijst met faalvormen {title}\n"
+                                            )
 
                                         description = value.get(
                                             "Beschrijving", ""
@@ -252,7 +254,7 @@ def combine_json_files_for_aads(base_dir: str):
 
                                         if description:
                                             descriptions.append(
-                                                f"{faalvorm_count}. {description}. Gemiddeld aantal incidenten: {incidenten}"
+                                                f"{faalvorm_count}. {description}. Gemiddeld aantal incidenten faalvorm: {incidenten}"
                                             )
                                             faalvorm_count += 1
 
