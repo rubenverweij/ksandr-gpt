@@ -2,6 +2,7 @@ import asyncio
 import time
 import uuid
 import os
+from datetime import datetime
 from components import vind_relevante_componenten, COMPONENTS
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -134,8 +135,16 @@ async def ask(request: AskRequest):
     """Verwerkt binnenkomende verzoeken."""
     request.id = str(uuid.uuid4())  # Genereer een uniek ID
     await request_queue.put(request)  # Voeg het verzoek toe aan de wachtrij
-    request_responses[request.id] = {"status": "processing", "start_time": time.time()}
-    return {"message": "Verzoek wordt verwerkt", "request_id": request.id}
+    start_time = time.time()
+    request_responses[request.id] = {"status": "processing", "start_time": start_time}
+    return {
+        "message": "Verzoek wordt verwerkt",
+        "request_id": request.id,
+        "in_queue": request_queue.qsize(),
+        "start_time": {
+            datetime.fromtimestamp(start_time).strftime("%H:%M:%S %d-%m-%Y")
+        },
+    }
 
 
 @app.get("/status/{request_id}")

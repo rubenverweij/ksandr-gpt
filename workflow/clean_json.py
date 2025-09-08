@@ -66,7 +66,7 @@ def rename_json_keys_based_on_file_path(json_data, file_path):
 
     new_key_prefix = AADS.get(aad, "")
     if "fail-types" in directory_parts:
-        new_key_prefix = f"faaltype {new_key_prefix}" if new_key_prefix else ""
+        new_key_prefix = f"faalvorm {new_key_prefix}" if new_key_prefix else ""
 
     print(f"Nieuwe key {new_key_prefix} voor aad: {aad}")
 
@@ -191,6 +191,62 @@ def clean_json_in_directory(directory):
                     with open(file_path, "w", encoding="utf-8") as f:
                         json.dump(cleaned_data, f, ensure_ascii=False, indent=2)
                     print(f"Bestand opgeschoond: {file_path}")
+
+                # Faalvormen samenvoegen
+                combineer_faalvormen(directory)
+
+
+def combineer_faalvormen(base_dir: str):
+    """
+    Verwerkt alle JSON-bestanden in de opgegeven base_dir en slaat de beschrijvingen op per AAD-nummer.
+    De beschrijvingen worden opgeslagen in tekstbestanden per AAD-nummer.
+
+    :param base_dir: Basis directory waar de AAD-mappen zich bevinden
+    """
+    # Door alle directories in de base_dir lopen
+    for root, _, files in os.walk(base_dir):
+        if "fail-types" in root:
+            # Verkrijg het AAD-nummer uit het pad
+            parts = root.split(os.sep)
+            if len(parts) > 5:
+                aad_nummer = parts[5]
+
+                # Bestandsnaam voor het AAD-nummer
+                output_file = f"faalvormen_{aad_nummer}.txt"
+                beschrijvingen = []  # Lijst voor de beschrijvingen van dit AAD-nummer
+
+                # Loop door de bestanden in de 'fail-types' directory
+                for file in files:
+                    if file == "main.json":
+                        json_path = os.path.join(root, file)
+
+                        try:
+                            with open(json_path, "r", encoding="utf-8") as f:
+                                data = json.load(f)
+
+                                # Verwerk de beschrijvingen in het JSON-bestand
+                                for key, value in data.items():
+                                    if key.startswith("Beschrijving faaltype"):
+                                        titel = key.replace("Beschrijving ", "").strip()
+                                        beschrijving = value.get(
+                                            "Beschrijving", ""
+                                        ).strip()
+
+                                        if beschrijving:
+                                            beschrijvingen.append(
+                                                f"faaltype {titel}\n1) {beschrijving}\n"
+                                            )
+
+                        except Exception as e:
+                            print(f"Fout bij verwerken van {json_path}: {e}")
+
+                # Als er beschrijvingen zijn gevonden, schrijf ze naar het bestand
+                if beschrijvingen:
+                    with open(output_file, "w", encoding="utf-8") as f:
+                        f.write("\n".join(beschrijvingen))
+                    print(f"✔ Beschrijvingen opgeslagen in '{output_file}'")
+                else:
+                    print(f"Geen beschrijvingen gevonden voor AAD {aad_nummer}.")
 
 
 # Hoofdfunctie om de commandoregelargumenten te verwerken
