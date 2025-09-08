@@ -210,7 +210,7 @@ def combine_json_files_for_aads(base_dir: str):
         for category in categories:
             # Set the path for the current category and AAD
             category_path = os.path.join(
-                base_dir, str(aad_number), category, "fail-types"
+                base_dir, "aads", str(aad_number), category, "fail-types"
             )
 
             # Check if fail-types directory exists for the given AAD and category
