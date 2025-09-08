@@ -19,6 +19,7 @@ TEMPERATURE = float(os.getenv("TEMPERATURE", 0.8))
 SOURCE_MAX = int(os.getenv("SOURCE_MAX", 2))
 SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.6))
 STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
+INCLUDE_FILTER = os.getenv("INCLUDE_FILTER", False)
 
 # Initialisatie van het taalmodel
 llm = LLM(
@@ -50,7 +51,7 @@ Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 
 - Wees kort en bondig.
 - Vermijd herhaling.
 - Als de onderstaande context geen tekst bevat zeg dan: "Ik weet het antwoord niet."
-- Beantwoord alleen de gestelde vraag. Negeer andere vragen in de context. Gebruik uitsluitend de context. Maak geen aannames.
+- Beantwoord alleen de gestelde vraag. Negeer andere vragen in de context. Maak geen aannames.
 
 <|im_end|>
 <|im_start|>
@@ -77,15 +78,22 @@ async def process_request(request: AskRequest):
     """Verwerkt een verzoek asynchroon."""
     source_max = getattr(request, "source_max", None)
     score_threshold = getattr(request, "score_threshold", None)
-    relevant_filter_list = vind_relevante_componenten(
-        vraag=request.prompt, componenten_dict=COMPONENTS
-    )
+
+    if INCLUDE_FILTER:
+        active_filter = {
+            "type_id": vind_relevante_componenten(
+                vraag=request.prompt, componenten_dict=COMPONENTS
+            )
+        }
+    else:
+        active_filter = None
+
     try:
         response = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: llm._ask(
                 question=request.prompt,
-                filters={"type_id": relevant_filter_list},
+                filters=active_filter,
                 table_k=0,
                 k=source_max,
                 score_threshold=score_threshold,
@@ -98,7 +106,7 @@ async def process_request(request: AskRequest):
             )
         return response
     except Exception as e:
-        return {"error": str(e), "filter": relevant_filter_list}
+        return {"error": str(e), "filter": active_filter}
 
 
 # Worker voor het verwerken van verzoeken in de wachtrij
