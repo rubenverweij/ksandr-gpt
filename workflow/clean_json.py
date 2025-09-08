@@ -198,8 +198,9 @@ def clean_json_in_directory(directory):
 
 def combineer_faalvormen(base_dir: str):
     """
-    Verwerkt alle JSON-bestanden in de opgegeven base_dir en slaat de beschrijvingen op per AAD-nummer.
-    De beschrijvingen worden opgeslagen in tekstbestanden per AAD-nummer.
+    Verwerkt alle JSON-bestanden in de opgegeven base_dir en slaat de beschrijvingen op per AAD-nummer
+    en per cat-1 of cat-2. De beschrijvingen worden opgeslagen in tekstbestanden per AAD-nummer
+    en per categorie.
 
     :param base_dir: Basis directory waar de AAD-mappen zich bevinden
     """
@@ -210,9 +211,10 @@ def combineer_faalvormen(base_dir: str):
             parts = root.split(os.sep)
             if len(parts) > 5:
                 aad_nummer = parts[5]
+                cat_type = parts[6]  # 'cat-1' of 'cat-2'
 
-                # Bestandsnaam voor het AAD-nummer
-                output_file = f"faalvormen_{aad_nummer}.txt"
+                # Bestandsnaam voor het AAD-nummer en categorie
+                output_file = f"faalvormen_{cat_type}_{aad_nummer}.txt"
                 beschrijvingen = []  # Lijst voor de beschrijvingen van dit AAD-nummer
 
                 # Loop door de bestanden in de 'fail-types' directory
@@ -225,26 +227,41 @@ def combineer_faalvormen(base_dir: str):
                                 data = json.load(f)
 
                                 # Verwerk de beschrijvingen in het JSON-bestand
+                                faalvorm_count = (
+                                    0  # Telling voor aantal faalvormen in dit bestand
+                                )
                                 for key, value in data.items():
-                                    if key.startswith("Beschrijving faaltype"):
+                                    if key.startswith("Beschrijving faalvorm"):
                                         titel = key.replace("Beschrijving ", "").strip()
                                         beschrijving = value.get(
                                             "Beschrijving", ""
                                         ).strip()
 
                                         if beschrijving:
-                                            beschrijvingen.append(
-                                                f"faaltype {titel}\n1) {beschrijving}\n"
-                                            )
+                                            faalvorm_count += 1  # Verhoog de telling voor iedere beschrijving
+                                            beschrijvingen.append(f"faalvorm {titel}\n")
+                                            description_number = 1
+                                            for desc in beschrijving.split("\n"):
+                                                beschrijvingen.append(
+                                                    f"{description_number}) {desc.strip()}"
+                                                )
+                                                description_number += 1
+
+                                # Voeg de telling van de faalvormen toe
+                                beschrijvingen.insert(
+                                    0,
+                                    f"Aantal faalvormen {titel}: {faalvorm_count}\n",
+                                )
 
                         except Exception as e:
                             print(f"Fout bij verwerken van {json_path}: {e}")
 
                 # Als er beschrijvingen zijn gevonden, schrijf ze naar het bestand
                 if beschrijvingen:
-                    with open(output_file, "w", encoding="utf-8") as f:
+                    output_path = os.path.join(base_dir, cat_type, output_file)
+                    with open(output_path, "w", encoding="utf-8") as f:
                         f.write("\n".join(beschrijvingen))
-                    print(f"✔ Beschrijvingen opgeslagen in '{output_file}'")
+                    print(f"✔ Beschrijvingen opgeslagen in '{output_path}'")
                 else:
                     print(f"Geen beschrijvingen gevonden voor AAD {aad_nummer}.")
 
