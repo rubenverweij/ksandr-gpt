@@ -140,7 +140,7 @@ async def ask(request: AskRequest):
     request_responses[request.id] = {
         "status": "processing",
         "start_time": start_time,
-        "in_queue": in_queue,
+        "in_queue_start": in_queue,
         "start_time_formatted": datetime.fromtimestamp(start_time).strftime(
             "%H:%M:%S %d-%m-%Y"
         ),
@@ -148,7 +148,7 @@ async def ask(request: AskRequest):
     return {
         "message": "Verzoek wordt verwerkt",
         "request_id": request.id,
-        "in_queue": in_queue,
+        "in_queue_start": in_queue,
         "start_time": datetime.fromtimestamp(start_time).strftime("%H:%M:%S %d-%m-%Y"),
     }
 
@@ -160,7 +160,14 @@ async def get_status(request_id: str):
         response_data = request_responses[request_id]
         if response_data["status"] == "completed":
             return request_responses[request_id]
-        return {"status": "processing"}
+        return {
+            "status": "processing",
+            "start_time_formatted": response_data["start_time_formatted"],
+            "in_queue_start": response_data["in_queue_start"],
+            "in_queue_current": await get_request_position_in_queue(
+                request_id=request_id
+            ),
+        }
     return {"message": "Verzoek niet gevonden"}
 
 
@@ -168,6 +175,15 @@ async def get_status(request_id: str):
 async def startup():
     """Start de worker om verzoeken sequentieel te verwerken."""
     asyncio.create_task(request_worker())
+
+
+async def get_request_position_in_queue(request_id: str) -> int:
+    """Calculate the real-time position of the request in the queue."""
+    queue_list = list(request_queue._queue)
+    for index, queued_request in enumerate(queue_list):
+        if queued_request.id == request_id:
+            return index + 1
+    return 0
 
 
 def _build_filter(
