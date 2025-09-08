@@ -250,7 +250,7 @@ def combineer_faalvormen(base_dir: str):
                 # Als er beschrijvingen zijn gevonden, schrijf ze naar het bestand
                 if beschrijvingen:
                     output_path = os.path.join(
-                        base_dir, aad_nummer, cat_type, output_file
+                        base_dir, "aads", aad_nummer, cat_type, output_file
                     )
                     with open(output_path, "w", encoding="utf-8") as f:
                         f.write("\n".join(beschrijvingen))
