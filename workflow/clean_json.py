@@ -215,7 +215,9 @@ def combine_json_files_for_aads(base_dir: str):
 
             # Check if fail-types directory exists for the given AAD and category
             if os.path.exists(category_path):
-                output_file = f"faalvormen_{aad_number}_{category}.txt"
+                output_file = os.path.join(
+                    category_path, f"faalvormen_{aad_number}_{category}.txt"
+                )
                 descriptions = []  # List to store all descriptions for the AAD/category combination
                 faalvorm_count = 0
 
@@ -244,10 +246,15 @@ def combine_json_files_for_aads(base_dir: str):
                                             "Beschrijving", ""
                                         ).strip()
 
+                                        incidenten = value.get(
+                                            "Gemiddeld aantal incidenten", ""
+                                        ).strip()
+
                                         if description:
                                             descriptions.append(
-                                                f"{faalvorm_count}. {description}\n"
+                                                f"{faalvorm_count}. {description}. Gemiddeld aantal incidenten: {incidenten}"
                                             )
+                                            faalvorm_count += 1
 
                         except Exception as e:
                             print(f"Fout bij verwerken van {fail_type_path}: {e}")
