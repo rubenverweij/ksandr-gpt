@@ -58,13 +58,14 @@ Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 
 <|im_end|>
 <|im_start|>user
 
-Context:
+context:
 {context}
 
 Vraag:
 {question}
 
 <|im_end|>
+<|im_start|>assistant
 """
 
 
