@@ -241,7 +241,7 @@ def combine_json_files_for_aads(base_dir: str):
                                                 "Beschrijving faalvorm", ""
                                             ).strip()
                                             descriptions.append(
-                                                f"Opsomming lijst met faalvormen {title}\n"
+                                                f"Opsomming lijst met faalvormen {title}"
                                             )
 
                                         description = value.get(
