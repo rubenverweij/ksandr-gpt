@@ -52,7 +52,7 @@ Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 
 - Gebruik correct en helder Nederlands.
 - Wees kort en bondig.
 - Vermijd herhaling.
-- Als de onderstaande context geen tekst bevat zeg dan: "Ik weet het antwoord niet."
+- Als het antwoord niet duidelijk blijkt uit de context zeg dan: "Ik weet het antwoord niet."
 - Beantwoord alleen de gestelde vraag. Negeer andere vragen in de context. Maak geen aannames.
 
 <|im_end|>
@@ -105,10 +105,10 @@ async def process_request(request: AskRequest):
                 qa_template=DEFAULT_QA_PROMPT,
             ),
         )
-        if not response.get("source_documents"):
-            response["answer"] = (
-                "Ik weet het antwoord helaas niet, probeer je vraag anders te formuleren."
-            )
+        # if not response.get("source_documents"):
+        #     response["answer"] = (
+        #         "Ik weet het antwoord helaas niet, probeer je vraag anders te formuleren."
+        #     )
         return response
     except Exception as e:
         return {"error": str(e), "filter": active_filter}
