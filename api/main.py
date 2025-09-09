@@ -56,12 +56,14 @@ Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 
 - Beantwoord alleen de gestelde vraag. Negeer andere vragen in de context. Maak geen aannames.
 
 <|im_end|>
-<|im_start|>
+<|im_start|>user
 
 Context:
 {context}
+
 Vraag:
 {question}
+
 <|im_end|>
 """
 
@@ -168,7 +170,7 @@ async def get_status(request_id: str):
                 request_id=request_id
             ),
         }
-    return {"message": "Verzoek niet gevonden"}
+    return {"message": "Verzoek niet gevonden", "status": "not_found"}
 
 
 @app.on_event("startup")
