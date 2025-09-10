@@ -92,9 +92,9 @@ async def process_request(request: AskRequest):
         active_filter = vind_relevante_componenten(
             vraag=request.prompt, componenten_dict=COMPONENTS
         )
-        request_responses["active_filter"] = str(active_filter)
     else:
         active_filter = None
+    request["active_filter"] = str(active_filter)
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
