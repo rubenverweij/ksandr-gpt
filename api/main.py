@@ -94,8 +94,6 @@ async def process_request(request: AskRequest):
         )
     else:
         active_filter = None
-    request.filter = str(active_filter)
-
     try:
         response = await asyncio.get_event_loop().run_in_executor(
             None,
@@ -108,6 +106,7 @@ async def process_request(request: AskRequest):
                 qa_template=DEFAULT_QA_PROMPT,
             ),
         )
+        response["active_filter"] = str(active_filter)
         # if not response.get("source_documents"):
         #     response["answer"] = (
         #         "Ik weet het antwoord helaas niet, probeer je vraag anders te formuleren."
