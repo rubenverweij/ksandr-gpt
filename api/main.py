@@ -3,7 +3,7 @@ import time
 import uuid
 import os
 from datetime import datetime
-from api.helpers import vind_relevante_componenten, COMPONENTS, uniek_antwoord
+from helpers import vind_relevante_componenten, COMPONENTS, uniek_antwoord
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Dict, Optional, Union, List, Any
