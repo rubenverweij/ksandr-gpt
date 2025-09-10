@@ -79,7 +79,7 @@ if __name__ == "__main__":
         print(f"Error: {e.strerror} - {e.filename}")
 
     llm = LLM(
-        n_gpu_layers=-1,
+        n_gpu_layers=10,
         embedding_model_kwargs={"device": "cuda"},
         store_type=args.store,
     )
