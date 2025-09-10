@@ -37,7 +37,7 @@ llm = LLM(
 )
 
 print(
-    "Starting container with temperature: {TEMPERATURE}, source_max: {SOURCE_MAX}, score_theshold: {SCORE_THRESHOLD}, store: {STORE_TYPE} and filter: {INCLUDE_FILTER}"
+    f"Starting container with temperature: {TEMPERATURE}, source_max: {SOURCE_MAX}, score_theshold: {SCORE_THRESHOLD}, store: {STORE_TYPE} and filter: {INCLUDE_FILTER}"
 )
 
 DEFAULT_QA_PROMPT = """
