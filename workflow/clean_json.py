@@ -204,23 +204,28 @@ def split_json_by_level_2(json_data, base_file_path):
 
 
 def json_to_single_occurrence_string(json_obj):
+    items = []
+
     def flatten_json(d, parent_key="", sep=" "):
-        items = []
-        for k, v in d.items():
-            if k not in items:
-                items.append((k, ""))
-            new_key = f"{k}" if parent_key else k
-            if isinstance(v, dict):
-                items.extend(flatten_json(v, new_key, sep=sep).items())
-            elif isinstance(v, list):
-                for idx, item in enumerate(v):
-                    items.extend(flatten_json(item, f"{idx}", sep=sep).items())
-            else:
-                items.append((new_key, v))
-        return dict(items)
+        if isinstance(d, dict):
+            for k, v in d.items():
+                if k not in items:
+                    items.append(f"{k}:")
+                new_key = f"{k}" if parent_key else k
+                if isinstance(v, dict):
+                    flatten_json(v, new_key, sep=sep)
+                elif isinstance(v, list):
+                    for idx, item in enumerate(v):
+                        if isinstance(item, dict):
+                            flatten_json(item, None, sep=sep)
+                        else:
+                            items.append(f"{idx} {item}.")
+                else:
+                    items.append(f"{new_key} {v}.")
+            return items
 
     flattened = flatten_json(json_obj)
-    json_str = json.dumps(flattened)
+    json_str = " ".join(flattened)
     json_str = re.sub(r'["]', "", json_str)
     json_str = re.sub(r':""', ":", json_str)
     json_str = re.sub(r"[{}[\]]", "", json_str)
