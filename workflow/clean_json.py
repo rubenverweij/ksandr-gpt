@@ -202,6 +202,8 @@ def clean_json_in_directory(directory):
 
 
 def json_to_single_occurrence_string(json_obj):
+    json_obj = json.loads(json_obj)
+
     def flatten_json(d, parent_key="", sep=" "):
         items = []
         for k, v in d.items():
