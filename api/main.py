@@ -45,15 +45,15 @@ Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door 
 
 De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie van relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
 
-Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 vaccuum vermogensschakelaar 3) Eaton L-SEP installatie 4) Siemens NXplusC schakelaar 5) Siemens 8DJH schakelaar 6) Eaton FMX schakelinstallatie 7) Merlin Gerin RM6 schakelaar 8) Hazemeijer CONEL schakelinstallatie 9) Eaton 10 kV COQ schakelaar 10) Eaton Capitole schakelaar 11) Eaton Xiria schakelinstallatie 12) Eaton Holec SVS schakelaar 13) MS/LS distributie transformator 14) Eaton Magnefix MD MF schakelinstallatie 15) ABB DR12 schakelaar 16) ABB Safe schakelinstallatie 17) kabelmoffen 18) Eaton MMS schakelinstallatie 19) ABB BBC DB10 schakelaar 20) HS MS vermogens transformator 21)
+Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 vaccuum vermogensschakelaar 3) Eaton L-SEP installatie 4) Siemens NXplusC schakelaar 5) Siemens 8DJH schakelaar 6) Eaton FMX schakelinstallatie 7) Merlin Gerin RM6 schakelaar 8) Hazemeijer CONEL schakelinstallatie 9) Eaton 10 kV COQ schakelaar 10) Eaton Capitole schakelaar 11) Eaton Xiria schakelinstallatie 12) Eaton Holec SVS schakelaar 13) MS/LS distributie transformator 14) Eaton Magnefix MD MF schakelinstallatie 15) ABB DR12 schakelaar 16) ABB Safe schakelinstallatie 17) kabelmoffen 18) Eaton MMS schakelinstallatie 19) ABB BBC DB10 schakelaar 20) HS MS vermogens transformator
 
 **Belangrijke instructies bij de beantwoording:**
 - Verbeter spelling en grammatica.
 - Gebruik correct en helder Nederlands.
-- Wees kort en bondig.
+- Wees volledig, maar als het kan kort en bondig.
 - Vermijd herhaling.
 - Als het antwoord niet duidelijk blijkt uit de context zeg dan: "Ik weet het antwoord niet."
-- Beantwoord alleen de gestelde vraag. Negeer andere vragen in de context. Maak geen aannames.
+
 
 <|im_end|>
 <|im_start|>user
@@ -85,11 +85,9 @@ async def process_request(request: AskRequest):
     score_threshold = getattr(request, "score_threshold", None)
 
     if INCLUDE_FILTER:
-        active_filter = {
-            "type_id": vind_relevante_componenten(
-                vraag=request.prompt, componenten_dict=COMPONENTS
-            )
-        }
+        active_filter = vind_relevante_componenten(
+            vraag=request.prompt, componenten_dict=COMPONENTS
+        )
     else:
         active_filter = None
 

@@ -87,7 +87,7 @@ def vind_relevante_componenten(vraag, componenten_dict):
     #                 gevonden_sleutels.append(sleutel)
     #                 break
 
-    return gevonden_sleutels[0] if len(gevonden_sleutels) == 1 else "na"
+    return {"type_id": gevonden_sleutels[0]} if len(gevonden_sleutels) == 1 else None
 
 
 if __name__ == "__main__":
