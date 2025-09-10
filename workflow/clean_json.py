@@ -30,6 +30,88 @@ AADS = {
 }
 
 
+# Functie om door een directory te lopen en alle JSON-bestanden te verwerken
+def clean_json_in_directory(directory):
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".json"):  # Alleen JSON-bestanden
+                file_path = os.path.join(root, file)
+                print(f"Verwerken bestand: {file_path}")
+
+                # Controleren of het bestand leeg is
+                if os.stat(file_path).st_size == 0:
+                    print(f"Bestand overgeslagen (leeg): {file_path}")
+                    continue  # Sla lege bestanden over
+
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                except json.JSONDecodeError as e:
+                    print(f"Fout bij het lezen van JSON uit {file_path}: {e}")
+                    continue
+                except Exception as e:
+                    print(f"Onverwachte fout bij {file_path}: {e}")
+                    continue
+
+                # Het hernoemen van de sleutels op basis van het pad van het bestand
+                renamed_data = rename_json_keys_based_on_file_path(data, file_path)
+
+                # Opschonen van het JSON-bestand
+                cleaned_data = clean_html(renamed_data)
+
+                # Opsplitsen van de JSON op niveau 2 als er geen "fail-types" is
+                split_data = split_json_by_level_2(cleaned_data, file_path)
+
+                # Als de JSON gesplitst is, slaan we meerdere bestanden op
+                if split_data:
+                    # Controleer of split_data een lijst van tuples is
+                    if isinstance(split_data, list) and all(
+                        isinstance(item, tuple) and len(item) == 2
+                        for item in split_data
+                    ):
+                        for key, split_json in split_data:
+                            if key is not None:  # We slaan alleen niet-None keys op
+                                # Opslaan van de gesplitste JSON in een nieuw bestand
+                                cleaned_filename = key.translate(
+                                    str.maketrans(
+                                        {
+                                            " ": "_",
+                                            **{char: "" for char in string.punctuation},
+                                        }
+                                    )
+                                )
+                                split_file_name = (
+                                    f"{file.split('.')[0]}_{cleaned_filename}.json"
+                                )
+                                split_file_path = os.path.join(root, split_file_name)
+                                with open(split_file_path, "w", encoding="utf-8") as f:
+                                    json.dump(
+                                        split_json, f, ensure_ascii=False, indent=2
+                                    )
+                                print(
+                                    f"Bestand opgesplitst en opgeslagen: {split_file_path}"
+                                )
+                    else:
+                        print(
+                            f"Fout: split_data heeft niet de verwachte structuur voor {file_path}"
+                        )
+                else:
+                    # Als er geen splitsing was, slaan we het bestand op in dezelfde locatie
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        json.dump(cleaned_data, f, ensure_ascii=False, indent=2)
+                    print(f"Bestand opgeschoond: {file_path}")
+
+                with open(file_path, "r", encoding="utf-8") as f:
+                    cleaned_data = json.load(f)
+                json_string = json_to_single_occurrence_string(cleaned_data)
+                file_path_without_extension, _ = os.path.splitext(file_path)
+                with open(f"{file_path_without_extension}.txt", "w") as file:
+                    file.write(json_string)
+
+    # Faalvormen samenvoegen
+    combine_json_files_for_aads(directory)
+
+
 # Functie om HTML-tags uit de waarde te verwijderen, lege waarden te verwijderen, onnodige spaties te verwijderen, en "tags" attributen te verwijderen
 def clean_html(value):
     if value is None or value == "" or value == [] or value == {}:
@@ -121,89 +203,7 @@ def split_json_by_level_2(json_data, base_file_path):
     return split_files
 
 
-# Functie om door een directory te lopen en alle JSON-bestanden te verwerken
-def clean_json_in_directory(directory):
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".json"):  # Alleen JSON-bestanden
-                file_path = os.path.join(root, file)
-                print(f"Verwerken bestand: {file_path}")
-
-                # Controleren of het bestand leeg is
-                if os.stat(file_path).st_size == 0:
-                    print(f"Bestand overgeslagen (leeg): {file_path}")
-                    continue  # Sla lege bestanden over
-
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                except json.JSONDecodeError as e:
-                    print(f"Fout bij het lezen van JSON uit {file_path}: {e}")
-                    continue
-                except Exception as e:
-                    print(f"Onverwachte fout bij {file_path}: {e}")
-                    continue
-
-                # Het hernoemen van de sleutels op basis van het pad van het bestand
-                renamed_data = rename_json_keys_based_on_file_path(data, file_path)
-
-                # Opschonen van het JSON-bestand
-                cleaned_data = clean_html(renamed_data)
-
-                # Opsplitsen van de JSON op niveau 2 als er geen "fail-types" is
-                split_data = split_json_by_level_2(cleaned_data, file_path)
-
-                # Als de JSON gesplitst is, slaan we meerdere bestanden op
-                if split_data:
-                    # Controleer of split_data een lijst van tuples is
-                    if isinstance(split_data, list) and all(
-                        isinstance(item, tuple) and len(item) == 2
-                        for item in split_data
-                    ):
-                        for key, split_json in split_data:
-                            if key is not None:  # We slaan alleen niet-None keys op
-                                # Opslaan van de gesplitste JSON in een nieuw bestand
-                                cleaned_filename = key.translate(
-                                    str.maketrans(
-                                        {
-                                            " ": "_",
-                                            **{char: "" for char in string.punctuation},
-                                        }
-                                    )
-                                )
-                                split_file_name = (
-                                    f"{file.split('.')[0]}_{cleaned_filename}.json"
-                                )
-                                split_file_path = os.path.join(root, split_file_name)
-                                with open(split_file_path, "w", encoding="utf-8") as f:
-                                    json.dump(
-                                        split_json, f, ensure_ascii=False, indent=2
-                                    )
-                                print(
-                                    f"Bestand opgesplitst en opgeslagen: {split_file_path}"
-                                )
-                    else:
-                        print(
-                            f"Fout: split_data heeft niet de verwachte structuur voor {file_path}"
-                        )
-                else:
-                    # Als er geen splitsing was, slaan we het bestand op in dezelfde locatie
-                    with open(file_path, "w", encoding="utf-8") as f:
-                        json.dump(cleaned_data, f, ensure_ascii=False, indent=2)
-                    print(f"Bestand opgeschoond: {file_path}")
-
-                json_string = json_to_single_occurrence_string(cleaned_data)
-                file_path_without_extension, _ = os.path.splitext(file_path)
-                with open(f"{file_path_without_extension}.txt", "w") as file:
-                    file.write(json_string)
-
-    # Faalvormen samenvoegen
-    combine_json_files_for_aads(directory)
-
-
 def json_to_single_occurrence_string(json_obj):
-    json_obj = json.loads(json_obj)
-
     def flatten_json(d, parent_key="", sep=" "):
         items = []
         for k, v in d.items():
