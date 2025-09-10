@@ -107,6 +107,7 @@ async def process_request(request: AskRequest):
             ),
         )
         response["active_filter"] = str(active_filter)
+        response["answer"] = uniek_antwoord(response["answer"])
         # if not response.get("source_documents"):
         #     response["answer"] = (
         #         "Ik weet het antwoord helaas niet, probeer je vraag anders te formuleren."
@@ -123,7 +124,6 @@ async def request_worker():
         request = await request_queue.get()
         async with semaphore:
             response = await process_request(request)
-            response["answer"] = uniek_antwoord(response["answer"])
             end_time = time.time()
             duration = end_time - request_responses[request.id]["start_time"]
             request_responses[request.id].update(
