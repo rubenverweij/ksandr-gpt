@@ -94,7 +94,7 @@ async def process_request(request: AskRequest):
         )
     else:
         active_filter = None
-    request["active_filter"] = str(active_filter)
+    request.filter = str(active_filter)
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
