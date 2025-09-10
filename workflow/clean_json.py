@@ -192,8 +192,38 @@ def clean_json_in_directory(directory):
                         json.dump(cleaned_data, f, ensure_ascii=False, indent=2)
                     print(f"Bestand opgeschoond: {file_path}")
 
+                json_string = json_to_single_occurrence_string(cleaned_data)
+                file_path_without_extension, _ = os.path.splitext(file_path)
+                with open(f"{file_path_without_extension}.txt", "w") as file:
+                    file.write(json_string)
+
     # Faalvormen samenvoegen
     combine_json_files_for_aads(directory)
+
+
+def json_to_single_occurrence_string(json_obj):
+    def flatten_json(d, parent_key="", sep=" "):
+        items = []
+        for k, v in d.items():
+            if k not in items:
+                items.append((k, ""))
+            new_key = f"{k}" if parent_key else k
+            if isinstance(v, dict):
+                items.extend(flatten_json(v, new_key, sep=sep).items())
+            elif isinstance(v, list):
+                for idx, item in enumerate(v):
+                    items.extend(flatten_json(item, f"{idx}", sep=sep).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
+
+    flattened = flatten_json(json_obj)
+    json_str = json.dumps(flattened)
+    json_str = re.sub(r'["]', "", json_str)
+    json_str = re.sub(r':""', ":", json_str)
+    json_str = re.sub(r"[{}[\]]", "", json_str)
+    json_str = re.sub(r" , ", " ", json_str)
+    return json_str
 
 
 def combine_json_files_for_aads(base_dir: str):
