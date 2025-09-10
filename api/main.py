@@ -20,7 +20,7 @@ TEMPERATURE = float(os.getenv("TEMPERATURE", 0.8))
 SOURCE_MAX = int(os.getenv("SOURCE_MAX", 2))
 SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.6))
 STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
-INCLUDE_FILTER = os.getenv("INCLUDE_FILTER", False)
+INCLUDE_FILTER = int(os.getenv("INCLUDE_FILTER", 0))
 
 # Initialisatie van het taalmodel
 llm = LLM(
@@ -34,6 +34,10 @@ llm = LLM(
     rag_score_threshold=SCORE_THRESHOLD,
     store_type=STORE_TYPE,
     verbose=False,
+)
+
+print(
+    "Starting container with temperature: {TEMPERATURE}, source_max: {SOURCE_MAX}, score_theshold: {SCORE_THRESHOLD}, store: {STORE_TYPE} and filter: {INCLUDE_FILTER}"
 )
 
 DEFAULT_QA_PROMPT = """
