@@ -51,7 +51,7 @@ Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 
 - Verbeter spelling en grammatica.
 - Gebruik correct en helder Nederlands.
 - Wees volledig, maar als het kan kort en bondig.
-- Vermijd herhaling.
+- Herhaal het antwoord niet.
 - Als het antwoord niet duidelijk blijkt uit de context zeg dan: "Ik weet het antwoord niet."
 
 
@@ -88,6 +88,7 @@ async def process_request(request: AskRequest):
         active_filter = vind_relevante_componenten(
             vraag=request.prompt, componenten_dict=COMPONENTS
         )
+        request_responses["active_filter"] = str(active_filter)
     else:
         active_filter = None
 
