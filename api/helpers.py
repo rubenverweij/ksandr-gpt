@@ -1,3 +1,5 @@
+import re
+
 # Definieer de componenten
 COMPONENTS = {
     "10535": "LK ELA12 schakelinstallatie",
@@ -88,6 +90,12 @@ def vind_relevante_componenten(vraag, componenten_dict):
     #                 break
 
     return {"type_id": gevonden_sleutels[0]} if len(gevonden_sleutels) == 1 else None
+
+
+def uniek_antwoord(tekst):
+    zinnen = re.split(r"(?<=[.!?])\s+", tekst.strip())
+    unieke_zinnen = set(zinnen)
+    return " ".join(sorted(unieke_zinnen))
 
 
 if __name__ == "__main__":

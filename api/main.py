@@ -3,7 +3,7 @@ import time
 import uuid
 import os
 from datetime import datetime
-from components import vind_relevante_componenten, COMPONENTS
+from api.helpers import vind_relevante_componenten, COMPONENTS, uniek_antwoord
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Dict, Optional, Union, List, Any
@@ -120,6 +120,7 @@ async def request_worker():
         request = await request_queue.get()
         async with semaphore:
             response = await process_request(request)
+            response["answer"] = uniek_antwoord(response["answer"])
             end_time = time.time()
             duration = end_time - request_responses[request.id]["start_time"]
             request_responses[request.id].update(
