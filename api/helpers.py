@@ -94,8 +94,11 @@ def vind_relevante_componenten(vraag, componenten_dict):
 
 def uniek_antwoord(tekst):
     zinnen = re.split(r"(?<=[.!?])\s+", tekst.strip())
-    unieke_zinnen = set(zinnen)
-    return " ".join(sorted(unieke_zinnen))
+    unieke_zinnen = []
+    for zin in zinnen:
+        if zin not in unieke_zinnen:
+            unieke_zinnen.append(zin)
+    return " ".join(unieke_zinnen)
 
 
 if __name__ == "__main__":
@@ -117,3 +120,5 @@ if __name__ == "__main__":
         )
         print(f"Gevonden component sleutels: {gevonden_sleutels}")
         print("-" * 40)
+
+    print(uniek_antwoord(tekst=""))
