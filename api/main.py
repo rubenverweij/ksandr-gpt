@@ -108,6 +108,7 @@ async def process_request(request: AskRequest):
         )
         response["active_filter"] = str(active_filter)
         response["answer"] = uniek_antwoord(response["answer"])
+        response["answer_clean"] = response["answer"]
         # if not response.get("source_documents"):
         #     response["answer"] = (
         #         "Ik weet het antwoord helaas niet, probeer je vraag anders te formuleren."
