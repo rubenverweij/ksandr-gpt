@@ -1,137 +1,227 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+import asyncio
+import time
+import uuid
 import os
-from langchain.memory.chat_message_histories import RedisChatMessageHistory
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from datetime import datetime
+from helpers import vind_relevante_componenten, COMPONENTS
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import Dict, Optional, Union, List, Any
+
 from langchain_community.vectorstores import Chroma
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.llms import LlamaCpp
-from langchain_core.runnables.history import RunnableWithMessageHistory
+
 from get_embedding_function import get_embedding_function
-from langchain_core.chat_history import BaseChatMessageHistory
 
-# 🔧 Configuratie
-REDIS_URL = "redis://localhost:6379"
+# Configuratie voor gelijktijdige verwerking van verzoeken
+request_queue = asyncio.Queue()
+semaphore = asyncio.Semaphore(5)
+app = FastAPI()
+request_responses = {}
+
+# Configuratievariabelen
+TEMPERATURE = float(os.getenv("TEMPERATURE", 0.8))
+SOURCE_MAX = int(os.getenv("SOURCE_MAX", 2))
+SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.6))
+STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
+INCLUDE_FILTER = int(os.getenv("INCLUDE_FILTER", 0))
+DEFAULT_MODEL_PATH = "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf"
 CHROMA_PATH = "/root/onprem_data/chroma"
-DEFAULT_MODEL_PATH = "/root/onprem_data/models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
 
-# 📄 Prompt template voor de assistent
-PROMPT_TEMPLATE = """
+# Initialisatie van het taalmodel
+llm = LlamaCpp(
+    model_path=DEFAULT_MODEL_PATH,
+    # max_tokens=500,
+    n_gpu_layers=-1,
+    n_ctx=30000,  # Use the full context size
+    # max_new_tokens=150,
+    # verbose=False,
+    # streaming=True,
+    # callbacks=[StreamingStdOutCallbackHandler()],
+    temperature=TEMPERATURE,
+    # rag_num_source_docs=SOURCE_MAX,
+    # rag_score_threshold=SCORE_THRESHOLD,
+    # top_p=0.85,
+)
+embedding_function = get_embedding_function()
+db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
-Je bent een behulpzame, nauwkeurige en feitelijke assistent van het Ksandr data platform. 
 
-Context:
+print(
+    f"Starting container with temperature: {TEMPERATURE}, source_max: {SOURCE_MAX}, score_theshold: {SCORE_THRESHOLD}, store: {STORE_TYPE} and filter: {INCLUDE_FILTER}"
+)
+
+DEFAULT_QA_PROMPT = """
+<|im_start|>system
+
+Je bent een behulpzame en feitelijke assistent die vragen beantwoordt over documenten op het Ksandr-platform.
+
+Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door kennis over netcomponenten te borgen, ontwikkelen en delen, helpt Ksandr de netbeheerders om de kwaliteit van hun netten op het gewenste maatschappelijk niveau te houden.
+
+De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie van relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
+
+Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 vaccuum vermogensschakelaar 3) Eaton L-SEP installatie 4) Siemens NXplusC schakelaar 5) Siemens 8DJH schakelaar 6) Eaton FMX schakelinstallatie 7) Merlin Gerin RM6 schakelaar 8) Hazemeijer CONEL schakelinstallatie 9) Eaton 10 kV COQ schakelaar 10) Eaton Capitole schakelaar 11) Eaton Xiria schakelinstallatie 12) Eaton Holec SVS schakelaar 13) MS/LS distributie transformator 14) Eaton Magnefix MD MF schakelinstallatie 15) ABB DR12 schakelaar 16) ABB Safe schakelinstallatie 17) kabelmoffen 18) Eaton MMS schakelinstallatie 19) ABB BBC DB10 schakelaar 20) HS MS vermogens transformator
+
+**Belangrijke instructies bij de beantwoording:**
+- Verbeter spelling en grammatica.
+- Gebruik correct en helder Nederlands.
+- Wees volledig, maar als het kan kort en bondig.
+- Herhaal het antwoord niet.
+- Als het antwoord niet duidelijk blijkt uit de context zeg dan: "Ik weet het antwoord niet."
+
+
+<|im_end|>
+<|im_start|>user
+
+context:
 {context}
 
 Vraag:
 {question}
 
-Antwoord:
+<|im_end|>
+<|im_start|>assistant
 """
 
-app = FastAPI()
+
+# Vraagmodel
+class AskRequest(BaseModel):
+    prompt: str
+    permission: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]] = None
+    user_id: Optional[str]
+
+    class Config:
+        extra = "allow"  # Sta extra velden toe
 
 
-# Pydantic model voor de inkomende verzoek body
-class QueryRequest(BaseModel):
-    query_text: str
-    user_id: str
-    model_path: str = DEFAULT_MODEL_PATH  # Optioneel, standaard model pad
+def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp):
+    results = db.similarity_search_with_score(prompt, k=10, filter=filter)
 
-
-# Beperkte Redis geschiedenis om de laatste N berichten (alleen vragen) op te slaan
-class LimitedRedisChatMessageHistory(RedisChatMessageHistory):
-    def __init__(self, session_id: str, url: str, max_messages: int = 2):
-        super().__init__(session_id=session_id, url=url)
-        self.max_messages = max_messages
-
-    def add_message(self, message: dict):
-        self.redis_client.lpush(self.key, message)
-        self.redis_client.ltrim(self.key, 0, self.max_messages - 1)
-
-    def load_memory_variables(self, inputs: dict):
-        messages = self.redis_client.lrange(self.key, 0, self.max_messages - 1)
-        return {"history": [msg.decode("utf-8") for msg in messages]}
-
-
-def get_session_history(user_id: str) -> BaseChatMessageHistory:
-    return LimitedRedisChatMessageHistory(
-        session_id=user_id,
-        url=REDIS_URL,
-        max_messages=2,
-    )
-
-
-# 🤖 Initialiseer het taalmodel met streaming
-def load_model(model_path: str) -> LlamaCpp:
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"❌ Modelbestand niet gevonden: {model_path}")
-
-    return LlamaCpp(
-        model_path=model_path,
-        max_tokens=500,
-        n_gpu_layers=-1,
-        n_ctx=8096,
-        max_new_tokens=150,
-        verbose=False,
-        streaming=True,
-        callbacks=[StreamingStdOutCallbackHandler()],
-        temperature=0.4,
-        top_p=0.85,
-    )
-
-
-def query_rag(query_text: str, user_id: str, model: LlamaCpp, database: Chroma) -> str:
-    # Zoek naar relevante documenten via Chroma
-    results = database.similarity_search_with_score(query_text, k=10)
-
-    # Bouw de context op
+    # Bouw de context op uit de gevonden documenten
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _ in results])
-    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    prompt = prompt_template.format(context=context_text, question=query_text)
 
-    # Maak een runnable met message history
-    conversation = RunnableWithMessageHistory(
-        runnable=model,
-        get_session_history=get_session_history,
-    )
+    # Format de prompt met context en vraag
+    prompt_template = ChatPromptTemplate.from_template(DEFAULT_QA_PROMPT)
+    prompt = prompt_template.format(context=context_text, question=prompt)
 
-    # Stream tokens
-    response_text = ""
-    for chunk in conversation.stream(
-        {"input": prompt}, config={"configurable": {"session_id": user_id}}
-    ):
-        if "output" in chunk:
-            token = chunk["output"]
-            print(token, end="", flush=True)  # stdout live
-            response_text += token
-
-    return response_text
+    # Stel de vraag aan het model
+    return llm(prompt)
 
 
-# Laad het model bij de opstart van de FastAPI-app
-@app.on_event("startup")
-async def startup_event():
-    model_path = DEFAULT_MODEL_PATH
-    embedding_function = get_embedding_function()
-    app.state.database = Chroma(
-        persist_directory=CHROMA_PATH, embedding_function=embedding_function
-    )
-    app.state.model = load_model(model_path)
-    print("Model en database succesvol geladen!")
+# Verwerkt het verzoek en haalt de reactie op
+async def process_request(request: AskRequest):
+    """Verwerkt een verzoek asynchroon."""
+
+    if INCLUDE_FILTER:
+        active_filter = vind_relevante_componenten(
+            vraag=request.prompt, componenten_dict=COMPONENTS
+        )
+    else:
+        active_filter = None
+    try:
+        response = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: ask_llm(prompt=request.prompt, model=llm, filter=active_filter),
+        )
+        response["active_filter"] = str(active_filter)
+        # response["answer"] = uniek_antwoord(response["answer"])
+        # response["answer_clean"] = response["answer"]
+        return response
+    except Exception as e:
+        return {"error": str(e), "filter": active_filter}
+
+
+# Worker voor het verwerken van verzoeken in de wachtrij
+async def request_worker():
+    """Verwerkt verzoeken één voor één."""
+    while True:
+        request = await request_queue.get()
+        async with semaphore:
+            response = await process_request(request)
+            end_time = time.time()
+            duration = end_time - request_responses[request.id]["start_time"]
+            request_responses[request.id].update(
+                {
+                    "status": "completed",
+                    "response": response,
+                    "end_time": end_time,
+                    "time_duration": duration,
+                }
+            )
 
 
 @app.post("/ask")
-async def ask(request: QueryRequest):
-    try:
-        response = query_rag(
-            query_text=request.query_text,
-            user_id=request.user_id,
-            model=app.state.model,
-            database=app.state.database,
-        )
-        return {"response": response}
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Er is een fout opgetreden: {str(e)}"
-        )
+async def ask(request: AskRequest):
+    """Verwerkt binnenkomende verzoeken."""
+    request.id = str(uuid.uuid4())  # Genereer een uniek ID
+    await request_queue.put(request)  # Voeg het verzoek toe aan de wachtrij
+    start_time = time.time()
+    in_queue = request_queue.qsize()
+    request_responses[request.id] = {
+        "status": "processing",
+        "start_time": start_time,
+        "in_queue_start": in_queue,
+        "start_time_formatted": datetime.fromtimestamp(start_time).strftime(
+            "%H:%M:%S %d-%m-%Y"
+        ),
+    }
+    return {
+        "message": "Verzoek wordt verwerkt",
+        "request_id": request.id,
+        "in_queue_start": in_queue,
+        "start_time": datetime.fromtimestamp(start_time).strftime("%H:%M:%S %d-%m-%Y"),
+    }
+
+
+@app.get("/status/{request_id}")
+async def get_status(request_id: str):
+    """Check de status en het resultaat van een verzoek."""
+    if request_id in request_responses:
+        response_data = request_responses[request_id]
+        if response_data["status"] == "completed":
+            return request_responses[request_id]
+        return {
+            "status": "processing",
+            "start_time_formatted": response_data["start_time_formatted"],
+            "in_queue_start": response_data["in_queue_start"],
+            "in_queue_current": await get_request_position_in_queue(
+                request_id=request_id
+            ),
+        }
+    return {"message": "Verzoek niet gevonden", "status": "not_found"}
+
+
+@app.on_event("startup")
+async def startup():
+    """Start de worker om verzoeken sequentieel te verwerken."""
+    asyncio.create_task(request_worker())
+
+
+async def get_request_position_in_queue(request_id: str) -> int:
+    """Calculate the real-time position of the request in the queue."""
+    queue_list = list(request_queue._queue)
+    for index, queued_request in enumerate(queue_list):
+        if queued_request.id == request_id:
+            return index + 1
+    return 0
+
+
+def _build_filter(
+    permission_data: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]],
+) -> Dict[str, Any]:
+    """Bouwt een filter op basis van de opgegeven permissies."""
+    if not permission_data:
+        return {"table": False}
+    permissions = []
+    for source, value in permission_data.items():
+        if isinstance(value, dict):
+            for category, ids in value.items():
+                for id_ in ids:
+                    permissions.append(f"{id_}_{category}")
+        elif isinstance(value, list):
+            for id_ in value:
+                permissions.append(f"{id_}_{source}")
+        elif isinstance(value, bool):
+            permissions.append(f"{'true' if value else 'false'}_{source}")
+    return {"permission_and_type": {"$in": permissions}}

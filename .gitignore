@@ -64,7 +64,8 @@ db.sqlite3-journal
 # Flask stuff:
 instance/
 .webassets-cache
-
+/chroma
+*.json
 # Scrapy stuff:
 .scrapy
 
@@ -175,3 +176,8 @@ cython_debug/
 cuda-repo-ubuntu2404-12-9-local_12.9.0-575.51.03-1_amd64.deb
 *.pem
 /notebooks
+langchain/chroma/*
+*.txt
+nohup.out
+chroma/chroma.sqlite3
+langchain/docs/aad.json
