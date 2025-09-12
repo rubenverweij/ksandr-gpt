@@ -106,7 +106,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp):
     prompt = prompt_template.format(context=context_text, question=prompt)
 
     # Stel de vraag aan het model
-    return llm(prompt)
+    return model(prompt)
 
 
 # Verwerkt het verzoek en haalt de reactie op
