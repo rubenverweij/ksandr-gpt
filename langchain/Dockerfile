@@ -25,4 +25,5 @@ RUN python3 -m pip install torch torchvision torchaudio \
 # Installeer llama-cpp-python (met cuda)
 RUN CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python
 RUN python3 -m pip install redis chromadb langchain_chroma sentence-transformers langchain langchain-huggingface langchain-community fastapi[standard]
-CMD ["fastapi", "run", "api/main.py", "--port", "8000"]
+# CMD ["fastapi", "run", "api/main.py", "--port", "8000"]
+CMD ["tail", "-f", "/dev/null"]
