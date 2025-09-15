@@ -128,6 +128,7 @@ def ask_llm(
             "id": doc.id,
             "page_content": doc.page_content,
             "metadata": doc.metadata,
+            "type": doc.type,
         }
         doc_dict["metadata"]["score"] = score
         doc_dict["metadata"]["source"] = doc_dict["metadata"]["file_path"]
