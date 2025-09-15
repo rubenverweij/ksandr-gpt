@@ -4,13 +4,17 @@ import uuid
 import os
 import re
 from datetime import datetime
-from helpers import vind_relevante_componenten, COMPONENTS
+from helpers import (
+    vind_relevante_componenten,
+    COMPONENTS,
+    uniek_antwoord,
+    get_embedding_function,
+)
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Dict, Optional, Union, List, Any
 from langchain_community.vectorstores import Chroma
 from langchain_community.llms import LlamaCpp
-from get_embedding_function import get_embedding_function, uniek_antwoord
 from langchain_core.callbacks import BaseCallbackHandler
 
 

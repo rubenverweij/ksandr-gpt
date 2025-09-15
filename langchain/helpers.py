@@ -62,6 +62,51 @@ specifieke_componenten = [
 ]
 
 
+def remove_repetitions(text: str) -> str:
+    # Split the text by newline first to preserve the structure
+    sentences = text.split("\n")
+
+    # Create a list to store the unique sentences and a set to track already seen sentences
+    unique_sentences = set()
+    cleaned_sentences = []
+
+    for sentence in sentences:
+        # Split into individual sentences (this works for sentences ending with punctuation)
+        sub_sentences = re.split(
+            r"(?<=\w[.!?])\s*", sentence.strip()
+        )  # Split on sentence boundary
+
+        cleaned_sub_sentences = []
+        for sub_sentence in sub_sentences:
+            # If the sentence has not been seen before, keep it
+            if sub_sentence and sub_sentence not in unique_sentences:
+                unique_sentences.add(sub_sentence)
+                cleaned_sub_sentences.append(sub_sentence)
+
+        # Rejoin sub-sentences if any unique sentences are present in the current sentence block
+        if cleaned_sub_sentences:
+            cleaned_sentences.append(" ".join(cleaned_sub_sentences))
+
+    # Rebuild the text with cleaned sentences, preserving the newline structure
+    return "\n".join(cleaned_sentences)
+
+
+def remove_last_unfinished_sentence(text: str) -> str:
+    # Look for the last complete sentence ending with a period
+    match = re.search(r"(.*?\.\s*)([^\.\n]*?)$", text, re.DOTALL)
+    if match:
+        before_last, after_last = match.groups()
+        # If the trailing part after the last '.' has no '.' and is not empty,
+        # we remove it
+        if after_last.strip() and not after_last.strip().endswith("."):
+            return before_last.rstrip()
+    return text.rstrip()
+
+
+def uniek_antwoord(tekst):
+    return remove_last_unfinished_sentence(remove_repetitions(tekst))
+
+
 def get_embedding_function():
     embedding_encode_kwargs: dict = {"normalize_embeddings": False}
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -106,15 +151,6 @@ def vind_relevante_componenten(vraag, componenten_dict):
     return {"type_id": gevonden_sleutels[0]} if len(gevonden_sleutels) == 1 else None
 
 
-def uniek_antwoord(tekst):
-    zinnen = re.split(r"(?<=[.!?])\s+", tekst.strip())
-    unieke_zinnen = []
-    for zin in zinnen:
-        if zin not in unieke_zinnen:
-            unieke_zinnen.append(zin)
-    return " ".join(unieke_zinnen)
-
-
 if __name__ == "__main__":
     # Voorbeeld van gebruik:
     vragen = [
@@ -135,4 +171,10 @@ if __name__ == "__main__":
         print(f"Gevonden component sleutels: {gevonden_sleutels}")
         print("-" * 40)
 
-    print(uniek_antwoord(tekst=""))
+    print(
+        remove_last_unfinished_sentence(
+            remove_repetitions(
+                text="De Xiria is een serie. \n De Xiria is een gave serie. De Xiria is een"
+            )
+        )
+    )
