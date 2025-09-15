@@ -122,10 +122,15 @@ def ask_llm(
     context_text = context_text.replace('"', "")
     context_text = re.sub(r'[{}"\[\]]', "", context_text)
     context_text = context_text[:3500]
-    results = [
-        {**doc, "metadata": {**doc["metadata"], "score": score}}
-        for doc, score in results
-    ]
+    results_new_schema = []
+    for doc, score in results:
+        doc_dict = {
+            "id": doc.id,
+            "page_content": doc.page_content,
+            "metadata": doc.metadata,
+        }
+        doc_dict["metadata"]["score"] = score
+        results_new_schema.append(doc_dict)
     prompt_with_template = DEFAULT_QA_PROMPT.format(
         context=context_text, question=prompt
     )
@@ -133,7 +138,7 @@ def ask_llm(
     return {
         "question": prompt,
         "answer": model.invoke(prompt_with_template),
-        "source_documents": results,
+        "source_documents": results_new_schema,
     }
 
 
