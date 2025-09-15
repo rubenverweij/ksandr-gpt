@@ -12,7 +12,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.vectorstores import Chroma
 from langchain_community.llms import LlamaCpp
 from get_embedding_function import get_embedding_function
-from langchain.callbacks import BaseCallbackHandler
+from langchain_core.callbacks import BaseCallbackHandler
 
 
 # Configuratie voor gelijktijdige verwerking van verzoeken
