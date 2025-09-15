@@ -125,8 +125,11 @@ def ask_llm(
     context_text = context_text[:3500]
     prompt = DEFAULT_QA_PROMPT.format(context=context_text, question=prompt)
     # streaming_callback = StreamingResponseCallback(request_id=request_id)
-    response = model.invoke(prompt)
-    return {"response": response}
+    return {
+        "question": prompt,
+        "answer": model.invoke(prompt),
+        "source_documents": results,
+    }
 
 
 # Verwerkt het verzoek en haalt de reactie op
