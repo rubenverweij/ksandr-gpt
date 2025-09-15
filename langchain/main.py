@@ -124,8 +124,8 @@ def ask_llm(
     context_text = re.sub(r'[{}"\[\]]', "", context_text)
     context_text = context_text[:3500]
     prompt = DEFAULT_QA_PROMPT.format(context=context_text, question=prompt)
-    streaming_callback = StreamingResponseCallback(request_id=request_id)
-    response = model.invoke(prompt, callbacks=[streaming_callback])
+    # streaming_callback = StreamingResponseCallback(request_id=request_id)
+    response = model.invoke(prompt)
     return response
 
 
@@ -141,7 +141,7 @@ async def process_request(request: AskRequest):
 
     try:
         # Pass request_id for tracking the streaming response
-        _ = await asyncio.get_event_loop().run_in_executor(
+        response = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: ask_llm(
                 prompt=request.prompt,
@@ -150,8 +150,12 @@ async def process_request(request: AskRequest):
                 request_id=request.id,
             ),
         )
-        # Note: You won't get the full response right away
-        return {"message": "Request is being processed", "request_id": request.id}
+        response["active_filter"] = str(active_filter)
+        # if not response.get("source_documents"):
+        #     response["answer"] = (
+        #         "Ik weet het antwoord helaas niet, probeer je vraag anders te formuleren."
+        #     )
+        return response
     except Exception as e:
         return {"error": str(e), "filter": active_filter}
 
