@@ -116,18 +116,23 @@ def ask_llm(
     prompt: str, filter: Optional[Dict | None], model: LlamaCpp, request_id: str
 ):
     results = db.similarity_search_with_score(prompt, k=15, filter=filter)
-    # Build the context from the retrieved documents
     context_text = "\n".join([doc.page_content for doc, _ in results])
     context_text = context_text.replace("'", '"')
     context_text = context_text.replace("\\'", "'")
     context_text = context_text.replace('"', "")
     context_text = re.sub(r'[{}"\[\]]', "", context_text)
     context_text = context_text[:3500]
-    prompt = DEFAULT_QA_PROMPT.format(context=context_text, question=prompt)
+    results = [
+        {**doc, "metadata": {**doc["metadata"], "score": score}}
+        for doc, score in results
+    ]
+    prompt_with_template = DEFAULT_QA_PROMPT.format(
+        context=context_text, question=prompt
+    )
     # streaming_callback = StreamingResponseCallback(request_id=request_id)
     return {
         "question": prompt,
-        "answer": model.invoke(prompt),
+        "answer": model.invoke(prompt_with_template),
         "source_documents": results,
     }
 
