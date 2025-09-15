@@ -130,6 +130,8 @@ def ask_llm(
             "metadata": doc.metadata,
         }
         doc_dict["metadata"]["score"] = score
+        doc_dict["metadata"]["source"] = doc_dict["metadata"]["file_path"]
+        doc_dict["metadata"]["source_search"] = doc_dict["metadata"]["file_path"]
         results_new_schema.append(doc_dict)
     prompt_with_template = DEFAULT_QA_PROMPT.format(
         context=context_text, question=prompt
