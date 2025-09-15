@@ -8,7 +8,6 @@ from helpers import vind_relevante_componenten, COMPONENTS
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Dict, Optional, Union, List, Any
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.vectorstores import Chroma
 from langchain_community.llms import LlamaCpp
 from get_embedding_function import get_embedding_function
@@ -38,7 +37,6 @@ LLM = LlamaCpp(
     n_ctx=12000,
     verbose=False,
     streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()],
     temperature=0.2,
     top_p=0.9,
 )
