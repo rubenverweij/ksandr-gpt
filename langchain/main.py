@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from typing import Dict, Optional, Union, List, Any
 from langchain_community.vectorstores import Chroma
 from langchain_community.llms import LlamaCpp
-from get_embedding_function import get_embedding_function
+from get_embedding_function import get_embedding_function, uniek_antwoord
 from langchain_core.callbacks import BaseCallbackHandler
 
 
@@ -21,11 +21,11 @@ app = FastAPI()
 request_responses = {}
 
 # Configuratievariabelen
-TEMPERATURE = float(os.getenv("TEMPERATURE", 0.8))
-SOURCE_MAX = int(os.getenv("SOURCE_MAX", 2))
-SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.6))
+TEMPERATURE = float(os.getenv("TEMPERATURE", 0.2))
+SOURCE_MAX = int(os.getenv("SOURCE_MAX", 10))
+SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 1.1))
 STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
-INCLUDE_FILTER = int(os.getenv("INCLUDE_FILTER", 0))
+INCLUDE_FILTER = int(os.getenv("INCLUDE_FILTER", 1))
 DEFAULT_MODEL_PATH = "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf"
 CHROMA_PATH = "/root/onprem_data/chroma"
 
@@ -37,7 +37,7 @@ LLM = LlamaCpp(
     n_ctx=12000,
     verbose=False,
     streaming=True,
-    temperature=0.2,
+    temperature=TEMPERATURE,
     top_p=0.9,
 )
 embedding_function = get_embedding_function()
@@ -115,7 +115,8 @@ class AskRequest(BaseModel):
 def ask_llm(
     prompt: str, filter: Optional[Dict | None], model: LlamaCpp, request_id: str
 ):
-    results = db.similarity_search_with_score(prompt, k=15, filter=filter)
+    results = db.similarity_search_with_score(prompt, k=SOURCE_MAX, filter=filter)
+    results = [(doc, score) for doc, score in results if score < SCORE_THRESHOLD]
     context_text = "\n".join([doc.page_content for doc, _ in results])
     context_text = context_text.replace("'", '"')
     context_text = context_text.replace("\\'", "'")
@@ -167,6 +168,7 @@ async def process_request(request: AskRequest):
             ),
         )
         response["active_filter"] = str(active_filter)
+        response["answer"] = uniek_antwoord(response["answer"])
         # if not response.get("source_documents"):
         #     response["answer"] = (
         #         "Ik weet het antwoord helaas niet, probeer je vraag anders te formuleren."
