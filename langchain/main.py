@@ -106,7 +106,7 @@ class StreamingResponseCallback(BaseCallbackHandler):
 class AskRequest(BaseModel):
     prompt: str
     permission: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]] = None
-    user_id: Optional[str]
+    user_id: Optional[str] = "123"
 
     class Config:
         extra = "allow"  # Sta extra velden toe
