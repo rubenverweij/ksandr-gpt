@@ -96,20 +96,23 @@ def load_documents(directory: Path) -> List[Document]:
                 content = clean_html(content)
                 splitter = RecursiveJsonSplitter()
                 chunks = splitter.split_json(content)
-
-                print(file_path)
-
                 for idx, chunk in enumerate(chunks):
+                    chunk_cleaned = str(chunk)
+                    chunk_cleaned = chunk_cleaned.replace("'", '"')
+                    chunk_cleaned = chunk_cleaned.replace("\\'", "'")
+                    chunk_cleaned = chunk_cleaned.replace('"', "")
+                    chunk_cleaned = re.sub(r'[{}"\[\]]', "", chunk_cleaned)
                     metadata = {
                         "file_path": file_path.as_posix(),
                         "chunk": idx,
                         "char_length": len(str(chunk)),
+                        "source": file_path.as_posix(),
+                        "source_search": file_path.as_posix(),
                     }
                     metadata.update(extract_file_data(file_path.as_posix()))
-
                     documenten.append(
                         Document(
-                            page_content=str(chunk),
+                            page_content=chunk_cleaned,
                             metadata=metadata,
                         )
                     )

@@ -2,7 +2,6 @@ import asyncio
 import time
 import uuid
 import os
-import re
 from datetime import datetime
 from helpers import (
     vind_relevante_componenten,
@@ -122,10 +121,10 @@ def ask_llm(
     results = db.similarity_search_with_score(prompt, k=SOURCE_MAX, filter=filter)
     results = [(doc, score) for doc, score in results if score < SCORE_THRESHOLD]
     context_text = "\n".join([doc.page_content for doc, _ in results])
-    context_text = context_text.replace("'", '"')
-    context_text = context_text.replace("\\'", "'")
-    context_text = context_text.replace('"', "")
-    context_text = re.sub(r'[{}"\[\]]', "", context_text)
+    # context_text = context_text.replace("'", '"')
+    # context_text = context_text.replace("\\'", "'")
+    # context_text = context_text.replace('"', "")
+    # context_text = re.sub(r'[{}"\[\]]', "", context_text)
     context_text = context_text[:3500]
     results_new_schema = []
     for doc, score in results:
@@ -136,8 +135,6 @@ def ask_llm(
             "type": doc.type,
         }
         doc_dict["metadata"]["score"] = score
-        doc_dict["metadata"]["source"] = doc_dict["metadata"]["file_path"]
-        doc_dict["metadata"]["source_search"] = doc_dict["metadata"]["file_path"]
         results_new_schema.append(doc_dict)
     prompt_with_template = DEFAULT_QA_PROMPT.format(
         context=context_text, question=prompt
