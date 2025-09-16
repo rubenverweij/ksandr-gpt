@@ -168,7 +168,10 @@ def similarity_search_with_nouns(
     nouns = extract_nouns_and_propn(query)
     if not nouns:
         return None
-    return {"$or": [{"$contains": noun} for noun in nouns]}
+    if len(nouns) == 1:
+        return {"$contains": nouns[0]}
+    else:
+        return {"$or": [{"$contains": noun} for noun in nouns]}
 
 
 if __name__ == "__main__":
