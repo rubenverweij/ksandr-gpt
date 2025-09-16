@@ -8,11 +8,12 @@ from helpers import (
     COMPONENTS,
     uniek_antwoord,
     get_embedding_function,
+    similarity_search_with_nouns,
 )
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Dict, Optional, Union, List, Any
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
 
@@ -118,13 +119,12 @@ class AskRequest(BaseModel):
 def ask_llm(
     prompt: str, filter: Optional[Dict | None], model: LlamaCpp, request_id: str
 ):
-    results = db.similarity_search_with_score(prompt, k=SOURCE_MAX, filter=filter)
+    document_search = similarity_search_with_nouns(query=prompt)
+    results = db.similarity_search_with_score(
+        prompt, k=SOURCE_MAX, filter=filter, where_document=document_search
+    )
     results = [(doc, score) for doc, score in results if score < SCORE_THRESHOLD]
     context_text = "\n".join([doc.page_content for doc, _ in results])
-    # context_text = context_text.replace("'", '"')
-    # context_text = context_text.replace("\\'", "'")
-    # context_text = context_text.replace('"', "")
-    # context_text = re.sub(r'[{}"\[\]]', "", context_text)
     context_text = context_text[:3500]
     results_new_schema = []
     for doc, score in results:
@@ -139,11 +139,11 @@ def ask_llm(
     prompt_with_template = DEFAULT_QA_PROMPT.format(
         context=context_text, question=prompt
     )
-    # streaming_callback = StreamingResponseCallback(request_id=request_id)
     return {
         "question": prompt,
         "answer": model.invoke(prompt_with_template),
         "source_documents": results_new_schema,
+        "where_document": document_search,
     }
 
 

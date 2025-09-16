@@ -1,6 +1,11 @@
 import re
 from langchain_huggingface import HuggingFaceEmbeddings
 import torch
+import spacy
+from typing import List
+
+# Gebruiken we voor het definieren van zelfstandig naamwoorden
+NLP = spacy.load("nl_core_news_sm")
 
 # Definieer de componenten
 COMPONENTS = {
@@ -149,6 +154,21 @@ def vind_relevante_componenten(vraag, componenten_dict):
     #                 break
 
     return {"type_id": gevonden_sleutels[0]} if len(gevonden_sleutels) == 1 else None
+
+
+def extract_nouns_and_propn(text: str) -> List[str]:
+    """Extract common nouns and proper nouns from Dutch text."""
+    doc = NLP(text)
+    return [token.text for token in doc if token.pos_ in ("NOUN", "PROPN")]
+
+
+def similarity_search_with_nouns(
+    query: str,
+):
+    nouns = extract_nouns_and_propn(query)
+    if not nouns:
+        return None
+    return {"$or": [{"$contains": noun} for noun in nouns]}
 
 
 if __name__ == "__main__":
