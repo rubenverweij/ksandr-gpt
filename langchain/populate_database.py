@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("-source", type=str)
     parser.add_argument(
         "-chunk_size",
-        type=str,
+        type=int,
     )
     parser.add_argument("-include_text", type=int, default=1)
 
