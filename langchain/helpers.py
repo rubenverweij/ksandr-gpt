@@ -2,70 +2,15 @@ import re
 from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 import spacy
-from patterns import patterns
+from patterns import (
+    PATROON_UITBREIDING,
+    COMPONENTS,
+    LIJST_SPECIFIEKE_COMPONENTEN,
+)
 from typing import List
 
 # Gebruiken we voor het definieren van zelfstandig naamwoorden
 NLP = spacy.load("nl_core_news_sm")
-
-# Definieer de componenten
-COMPONENTS = {
-    "10535": "LK ELA12 schakelinstallatie",
-    "10536": "ABB VD4 vaccuum vermogensschakelaar",
-    "10540": "Eaton L-SEP installatie",
-    "10542": "Siemens NXplusC schakelaar",
-    "10545": "Siemens 8DJH schakelaar",
-    "10546": "Eaton FMX schakelinstallatie",
-    "1555": "Merlin Gerin RM6 schakelaar",
-    "1556": "Hazemeijer CONEL schakelinstallatie",
-    "1557": "Eaton 10 kV COQ schakelaar",
-    "1558": "Eaton Capitole schakelaar",
-    "2059": "Eaton Xiria schakelinstallatie",
-    "2061": "Eaton Holec SVS schakelaar",
-    "2963": "MS/LS distributie transformator",
-    "318": "Eaton Magnefix MD MF schakelinstallatie",
-    "655": "ABB DR12 schakelaar",
-    "8825": "ABB Safe schakelinstallatie",
-    "8827": "kabelmoffen",
-    "9026": "Eaton MMS schakelinstallatie",
-    "9027": "ABB BBC DB10 schakelaar",
-    "9028": "HS MS vermogens transformator",
-}
-
-
-algemene_woorden = [
-    "eaton",
-    "siemens",
-    "abb",
-    "transformator",
-    "merlin",
-    "gerin",
-    "holec",
-    "conel",
-    "hazemeijer",
-    "lk",
-]
-
-specifieke_componenten = [
-    "db10",
-    "bcc",
-    "md",
-    "mf",
-    "magnefix",
-    "merlin",
-    "svs",
-    "coq",
-    "8djh",
-    "vd4",
-    "ela12",
-    "l-sep",
-    "rm6",
-    "nxplusc",
-    "mms",
-    "fmx",
-    "xiria",
-    "capitole",
-]
 
 
 def remove_repetitions(text: str) -> str:
@@ -141,7 +86,7 @@ def vind_relevante_componenten(vraag, componenten_dict):
 
     gevonden_sleutels = []
     for sleutel, waarde in componenten_dict.items():
-        for component in specifieke_componenten:
+        for component in LIJST_SPECIFIEKE_COMPONENTEN:
             if component in waarde.lower() and component in vraag:
                 gevonden_sleutels.append(sleutel)
                 break
@@ -149,7 +94,7 @@ def vind_relevante_componenten(vraag, componenten_dict):
     # FIXME kan nog niet omgaan met verschillende dossiers
     # if not gevonden_sleutels:
     #     for sleutel, waarde in componenten_dict.items():
-    #         for woord in algemene_woorden:
+    #         for woord in LIJST_ALGEMENE_WOORDEN:
     #             if woord in waarde.lower() and woord in vraag:
     #                 gevonden_sleutels.append(sleutel)
     #                 break
@@ -161,7 +106,15 @@ def extract_nouns_and_propn(text: str) -> List[str]:
     """Extract common nouns and proper nouns from Dutch text."""
     doc = NLP(text)
     list_nouns = [token.text for token in doc if token.pos_ in ("NOUN", "PROPN")]
-    return [w for w in list_nouns if any(p in w for p in patterns)]
+    expanded_nouns = []
+    for noun in list_nouns:
+        for pattern, extras in PATROON_UITBREIDING.items():
+            if pattern.lower() in noun.lower():  # case-insensitive match
+                if len(extras) > 0:
+                    expanded_nouns.extend(extras)
+                expanded_nouns.append(noun)
+
+    return list(set(expanded_nouns))  # remove duplicates
 
 
 def similarity_search_with_nouns(
