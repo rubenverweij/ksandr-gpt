@@ -215,7 +215,7 @@ if __name__ == "__main__":
     CHROMA_PATH = Path(args.chroma)
     SOURCE_DIR = Path(args.source)
     CHUNK_SIZE = Path(args.chunk_size)
-    INCLUDE_TEXT = Path(args.include_text)
+    INCLUDE_TEXT = args.include_text
     clear_database()
     chunks = load_documents(SOURCE_DIR)
     if not chunks:
