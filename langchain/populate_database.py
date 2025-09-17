@@ -9,9 +9,10 @@ from typing import Dict, List, Union
 from bs4 import BeautifulSoup
 from langchain.schema.document import Document
 from langchain_text_splitters import RecursiveJsonSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
-from get_embedding_function import get_embedding_function
+from helpers import get_embedding_function
 
 
 VALID_PERMISSIONS = {"cat-1", "cat-2"}
@@ -94,9 +95,16 @@ def load_documents(directory: Path) -> List[Document]:
             with file_path.open("r", encoding="utf-8") as f:
                 content = json.load(f)
                 content = clean_html(content)
-                splitter = RecursiveJsonSplitter()
-                chunks = splitter.split_json(content)
+                splitter = RecursiveJsonSplitter(max_chunk_size=CHUNK_SIZE)
+                chunks = splitter.split_text(json_data=content, convert_lists=True)
                 for idx, chunk in enumerate(chunks):
+                    try:
+                        parsed = json.loads(chunk)  # parse back into dict
+                        main_key = (
+                            list(parsed.keys())[0] if isinstance(parsed, dict) else None
+                        )
+                    except Exception:
+                        main_key = None
                     chunk_cleaned = str(chunk)
                     chunk_cleaned = chunk_cleaned.replace("'", '"')
                     chunk_cleaned = chunk_cleaned.replace("\\'", "'")
@@ -105,9 +113,11 @@ def load_documents(directory: Path) -> List[Document]:
                     metadata = {
                         "file_path": file_path.as_posix(),
                         "chunk": idx,
-                        "char_length": len(str(chunk)),
+                        "char_length": len(str(chunk_cleaned)),
                         "source": file_path.as_posix(),
                         "source_search": file_path.as_posix(),
+                        "key": main_key,
+                        "extension": "json",
                     }
                     metadata.update(extract_file_data(file_path.as_posix()))
                     documenten.append(
@@ -120,6 +130,41 @@ def load_documents(directory: Path) -> List[Document]:
             print(f"❌ Ongeldig JSON-bestand: {file_path}")
         except Exception as e:
             print(f"❌ Fout bij lezen van {file_path}: {e}")
+
+    if INCLUDE_TEXT:
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=CHUNK_SIZE,
+            chunk_overlap=100,
+        )
+        for file_path in directory.rglob("*.txt"):
+            try:
+                with file_path.open("r", encoding="utf-8") as f:
+                    content = f.read()
+                    chunks = splitter.split_text(content)
+                    for idx, chunk in enumerate(chunks):
+                        chunk_cleaned = str(chunk)
+                        chunk_cleaned = chunk_cleaned.replace("'", '"')
+                        chunk_cleaned = chunk_cleaned.replace("\\'", "'")
+                        chunk_cleaned = re.sub(r'[{}"\[\]]', "", chunk_cleaned)
+                        metadata = {
+                            "file_path": file_path.as_posix(),
+                            "chunk": idx,
+                            "char_length": len(chunk_cleaned),
+                            "source": file_path.as_posix(),
+                            "source_search": file_path.as_posix(),
+                            "key": "na",
+                            "extension": ".txt",
+                        }
+                        metadata.update(extract_file_data(file_path.as_posix()))
+                        documenten.append(
+                            Document(
+                                page_content=chunk_cleaned,
+                                metadata=metadata,
+                            )
+                        )
+            except Exception as e:
+                print(f"❌ Error reading {file_path}: {e}")
+
     print(f"📄 {len(documenten)} stukken geladen.")
     return documenten
 
@@ -159,11 +204,18 @@ if __name__ == "__main__":
         "-chroma",
         type=str,
     )
+    parser.add_argument(
+        "-chunk_size",
+        type=str,
+    )
+    parser.add_argument("-include_text", type=int, default=1)
     parser.add_argument("-source", type=str)
 
     args = parser.parse_args()
     CHROMA_PATH = Path(args.chroma)
     SOURCE_DIR = Path(args.source)
+    CHUNK_SIZE = Path(args.json_chunk_size)
+    INCLUDE_TEXT = Path(args.include_text)
     clear_database()
     chunks = load_documents(SOURCE_DIR)
     if not chunks:

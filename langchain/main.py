@@ -84,6 +84,30 @@ Vraag:
 <|im_start|>assistant
 """
 
+DEFAULT_QA_PROMPT_SIMPLE = """
+<|im_start|>system
+
+Je bent een behulpzame en feitelijke assistent die vragen beantwoordt over documenten op het Ksandr-platform.
+Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door kennis over netcomponenten te borgen, ontwikkelen en delen, helpt Ksandr de netbeheerders om de kwaliteit van hun netten op het gewenste maatschappelijk niveau te houden.
+De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie van relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
+Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 vaccuum vermogensschakelaar 3) Eaton L-SEP installatie 4) Siemens NXplusC schakelaar 5) Siemens 8DJH schakelaar 6) Eaton FMX schakelinstallatie 7) Merlin Gerin RM6 schakelaar 8) Hazemeijer CONEL schakelinstallatie 9) Eaton 10 kV COQ schakelaar 10) Eaton Capitole schakelaar 11) Eaton Xiria schakelinstallatie 12) Eaton Holec SVS schakelaar 13) MS/LS distributie transformator 14) Eaton Magnefix MD MF schakelinstallatie 15) ABB DR12 schakelaar 16) ABB Safe schakelinstallatie 17) kabelmoffen 18) Eaton MMS schakelinstallatie 19) ABB BBC DB10 schakelaar 20) HS MS vermogens transformator
+
+**Belangrijke instructies bij de beantwoording:**
+- Verbeter spelling en grammatica.
+- Gebruik correct en helder Nederlands.
+- Wees volledig, maar als het kan kort en bondig.
+- Herhaal het antwoord niet.
+
+<|im_end|>
+<|im_start|>user
+
+Vraag:
+{question}
+
+<|im_end|>
+<|im_start|>assistant
+"""
+
 
 # Streaming handler
 class StreamingResponseCallback(BaseCallbackHandler):
@@ -111,34 +135,38 @@ class AskRequest(BaseModel):
     prompt: str
     permission: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]] = None
     user_id: Optional[str] = "123"
+    rag: int = 1
 
     class Config:
         extra = "allow"  # Sta extra velden toe
 
 
-def ask_llm(
-    prompt: str, filter: Optional[Dict | None], model: LlamaCpp, request_id: str
-):
-    document_search = similarity_search_with_nouns(query=prompt)
-    results = db.similarity_search_with_score(
-        prompt, k=SOURCE_MAX, filter=filter, where_document=document_search
-    )
-    results = [(doc, score) for doc, score in results if score < SCORE_THRESHOLD]
-    context_text = "\n".join([doc.page_content for doc, _ in results])
-    context_text = context_text[:3500]
-    results_new_schema = []
-    for doc, score in results:
-        doc_dict = {
-            "id": doc.id,
-            "page_content": doc.page_content,
-            "metadata": doc.metadata,
-            "type": doc.type,
-        }
-        doc_dict["metadata"]["score"] = score
-        results_new_schema.append(doc_dict)
-    prompt_with_template = DEFAULT_QA_PROMPT.format(
-        context=context_text, question=prompt
-    )
+def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: int):
+    if rag:
+        document_search = similarity_search_with_nouns(query=prompt)
+        results = db.similarity_search_with_score(
+            prompt, k=SOURCE_MAX, filter=filter, where_document=document_search
+        )
+        results = [(doc, score) for doc, score in results if score < SCORE_THRESHOLD]
+        context_text = "\n".join([doc.page_content for doc, _ in results])
+        context_text = context_text[:3500]
+        results_new_schema = []
+        for doc, score in results:
+            doc_dict = {
+                "id": doc.id,
+                "page_content": doc.page_content,
+                "metadata": doc.metadata,
+                "type": doc.type,
+            }
+            doc_dict["metadata"]["score"] = score
+            results_new_schema.append(doc_dict)
+        prompt_with_template = DEFAULT_QA_PROMPT.format(
+            context=context_text, question=prompt
+        )
+    else:
+        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE
+        results_new_schema = None
+        document_search = None
     return {
         "question": prompt,
         "answer": model.invoke(prompt_with_template),
@@ -165,15 +193,16 @@ async def process_request(request: AskRequest):
                 prompt=request.prompt,
                 model=LLM,
                 filter=active_filter,
-                request_id=request.id,
+                rag=request.rag,
             ),
         )
         response["active_filter"] = str(active_filter)
         response["answer"] = uniek_antwoord(response["answer"])
-        # if not response.get("source_documents"):
-        #     response["answer"] = (
-        #         "Ik weet het antwoord helaas niet, probeer je vraag anders te formuleren."
-        #     )
+        if request.rag:
+            if not response.get("source_documents"):
+                response["answer"] = (
+                    "Op basis van de informatie die ik tot mijn beschikking heb, weet ik het antwoord helaas niet."
+                )
         return response
     except Exception as e:
         return {"error": str(e), "filter": active_filter}
