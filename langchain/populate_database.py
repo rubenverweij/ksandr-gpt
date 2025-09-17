@@ -204,17 +204,17 @@ if __name__ == "__main__":
         "-chroma",
         type=str,
     )
+    parser.add_argument("-source", type=str)
     parser.add_argument(
         "-chunk_size",
         type=str,
     )
     parser.add_argument("-include_text", type=int, default=1)
-    parser.add_argument("-source", type=str)
 
     args = parser.parse_args()
     CHROMA_PATH = Path(args.chroma)
     SOURCE_DIR = Path(args.source)
-    CHUNK_SIZE = Path(args.json_chunk_size)
+    CHUNK_SIZE = Path(args.chunk_size)
     INCLUDE_TEXT = Path(args.include_text)
     clear_database()
     chunks = load_documents(SOURCE_DIR)
