@@ -135,7 +135,7 @@ class AskRequest(BaseModel):
     prompt: str
     permission: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]] = None
     user_id: Optional[str] = "123"
-    rag: int = 1
+    rag: Optional[int] = 1
 
     class Config:
         extra = "allow"  # Sta extra velden toe
@@ -164,7 +164,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
             context=context_text, question=prompt
         )
     else:
-        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE
+        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(question=prompt)
         results_new_schema = None
         document_search = None
     return {
