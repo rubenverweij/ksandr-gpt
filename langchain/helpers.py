@@ -2,6 +2,7 @@ import re
 from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 import spacy
+from patterns import patterns
 from typing import List
 
 # Gebruiken we voor het definieren van zelfstandig naamwoorden
@@ -159,7 +160,8 @@ def vind_relevante_componenten(vraag, componenten_dict):
 def extract_nouns_and_propn(text: str) -> List[str]:
     """Extract common nouns and proper nouns from Dutch text."""
     doc = NLP(text)
-    return [token.text for token in doc if token.pos_ in ("NOUN", "PROPN")]
+    list_nouns = [token.text for token in doc if token.pos_ in ("NOUN", "PROPN")]
+    return [w for w in list_nouns if any(p in w for p in patterns)]
 
 
 def similarity_search_with_nouns(
@@ -201,3 +203,4 @@ if __name__ == "__main__":
             )
         )
     )
+    print(extract_nouns_and_propn("Wat is het vervangingsbeleid van de xiria?"))
