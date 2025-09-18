@@ -151,6 +151,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
             db=db,
             source_max=SOURCE_MAX,
             score_threshold=SCORE_THRESHOLD,
+            where_document=document_search,
         )
         results_new_schema = []
         for doc, score in results:
