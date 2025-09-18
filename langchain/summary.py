@@ -46,7 +46,9 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
     dossier = data.get("Dossier", {})
     populatie = data.get("Populatiegegevens", {}).get("Populatie per netbeheerder", [])
     component = COMPONENTS.get(aad_number, "Onbekend component")
-    sentences = []
+    sentences = [
+        f"Dit is een samenvatting van het AAD dossier van component {component}:"
+    ]
     # Publication info
     pub_date = dossier.get("Dossier", {}).get("Publicatiedatum")
     last_update = dossier.get("Dossier", {}).get("Laatste update")
@@ -117,8 +119,9 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
                     print(f"Fout bij verwerken van {fail_type_path}: {e}")
     return (
         template
-        + f"\n De faalvormen van component {component} zijn: \n"
+        + f"\nDe faalvormen van component {component} zijn: \n"
         + "\n".join(sorted(descriptions, key=extract_number))
+        + f"\nDit is het einde van de samenvatting van het AAD dossier van {component}\n"
     )
 
 
