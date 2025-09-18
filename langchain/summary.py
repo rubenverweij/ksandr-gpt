@@ -45,14 +45,16 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
     dossier = data["Dossier"]
     populatie = data["Populatiegegevens"]["Populatie per netbeheerder"]
     component = COMPONENTS[aad_number]
-    template = f"""Het AAD dossier van de {component} is gepubliceerd op {dossier["Dossier"]["Publicatiedatum"]} en voor het laatst gewijzigd op {dossier["Dossier"]["Laatste update"]}.
-                De omschrijving van de {component} is: {dossier["Component"]["Algemene productbeschrijving"]}. 
-                In het beheerteam van dit AAD zitten de volgende personen: {", ".join(item["text"] for item in data["Dossier"]["Deelnemers"]["Beheerteam"])}.
-                De netbeheerders die deelnemen aan dit dossier zijn: {dossier["Deelnemers"]["Deelnemende partijen"]}. De opdrachtgever van dit AAD is: {dossier["Deelnemers"]["Opdrachtgever"]}.
-                De fabrikant van de {component} is {dossier["Component"]["Fabrikant"]}. 
-                De technische specificatie is: {"".join(dossier["Technische specificaties"])}.
-                Het aantal van de {component} per netbeheerder is als volgt: {" ".join(f"Het aantal van {item['Netbeheerder']} is {item['Populatie']} op peildatum {item['Peildatum']}." for item in populatie)}.
-                De faalvormen van component {component} zijn:"""
+    template = f"""
+    Het AAD dossier van de {component} is gepubliceerd op {dossier["Dossier"]["Publicatiedatum"]} en voor het laatst gewijzigd op {dossier["Dossier"]["Laatste update"]}.
+    De omschrijving van de {component} is: {dossier["Component"]["Algemene productbeschrijving"]}. 
+    In het beheerteam van dit AAD zitten de volgende personen: {", ".join(item["text"] for item in data["Dossier"]["Deelnemers"]["Beheerteam"])}.
+    De netbeheerders die deelnemen aan dit dossier zijn: {dossier["Deelnemers"]["Deelnemende partijen"]}. De opdrachtgever van dit AAD is: {dossier["Deelnemers"]["Opdrachtgever"]}.
+    De fabrikant van de {component} is {dossier["Component"]["Fabrikant"]}. 
+    De technische specificatie is: {"".join(dossier["Technische specificaties"])}.
+    Het aantal van de {component} per netbeheerder is als volgt: {" ".join(f"Het aantal van {item['Netbeheerder']} is {item['Populatie']} op peildatum {item['Peildatum']}." for item in populatie)}.
+    De faalvormen van component {component} zijn:
+    """
     # Check if fail-types directory exists for the given AAD and category
     if os.path.exists(category_path):
         descriptions = []  # List to store all descriptions for the AAD/category combination
