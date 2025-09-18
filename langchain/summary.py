@@ -69,7 +69,7 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
                         )
                 except Exception as e:
                     print(f"Fout bij verwerken van {fail_type_path}: {e}")
-    return template + "\n".join(sorted(maak_samenvatting_aad(), key=extract_number))
+    return template + "\n".join(sorted(descriptions, key=extract_number))
 
 
 def get_aad_list_and_categories(base_dir: str):
