@@ -94,19 +94,6 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
     # Combine all sentences into template
     template = "\n".join(sentences)
 
-    # dossier = data["Dossier"]
-    # populatie = data["Populatiegegevens"]["Populatie per netbeheerder"]
-    # component = COMPONENTS[aad_number]
-    # template = f"""
-    # Het AAD dossier van de {component} is gepubliceerd op {dossier["Dossier"]["Publicatiedatum"]} en voor het laatst gewijzigd op {dossier["Dossier"]["Laatste update"]}.
-    # De omschrijving van de {component} is: {dossier["Component"]["Algemene productbeschrijving"]}.
-    # In het beheerteam van dit AAD zitten de volgende personen: {", ".join(item["text"] for item in data["Dossier"]["Deelnemers"]["Beheerteam"])}.
-    # De netbeheerders die deelnemen aan dit dossier zijn: {dossier["Deelnemers"]["Deelnemende partijen"]}. De opdrachtgever van dit AAD is: {dossier["Deelnemers"]["Opdrachtgever"]}.
-    # De fabrikant van de {component} is {dossier["Component"]["Fabrikant"]}.
-    # De technische specificatie is: {"".join(dossier.get("Technische specificaties", "onbekend"))}.
-    # Het aantal van de {component} per netbeheerder is als volgt: {" ".join(f"Het aantal van {item['Netbeheerder']} is {item['Populatie']} op peildatum {item['Peildatum']}." for item in populatie)}.
-
-    # """
     # Check if fail-types directory exists for the given AAD and category
     if os.path.exists(category_path):
         descriptions = [
@@ -121,7 +108,9 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
                     with open(fail_type_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
                         clean_desc = re.sub(
-                            r"\s+", " ", data["Beschrijving"]["Beschrijving"]
+                            r"\s+",
+                            " ",
+                            data["Beschrijving"].get("Beschrijving", "Onbekend"),
                         ).strip()
                         descriptions.append(
                             f"""- Nummer {data["Beschrijving"]["Nummer"]} -  Naam: {data["Beschrijving"]["Naam"]}. Hoe vaak komt deze faalvorm voor: {data["Beschrijving"]["Gemiddeld aantal incidenten"]}. De beschrijving is: {clean_desc}"""
