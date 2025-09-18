@@ -42,23 +42,76 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
     aad_path = os.path.join(base_dir, "aads", str(aad_number), category, "main.json")
     with open(aad_path, "r") as file:
         data = clean_html(json.load(file))
-    dossier = data["Dossier"]
-    populatie = data["Populatiegegevens"]["Populatie per netbeheerder"]
-    component = COMPONENTS[aad_number]
-    template = f"""
-    Het AAD dossier van de {component} is gepubliceerd op {dossier["Dossier"]["Publicatiedatum"]} en voor het laatst gewijzigd op {dossier["Dossier"]["Laatste update"]}.
-    De omschrijving van de {component} is: {dossier["Component"]["Algemene productbeschrijving"]}. 
-    In het beheerteam van dit AAD zitten de volgende personen: {", ".join(item["text"] for item in data["Dossier"]["Deelnemers"]["Beheerteam"])}.
-    De netbeheerders die deelnemen aan dit dossier zijn: {dossier["Deelnemers"]["Deelnemende partijen"]}. De opdrachtgever van dit AAD is: {dossier["Deelnemers"]["Opdrachtgever"]}.
-    De fabrikant van de {component} is {dossier["Component"]["Fabrikant"]}. 
-    De technische specificatie is: {"".join(dossier.get("Technische specificaties", "onbekend"))}.
-    Het aantal van de {component} per netbeheerder is als volgt: {" ".join(f"Het aantal van {item['Netbeheerder']} is {item['Populatie']} op peildatum {item['Peildatum']}." for item in populatie)}.
-    De faalvormen van component {component} zijn:
-    
-    """
+
+    dossier = data.get("Dossier", {})
+    populatie = data.get("Populatiegegevens", {}).get("Populatie per netbeheerder", [])
+    component = COMPONENTS.get(aad_number, "Onbekend component")
+    sentences = []
+    # Publication info
+    pub_date = dossier.get("Dossier", {}).get("Publicatiedatum")
+    last_update = dossier.get("Dossier", {}).get("Laatste update")
+    if pub_date or last_update:
+        sentences.append(
+            f"Het AAD dossier van de {component} is gepubliceerd op {pub_date or 'onbekend'} en voor het laatst gewijzigd op {last_update or 'onbekend'}."
+        )
+    # Component description
+    description = dossier.get("Component", {}).get("Algemene productbeschrijving")
+    if description:
+        sentences.append(f"De omschrijving van de {component} is: {description}.")
+    # Beheerteam
+    beheerteam = dossier.get("Deelnemers", {}).get("Beheerteam", [])
+    if beheerteam:
+        team_names = ", ".join(item.get("text", "Onbekend") for item in beheerteam)
+        sentences.append(
+            f"In het beheerteam van dit AAD zitten de volgende personen: {team_names}."
+        )
+    # Deelnemende partijen & opdrachtgever
+    deelnemende_partijen = dossier.get("Deelnemers", {}).get("Deelnemende partijen")
+    opdrachtgever = dossier.get("Deelnemers", {}).get("Opdrachtgever")
+    if deelnemende_partijen:
+        sentences.append(
+            f"De netbeheerders die deelnemen aan dit dossier zijn: {deelnemende_partijen}."
+        )
+    if opdrachtgever:
+        sentences.append(f"De opdrachtgever van dit AAD is: {opdrachtgever}.")
+    # Manufacturer
+    fabrikant = dossier.get("Component", {}).get("Fabrikant")
+    if fabrikant:
+        sentences.append(f"De fabrikant van de {component} is {fabrikant}.")
+    # Technical specifications
+    tech_specs = dossier.get("Technische specificaties")
+    if tech_specs:
+        sentences.append(f"De technische specificatie is: {' '.join(tech_specs)}.")
+    # Population per netbeheerder
+    if populatie:
+        pop_sentences = " ".join(
+            f"Het aantal van {item.get('Netbeheerder', 'Onbekend')} is {item.get('Populatie', 'onbekend')} op peildatum {item.get('Peildatum', 'onbekend')}."
+            for item in populatie
+        )
+        sentences.append(
+            f"Het aantal van de {component} per netbeheerder is als volgt: {pop_sentences}"
+        )
+    # Combine all sentences into template
+    template = "\n".join(sentences)
+
+    # dossier = data["Dossier"]
+    # populatie = data["Populatiegegevens"]["Populatie per netbeheerder"]
+    # component = COMPONENTS[aad_number]
+    # template = f"""
+    # Het AAD dossier van de {component} is gepubliceerd op {dossier["Dossier"]["Publicatiedatum"]} en voor het laatst gewijzigd op {dossier["Dossier"]["Laatste update"]}.
+    # De omschrijving van de {component} is: {dossier["Component"]["Algemene productbeschrijving"]}.
+    # In het beheerteam van dit AAD zitten de volgende personen: {", ".join(item["text"] for item in data["Dossier"]["Deelnemers"]["Beheerteam"])}.
+    # De netbeheerders die deelnemen aan dit dossier zijn: {dossier["Deelnemers"]["Deelnemende partijen"]}. De opdrachtgever van dit AAD is: {dossier["Deelnemers"]["Opdrachtgever"]}.
+    # De fabrikant van de {component} is {dossier["Component"]["Fabrikant"]}.
+    # De technische specificatie is: {"".join(dossier.get("Technische specificaties", "onbekend"))}.
+    # Het aantal van de {component} per netbeheerder is als volgt: {" ".join(f"Het aantal van {item['Netbeheerder']} is {item['Populatie']} op peildatum {item['Peildatum']}." for item in populatie)}.
+
+    # """
     # Check if fail-types directory exists for the given AAD and category
     if os.path.exists(category_path):
-        descriptions = []  # List to store all descriptions for the AAD/category combination
+        descriptions = [
+            f"De faalvormen van component {component} zijn:"
+        ]  # List to store all descriptions for the AAD/category combination
         # Loop through all subdirectories (fail-types)
         for fail_type_folder in os.listdir(category_path):
             fail_type_path = os.path.join(category_path, fail_type_folder, "main.json")
