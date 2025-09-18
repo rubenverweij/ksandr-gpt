@@ -39,7 +39,7 @@ def maak_samenvatting_aad(base_dir: str, aad_number, category):
     category_path = os.path.join(
         base_dir, "aads", str(aad_number), category, "fail-types"
     )
-    aad_path = os.path.join(base_dir, "aads", str(aad_number), "main.json")
+    aad_path = os.path.join(base_dir, "aads", str(aad_number), category, "main.json")
     with open(aad_path, "r") as file:
         data = clean_html(json.load(file))
     dossier = data["Dossier"]
