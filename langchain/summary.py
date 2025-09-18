@@ -117,7 +117,7 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
                     print(f"Fout bij verwerken van {fail_type_path}: {e}")
     return (
         template
-        + "\n De faalvormen van component {component} zijn:"
+        + f"\n De faalvormen van component {component} zijn: \n"
         + "\n".join(sorted(descriptions, key=extract_number))
     )
 
