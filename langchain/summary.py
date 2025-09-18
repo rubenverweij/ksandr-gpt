@@ -29,7 +29,7 @@ def extract_number(item: str) -> int:
     return int(match.group(1)) if match else float("inf")
 
 
-def maak_samenvatting_aad(base_dir: str, aad_number, category):
+def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
     """
     Loops through AAD numbers and categories, processes all main.json files under 'fail-types',
     and creates a combined file with descriptions from all fail-types.
@@ -95,6 +95,6 @@ def get_aad_list_and_categories(base_dir: str):
 if __name__ == "__main__":
     print(
         maak_samenvatting_aad(
-            "/home/ubuntu/ksandr_files", aad_number="10535", category="cat-1"
+            base_dir="/home/ubuntu/ksandr_files", aad_number="10535", category="cat-1"
         )
     )
