@@ -95,8 +95,15 @@ def get_aad_list_and_categories(base_dir: str):
 
 
 if __name__ == "__main__":
-    print(
-        maak_samenvatting_aad(
-            base_dir="/home/ubuntu/ksandr_files", aad_number="10535", category="cat-1"
-        )
-    )
+    base_dir = "/home/ubuntu/ksandr_files"
+    aads, categories = get_aad_list_and_categories(base_dir)
+
+    for aad in aads:
+        for categorie in categories:
+            print(
+                maak_samenvatting_aad(
+                    base_dir=base_dir,
+                    aad_number=aad,
+                    category=categorie,
+                )
+            )
