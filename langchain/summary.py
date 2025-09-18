@@ -54,6 +54,7 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
     De technische specificatie is: {"".join(dossier["Technische specificaties"])}.
     Het aantal van de {component} per netbeheerder is als volgt: {" ".join(f"Het aantal van {item['Netbeheerder']} is {item['Populatie']} op peildatum {item['Peildatum']}." for item in populatie)}.
     De faalvormen van component {component} zijn:
+    
     """
     # Check if fail-types directory exists for the given AAD and category
     if os.path.exists(category_path):
@@ -67,7 +68,7 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
                     with open(fail_type_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
                         descriptions.append(
-                            f"""- Nummer {data["Beschrijving"]["Nummer"]} -  Naam: {data["Beschrijving"]["Naam"]}. Hoe vaak komt deze faalvorm voor: {data["Beschrijving"]["Gemiddeld aantal incidenten"]}. De beschrijving is: {data["Beschrijving"]["Beschrijving"]}"""
+                            f"""- Nummer {data["Beschrijving"]["Nummer"]} -  Naam: {data["Beschrijving"]["Naam"]}. Hoe vaak komt deze faalvorm voor: {data["Beschrijving"]["Gemiddeld aantal incidenten"]}. De beschrijving is: {re.sub(r"\s+", " ", data["Beschrijving"]["Beschrijving"]).strip()}"""
                         )
                 except Exception as e:
                     print(f"Fout bij verwerken van {fail_type_path}: {e}")
@@ -99,11 +100,12 @@ if __name__ == "__main__":
     aads, categories = get_aad_list_and_categories(base_dir)
 
     for aad in aads:
-        for categorie in categories:
-            print(
-                maak_samenvatting_aad(
-                    base_dir=base_dir,
-                    aad_number=aad,
-                    category=categorie,
-                )
+        # TODO add cat-2 handling keyerrors
+        # for categorie in categories:
+        print(
+            maak_samenvatting_aad(
+                base_dir=base_dir,
+                aad_number=aad,
+                category="cat-1",
             )
+        )
