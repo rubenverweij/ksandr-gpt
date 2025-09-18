@@ -107,13 +107,13 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
                 try:
                     with open(fail_type_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                        clean_desc = re.sub(
-                            r"\s+",
-                            " ",
-                            data["Beschrijving"].get("Beschrijving", "Onbekend"),
-                        ).strip()
+                        # clean_desc = re.sub(
+                        #     r"\s+",
+                        #     " ",
+                        #     data["Beschrijving"].get("Beschrijving", "Onbekend"),
+                        # ).strip()
                         descriptions.append(
-                            f"""- Nummer {data["Beschrijving"]["Nummer"]} -  Naam: {data["Beschrijving"]["Naam"]}. Hoe vaak komt deze faalvorm voor: {data["Beschrijving"]["Gemiddeld aantal incidenten"]}. De beschrijving is: {clean_desc}"""
+                            f"""- Nummer {data["Beschrijving"].get("Nummer", "onbekend")} -  Naam: {data["Beschrijving"].get("Naam", "onbekend")}. Hoe vaak komt deze faalvorm voor: {data["Beschrijving"].get("Gemiddeld aantal incidenten", "onbekend")}."""
                         )
                 except Exception as e:
                     print(f"Fout bij verwerken van {fail_type_path}: {e}")
