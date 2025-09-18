@@ -95,6 +95,6 @@ def get_aad_list_and_categories(base_dir: str):
 if __name__ == "__main__":
     print(
         maak_samenvatting_aad(
-            "/home/ubuntu/ksandr_files", aad_number=10535, category="cat-1"
+            "/home/ubuntu/ksandr_files", aad_number="10535", category="cat-1"
         )
     )
