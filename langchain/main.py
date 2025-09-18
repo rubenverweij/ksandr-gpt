@@ -159,7 +159,6 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
                 "page_content": doc.page_content,
                 "metadata": doc.metadata,
                 "type": doc.type,
-                "summary": summary,
             }
             doc_dict["metadata"]["score"] = score
             results_new_schema.append(doc_dict)
@@ -175,6 +174,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
         "answer": model.invoke(prompt_with_template),
         "source_documents": results_new_schema,
         "where_document": document_search,
+        "summary": summary,
     }
 
 

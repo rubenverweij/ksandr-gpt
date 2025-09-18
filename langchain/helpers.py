@@ -137,15 +137,16 @@ def find_relevant_context(
     db: Chroma,
     source_max: int,
     score_threshold: float,
+    where_document,
     nx_max=20000,
 ):
     """Find the relevant context from Chroma based on prompt and filter."""
     # Perform similarity search
     results = db.similarity_search_with_score(
-        prompt, k=source_max, filter=filter_chroma
+        prompt, k=source_max, filter=filter_chroma, where_document=where_document
     )
     # Filter by score
-    results = [(doc, score) for doc, score in results if score >= score_threshold]
+    results = [(doc, score) for doc, score in results if score < score_threshold]
     summary = ""
     if filter_chroma:
         type_id = filter_chroma.get("type_id")
