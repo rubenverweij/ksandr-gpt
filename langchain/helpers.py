@@ -2,12 +2,14 @@ import re
 from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 import spacy
-from patterns import (
+from config import (
     PATROON_UITBREIDING,
     COMPONENTS,
     LIJST_SPECIFIEKE_COMPONENTEN,
+    PATH_SUMMARY,
 )
 from typing import List
+from langchain_chroma import Chroma
 
 # Gebruiken we voor het definieren van zelfstandig naamwoorden
 NLP = spacy.load("nl_core_news_sm")
@@ -127,6 +129,40 @@ def similarity_search_with_nouns(
         return {"$contains": nouns[0]}
     else:
         return {"$or": [{"$contains": noun} for noun in nouns]}
+
+
+def find_relevant_context(
+    prompt: str,
+    filter_chroma: dict[str, str],
+    db: Chroma,
+    source_max: int,
+    score_threshold: float,
+    nx_max=20000,
+):
+    """Find the relevant context from Chroma based on prompt and filter."""
+    # Perform similarity search
+    results = db.similarity_search_with_score(
+        prompt, k=source_max, filter=filter_chroma
+    )
+    # Filter by score
+    results = [(doc, score) for doc, score in results if score >= score_threshold]
+    summary = ""
+    if filter_chroma:
+        type_id = filter_chroma.get("type_id")
+        if type_id:
+            file_path = f"{PATH_SUMMARY}/{type_id}.txt"
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    summary = f.read()
+            except FileNotFoundError:
+                print(f"File not found: {file_path}")
+            except Exception as e:
+                print(f"Error reading file {file_path}: {e}")
+    # Combine page content
+    context_text = summary + "\n" + "\n".join([doc.page_content for doc, _ in results])
+    # Truncate by max characters
+    context_text = context_text[:nx_max]
+    return context_text, results
 
 
 if __name__ == "__main__":

@@ -1,5 +1,7 @@
 from typing import List, Dict
 
+PATH_SUMMARY = "/root/onprem_data/summary"
+
 PATROON_UITBREIDING: Dict[str, List[str]] = {
     "onderhoud": ["Onderhoud", "onderhoud"],
     "aantal": ["Populatie", "aantal", "populatie"],

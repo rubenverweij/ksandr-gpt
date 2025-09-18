@@ -36,9 +36,9 @@ CHROMA_PATH = "/root/onprem_data/chroma"
 # Initialisatie van het taalmodel
 LLM = LlamaCpp(
     model_path=DEFAULT_MODEL_PATH,
-    max_tokens=500,
+    max_tokens=2000,
     n_gpu_layers=-1,
-    n_ctx=12000,
+    n_ctx=32768,
     verbose=False,
     streaming=True,
     temperature=TEMPERATURE,
