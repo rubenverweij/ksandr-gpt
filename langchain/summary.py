@@ -147,15 +147,16 @@ def get_aad_list_and_categories(base_dir: str):
 
 if __name__ == "__main__":
     base_dir = "/home/ubuntu/ksandr_files"
+    output = "/home/ubuntu/onprem_data/summary/"
     aads, categories = get_aad_list_and_categories(base_dir)
 
     for aad in aads:
         # TODO add cat-2 handling keyerrors
         # for categorie in categories:
-        print(
-            maak_samenvatting_aad(
-                base_dir=base_dir,
-                aad_number=aad,
-                category="cat-1",
-            )
+        summary = maak_samenvatting_aad(
+            base_dir=base_dir,
+            aad_number=aad,
+            category="cat-1",
         )
+        with open(f"{output}/{aad}.txt", "w", encoding="utf-8") as file:
+            file.write(summary)
