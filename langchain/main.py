@@ -9,6 +9,7 @@ from helpers import (
     uniek_antwoord,
     get_embedding_function,
     find_relevant_context,
+    similarity_search_with_nouns,
 )
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -143,6 +144,7 @@ class AskRequest(BaseModel):
 
 def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: int):
     if rag:
+        document_search = similarity_search_with_nouns(query=prompt)
         context_text, results, summary = find_relevant_context(
             prompt=prompt,
             filter_chroma=filter,
