@@ -96,9 +96,7 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
 
     # Check if fail-types directory exists for the given AAD and category
     if os.path.exists(category_path):
-        descriptions = [
-            f"De faalvormen van component {component} zijn:"
-        ]  # List to store all descriptions for the AAD/category combination
+        descriptions = []  # List to store all descriptions for the AAD/category combination
         # Loop through all subdirectories (fail-types)
         for fail_type_folder in os.listdir(category_path):
             fail_type_path = os.path.join(category_path, fail_type_folder, "main.json")
@@ -113,11 +111,13 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
                         #     data["Beschrijving"].get("Beschrijving", "Onbekend"),
                         # ).strip()
                         descriptions.append(
-                            f"""- Nummer {data["Beschrijving"].get("Nummer", "onbekend")} -  Naam: {data["Beschrijving"].get("Naam", "onbekend")}. Hoe vaak komt deze faalvorm voor: {data["Beschrijving"].get("Gemiddeld aantal incidenten", "onbekend")}."""
+                            f"""- Nummer {data["Beschrijving"].get("Nummer", "onbekend")} - {data["Beschrijving"].get("Naam", "onbekend")}. Hoe vaak komt deze faalvorm voor: {data["Beschrijving"].get("Gemiddeld aantal incidenten", "onbekend")}."""
                         )
                 except Exception as e:
                     print(f"Fout bij verwerken van {fail_type_path}: {e}")
-    return template + "\n".join(sorted(descriptions, key=extract_number))
+    return template + "\n De faalvormen van component {component} zijn:\n".join(
+        sorted(descriptions, key=extract_number)
+    )
 
 
 def get_aad_list_and_categories(base_dir: str):
