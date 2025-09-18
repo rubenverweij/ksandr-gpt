@@ -8,7 +8,7 @@ from helpers import (
     COMPONENTS,
     uniek_antwoord,
     get_embedding_function,
-    similarity_search_with_nouns,
+    find_relevant_context,
 )
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -143,13 +143,13 @@ class AskRequest(BaseModel):
 
 def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: int):
     if rag:
-        document_search = similarity_search_with_nouns(query=prompt)
-        results = db.similarity_search_with_score(
-            prompt, k=SOURCE_MAX, filter=filter, where_document=document_search
+        context_text, results, summary = find_relevant_context(
+            prompt=prompt,
+            filter_chroma=filter,
+            db=db,
+            source_max=SOURCE_MAX,
+            score_threshold=SCORE_THRESHOLD,
         )
-        results = [(doc, score) for doc, score in results if score < SCORE_THRESHOLD]
-        context_text = "\n".join([doc.page_content for doc, _ in results])
-        context_text = context_text[:3500]
         results_new_schema = []
         for doc, score in results:
             doc_dict = {
@@ -157,6 +157,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
                 "page_content": doc.page_content,
                 "metadata": doc.metadata,
                 "type": doc.type,
+                "summary": summary,
             }
             doc_dict["metadata"]["score"] = score
             results_new_schema.append(doc_dict)

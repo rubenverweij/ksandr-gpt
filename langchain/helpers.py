@@ -161,8 +161,8 @@ def find_relevant_context(
     # Combine page content
     context_text = summary + "\n" + "\n".join([doc.page_content for doc, _ in results])
     # Truncate by max characters
-    context_text = context_text[:nx_max]
-    return context_text, results
+    # context_text = context_text[:nx_max]
+    return context_text, results, summary
 
 
 if __name__ == "__main__":
