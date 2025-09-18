@@ -51,7 +51,7 @@ def maak_samenvatting_aad(base_dir: str, aad_number: str, category: str):
     In het beheerteam van dit AAD zitten de volgende personen: {", ".join(item["text"] for item in data["Dossier"]["Deelnemers"]["Beheerteam"])}.
     De netbeheerders die deelnemen aan dit dossier zijn: {dossier["Deelnemers"]["Deelnemende partijen"]}. De opdrachtgever van dit AAD is: {dossier["Deelnemers"]["Opdrachtgever"]}.
     De fabrikant van de {component} is {dossier["Component"]["Fabrikant"]}. 
-    De technische specificatie is: {"".join(dossier["Technische specificaties"])}.
+    De technische specificatie is: {"".join(dossier.get("Technische specificaties", "onbekend"))}.
     Het aantal van de {component} per netbeheerder is als volgt: {" ".join(f"Het aantal van {item['Netbeheerder']} is {item['Populatie']} op peildatum {item['Peildatum']}." for item in populatie)}.
     De faalvormen van component {component} zijn:
     
