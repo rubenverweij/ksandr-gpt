@@ -33,6 +33,8 @@ STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
 INCLUDE_FILTER = int(os.getenv("INCLUDE_FILTER", 1))
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", 750))
 MAX_CTX = int(os.getenv("MAX_CTX", 8000))
+INCLUDE_SUMMARY = int(os.getenv("MAX_CTX", 0))
+INCLUDE_KEYWORDS = int(os.getenv("INCLUDE_KEYWORDS", 0))
 DEFAULT_MODEL_PATH = "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf"
 CHROMA_PATH = "/root/onprem_data/chroma"
 
@@ -141,7 +143,9 @@ class AskRequest(BaseModel):
 
 def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: int):
     if rag:
-        document_search = similarity_search_with_nouns(query=prompt)
+        document_search = similarity_search_with_nouns(
+            query=prompt, include_nouns=INCLUDE_KEYWORDS
+        )
         context_text, results, summary = find_relevant_context(
             prompt=prompt,
             filter_chroma=filter,
@@ -149,6 +153,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
             source_max=SOURCE_MAX,
             score_threshold=SCORE_THRESHOLD,
             where_document=document_search,
+            include_summary=INCLUDE_SUMMARY,
         )
         results_new_schema = []
         for doc, score in results:

@@ -104,7 +104,7 @@ def vind_relevante_componenten(vraag, componenten_dict):
     return {"type_id": gevonden_sleutels[0]} if len(gevonden_sleutels) == 1 else None
 
 
-def extract_nouns_and_propn(text: str) -> List[str]:
+def extract_nouns_and_propn(text: str, include_nouns) -> List[str]:
     """Extract common nouns and proper nouns from Dutch text."""
     doc = NLP(text)
     list_nouns = [token.text for token in doc if token.pos_ in ("NOUN", "PROPN")]
@@ -115,14 +115,15 @@ def extract_nouns_and_propn(text: str) -> List[str]:
                 if len(extras) > 0:
                     expanded_nouns.extend(extras)
                 expanded_nouns.append(noun)
+    if include_nouns:
+        total_list = expanded_nouns + list_nouns
+        return list(set(total_list))  # remove duplicates
+    else:
+        return list(set(expanded_nouns))
 
-    return list(set(expanded_nouns))  # remove duplicates
 
-
-def similarity_search_with_nouns(
-    query: str,
-):
-    nouns = extract_nouns_and_propn(query)
+def similarity_search_with_nouns(query: str, include_nouns):
+    nouns = extract_nouns_and_propn(query, include_nouns)
     if not nouns:
         return None
     if len(nouns) == 1:
@@ -138,6 +139,7 @@ def find_relevant_context(
     source_max: int,
     score_threshold: float,
     where_document,
+    include_summary: int,
     nx_max=20000,
 ):
     """Find the relevant context from Chroma based on prompt and filter."""
@@ -148,19 +150,20 @@ def find_relevant_context(
     # Filter by score
     results = [(doc, score) for doc, score in results if score < score_threshold]
     summary = ""
-    if filter_chroma:
-        type_id = filter_chroma.get("type_id")
-        if type_id:
-            file_path = f"{PATH_SUMMARY}/{type_id}.txt"
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    summary = f.read()
-            except FileNotFoundError:
-                print(f"File not found: {file_path}")
-            except Exception as e:
-                print(f"Error reading file {file_path}: {e}")
+    if include_summary:
+        if filter_chroma:
+            type_id = filter_chroma.get("type_id")
+            if type_id:
+                file_path = f"{PATH_SUMMARY}/{type_id}.txt"
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        summary = f.read() + "\n"
+                except FileNotFoundError:
+                    print(f"File not found: {file_path}")
+                except Exception as e:
+                    print(f"Error reading file {file_path}: {e}")
     # Combine page content
-    context_text = summary + "\n" + "\n".join([doc.page_content for doc, _ in results])
+    context_text = summary + "\n".join([doc.page_content for doc, _ in results])
     # Truncate by max characters
     # context_text = context_text[:nx_max]
     return context_text, results, summary
