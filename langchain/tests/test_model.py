@@ -1,50 +1,92 @@
 import csv
 import json
 import requests
+import argparse
+from datetime import datetime
+import re
 
 url = "http://localhost:8080/evaluate"
 
 if __name__ == "__main__":
-    location_testdata = "testvragen.csv"
+    parser = argparse.ArgumentParser(
+        description="Evaluate test questions against model."
+    )
+    parser.add_argument(
+        "--file", type=str, default="testvragen.csv", help="Path to CSV test file"
+    )
+    parser.add_argument(
+        "--expected_col",
+        type=str,
+        default="Antwoordrichting",
+        help="Column name for expected answers",
+    )
+    parser.add_argument(
+        "--actual_col",
+        type=str,
+        default="Resultaat_19-9-2025",
+        help="Column name for actual answers",
+    )
+    args = parser.parse_args()
+
+    location_testdata = args.file
     results = []
 
+    # Datumstempel voor outputfile
+    today = datetime.today().strftime("%Y-%m-%d")
+    output_file = f"/root/onprem_data/tests/evaluation_results_{today}.json"
+
+    # Eerst tellen
     with open(location_testdata, newline="", encoding="latin-1") as f:
         total = sum(1 for _ in f) - 1
 
+    # Daarna verwerken
     with open(location_testdata, newline="", encoding="latin-1") as f:
         reader = csv.DictReader(f, delimiter=";")
-        for idx, row in enumerate(reader):
+        for idx, row in enumerate(reader, start=1):
             percent = (idx / total) * 100
             print(f"Processing test question {idx}/{total} ({percent:.1f}%)")
-            expected = row["Antwoordrichting"]
-            actual = row["Resultaat_19-9-2025"]
+
+            expected = row[args.expected_col]
+            actual = row[args.actual_col]
             payload = {"expected": expected, "actual": actual}
 
             response = requests.post(url, json=payload)
-            print(response.json())
-            response = response.json()["evaluation"].strip().lower()
-            if response.startswith("correct"):
+            data = response.json()
+            response_text = data["evaluation"].strip().lower()
+
+            match = re.search(
+                r"\b([0-9](?:\.\d+)?|10(?:\.0+)?)(?:/10)?\b", response_text
+            )
+            if match:
+                score = float(match.group(1))
+            else:
+                score = None
+
+            if response_text.startswith("correct"):
                 result = "correct"
-            elif response.startswith("incorrect"):
+            elif response_text.startswith("incorrect"):
                 result = "incorrect"
             else:
-                result = "unknown"  # fallback, mocht er iets misgaan
+                result = "unknown"
 
             results.append(
                 {
                     "actual": actual,
                     "expected": expected,
                     "resultaat": result,
-                    "toelichting": response,
+                    "toelichting": response_text,
+                    "score": score,
                 }
             )
 
     # Schrijf naar JSON bestand
-    with open("evaluation_results.json", "w", encoding="utf-8") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
     total = len(results)
     num_correct = sum(1 for r in results if r["resultaat"] == "correct")
+
+    print(f"✅ Results saved to {output_file}")
     print(f"Totaal aantal vragen: {total}")
     print(f"Aantal correct: {num_correct}")
     print(f"Aantal incorrect: {total - num_correct}")
