@@ -16,8 +16,6 @@ if __name__ == "__main__":
         for idx, row in enumerate(reader):
             percent = (idx / total) * 100
             print(f"Processing test question {idx}/{total} ({percent:.1f}%)")
-            if idx == 10:
-                break
             expected = row["Antwoordrichting"]
             actual = row["Resultaat_19-9-2025"]
             payload = {"expected": expected, "actual": actual}
