@@ -15,6 +15,12 @@ if __name__ == "__main__":
         "--file", type=str, default="testvragen.csv", help="Path to CSV test file"
     )
     parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="/home/ubuntu/onprem_data/tests/",
+        help="Path to output dir",
+    )
+    parser.add_argument(
         "--expected_col",
         type=str,
         default="Antwoordrichting",
@@ -33,7 +39,7 @@ if __name__ == "__main__":
 
     # Datumstempel voor outputfile
     today = datetime.today().strftime("%Y-%m-%d")
-    output_file = f"/root/onprem_data/tests/evaluation_results_{today}.json"
+    output_file = f"{args.output_dir}/evaluation_results_{today}.json"
 
     # Eerst tellen
     with open(location_testdata, newline="", encoding="latin-1") as f:
