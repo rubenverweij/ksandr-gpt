@@ -1,6 +1,6 @@
 # Testscript
 
-Testvragen toevoegen aan `langchain\tests\testvragen.csv`.
+Testvragen toevoegen aan `langchain\tests\testvragen.csv` of locatie.
 
 Test script draaien en analyseren resultaten:
 

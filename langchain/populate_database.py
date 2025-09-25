@@ -87,6 +87,18 @@ def clean_html(value):
     return value
 
 
+def prepare_text_for_vector_store(text: str) -> str:
+    # Normalize escaped and real newlines
+    text = text.replace("\\n", "\n").replace("\r\n", "\n").replace("\r", "\n")
+    # Replace 3+ newlines with just 2 (keeps paragraph breaks)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    # Remove trailing spaces on each line
+    text = re.sub(r"[ \t]+\n", "\n", text)
+    # Collapse multiple spaces inside lines
+    text = re.sub(r" {2,}", " ", text)
+    return text.strip()
+
+
 def load_documents(directory: Path) -> List[Document]:
     """Laad alle JSON-documenten uit een map, splits ze op en verrijk met metadata."""
     documenten: List[Document] = []
@@ -114,6 +126,7 @@ def load_documents(directory: Path) -> List[Document]:
                         "file_path": file_path.as_posix(),
                         "chunk": idx,
                         "char_length": len(str(chunk_cleaned)),
+                        "useful": 0 if len(chunk_cleaned) < 150 else 1,
                         "source": file_path.as_posix(),
                         "source_search": file_path.as_posix(),
                         "key": main_key,
@@ -140,7 +153,8 @@ def load_documents(directory: Path) -> List[Document]:
             try:
                 with file_path.open("r", encoding="utf-8") as f:
                     content = f.read()
-                    chunks = splitter.split_text(content)
+                    content_cleaned = prepare_text_for_vector_store(content)
+                    chunks = splitter.split_text(content_cleaned)
                     for idx, chunk in enumerate(chunks):
                         chunk_cleaned = str(chunk)
                         chunk_cleaned = chunk_cleaned.replace("'", '"')
@@ -150,6 +164,7 @@ def load_documents(directory: Path) -> List[Document]:
                             "file_path": file_path.as_posix(),
                             "chunk": idx,
                             "char_length": len(chunk_cleaned),
+                            "useful": 0 if len(chunk_cleaned) < 150 else 1,
                             "source": file_path.as_posix(),
                             "source_search": file_path.as_posix(),
                             "key": "na",
