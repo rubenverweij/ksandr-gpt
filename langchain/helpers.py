@@ -63,7 +63,7 @@ def uniek_antwoord(tekst):
 def get_embedding_function():
     embedding_encode_kwargs: dict = {"normalize_embeddings": True}
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    embedding_model_kwargs = {"device": device, "torch_dtype": torch.float16}
+    embedding_model_kwargs = {"device": device}
     embeddings = HuggingFaceEmbeddings(
         model_name="BAAI/bge-multilingual-gemma2",
         model_kwargs=embedding_model_kwargs,
