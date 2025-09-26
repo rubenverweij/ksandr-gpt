@@ -72,26 +72,27 @@ if __name__ == "__main__":
             response = requests.post(url_question, json=payload)
             request_id = json.loads(response.text)["request_id"]
 
-            print(f"Processing test question with id {request_id} - {response.text}")
+            print(f"Processing test question with id {request_id}")
 
             while True:
                 response_str = get_status_response(request_id)
                 response = json.loads(response_str.text)
                 status = response.get("status")
                 print(f"Current status: {status}")
-                time.sleep(3)
+                time.sleep(5)
                 if status == "completed":
                     print("Processing completed.")
                     break  # Exit the loop]
 
+            answer = response["response"].get("answer")
+            print(f"Response is {response.get('response')}")
+
             cosine_score_reference = get_answer_quality(
                 answer_1=expected, answer_2=actual
             )
-            cosine_score_now = get_answer_quality(
-                answer_1=expected, answer_2=response["response"]["answer"]
-            )
+            cosine_score_now = get_answer_quality(answer_1=expected, answer_2=answer)
             best_answer, score_diff, scores = compare_answers_with_cross_encoder(
-                query=question, answer_1=actual, answer_2=response["response"]["answer"]
+                query=question, answer_1=actual, answer_2=answer
             )
 
             print(
@@ -101,7 +102,7 @@ if __name__ == "__main__":
             results.append(
                 {
                     "vraag": question,
-                    "antwoord": response["response"]["answer"],
+                    "antwoord": answer,
                     "score_consine_similarity": round(float(cosine_score_now), 2),
                     "score_reranker": round(float(scores[1]), 2),
                     "score_consine_similarity_ref": round(
