@@ -2,8 +2,10 @@ import csv
 import requests
 import argparse
 from datetime import datetime
+import json
 
 url_question = "http://localhost:8080/ask"
+url_question_output = "http://localhost:8080/status/{request_id}"
 url_evaluate = "http://localhost:8080/evaluate"
 
 if __name__ == "__main__":
@@ -50,6 +52,9 @@ if __name__ == "__main__":
     with open(location_testdata, newline="", encoding="latin-1") as f:
         total = sum(1 for _ in f) - 1
 
+    def get_status_response(request_id):
+        return requests.get(url_question_output.format(request_id))
+
     # Daarna verwerken
     with open(location_testdata, newline="", encoding="latin-1") as f:
         reader = csv.DictReader(f, delimiter=";")
@@ -63,7 +68,18 @@ if __name__ == "__main__":
 
             payload = {"prompt": question}
             response = requests.post(url_question, json=payload)
-            print(response)
+            request_id = response.text["request_id"]
+
+            while True:
+                response_str = get_status_response()
+                response = json.loads(response_str)
+                status = response.get("status")
+                print(f"Current status: {status}")
+                if status == "completed":
+                    print("Processing completed.")
+                    break  # Exit the loop]
+            print(response["response"]["answer"])
+
             if idx == 1:
                 break
 
