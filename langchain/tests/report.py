@@ -73,11 +73,9 @@ if __name__ == "__main__":
             print(f"📅 Rapport {stats['date']}:")
             print(f"   Totale vragen: {stats['total']}")
             print(
-                f"   Referentie beter gekozen: {stats['referentie']} ({stats['pct_referentie']:.1f}%)"
+                f"   Referentie beter: {stats['referentie']} ({stats['pct_referentie']:.1f}%)"
             )
-            print(
-                f"   Nieuw beter gekozen:      {stats['nieuw']} ({stats['pct_nieuw']:.1f}%)"
-            )
+            print(f"   Nieuw beter:      {stats['nieuw']} ({stats['pct_nieuw']:.1f}%)")
 
             if stats["avg_reranker"] is not None:
                 print(
@@ -102,11 +100,9 @@ if __name__ == "__main__":
 
         print("\n📊 Samenvatting over alle rapporten:")
         print(f"   Totale vragen: {total_qs}")
+        print(f"   Referentie beter: {total_ref} ({(total_ref / total_qs) * 100:.1f}%)")
         print(
-            f"   Referentie beter gekozen: {total_ref} ({(total_ref / total_qs) * 100:.1f}%)"
-        )
-        print(
-            f"   Nieuw beter gekozen:      {total_nieuw} ({(total_nieuw / total_qs) * 100:.1f}%)"
+            f"   Nieuw beter:      {total_nieuw} ({(total_nieuw / total_qs) * 100:.1f}%)"
         )
 
         # Optional: average scores across reports
