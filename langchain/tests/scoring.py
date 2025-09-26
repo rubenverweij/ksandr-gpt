@@ -32,9 +32,10 @@ def compare_answers_with_cross_encoder(query, answer_1, answer_2):
 
 def get_answer_quality(answer_1, answer_2):
     # Generate embeddings for both answers
-    embeddings = SENTENCE_TRANSFORMER.encode([answer_1, answer_2])
+    embeddings_1 = SENTENCE_TRANSFORMER.embed_query(answer_1)
+    embeddings_2 = SENTENCE_TRANSFORMER.embed_query(answer_2)
     # Compute cosine similarity between the two embeddings
-    similarity_score = cosine_similarity([embeddings[0]], [embeddings[1]])[0][0]
+    similarity_score = cosine_similarity([embeddings_1], [embeddings_2])[0][0]
     # Convert similarity score to a quality scale (optional, can fine-tune thresholds)
     quality_score = similarity_score * 100  # scale to percentage
     return quality_score
