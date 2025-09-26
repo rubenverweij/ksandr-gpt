@@ -71,7 +71,7 @@ if __name__ == "__main__":
             request_id = json.loads(response.text)["request_id"]
 
             while True:
-                response_str = get_status_response()
+                response_str = get_status_response(request_id)
                 response = json.loads(response_str)
                 status = response.get("status")
                 print(f"Current status: {status}")
