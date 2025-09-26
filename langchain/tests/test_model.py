@@ -3,6 +3,8 @@ import requests
 import argparse
 from datetime import datetime
 import json
+from scoring import cosine_similarity, compare_answers_with_cross_encoder
+import time
 
 url_question = "http://localhost:8080/ask"
 url_question_output = "http://localhost:8080/status/{request_id}"
@@ -77,10 +79,22 @@ if __name__ == "__main__":
                 response = json.loads(response_str.text)
                 status = response.get("status")
                 print(f"Current status: {status}")
+                time.sleep(3)
                 if status == "completed":
                     print("Processing completed.")
                     break  # Exit the loop]
-            print(response["response"]["answer"])
+
+            cosine_score_previous = cosine_similarity(X=expected, Y=actual)
+            cosine_score_now = cosine_similarity(
+                X=expected, Y=response["response"]["answer"]
+            )
+            best_answer, score_diff = compare_answers_with_cross_encoder(
+                query=question, answer_1=response["response"]["answer"], answer_2=actual
+            )
+
+            print(
+                f"The cosine score is {cosine_score_now}, the score was {cosine_score_previous}, the best answer according to the reranker {best_answer} with score diff {score_diff}"
+            )
 
             if idx == 1:
                 break
