@@ -112,9 +112,6 @@ if __name__ == "__main__":
                 }
             )
 
-            if idx == 3:
-                break
-
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
