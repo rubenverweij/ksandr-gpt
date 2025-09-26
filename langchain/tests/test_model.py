@@ -53,7 +53,7 @@ if __name__ == "__main__":
         total = sum(1 for _ in f) - 1
 
     def get_status_response(request_id):
-        return requests.get(url_question_output.format(request_id)).text
+        return requests.get(f"http://localhost:8080/status/{request_id}")
 
     # Daarna verwerken
     with open(location_testdata, newline="", encoding="latin-1") as f:
@@ -70,9 +70,11 @@ if __name__ == "__main__":
             response = requests.post(url_question, json=payload)
             request_id = json.loads(response.text)["request_id"]
 
+            print(f"Processing test question with id {request_id} - {response.text}")
+
             while True:
                 response_str = get_status_response(request_id)
-                response = json.loads(response_str)
+                response = json.loads(response_str.text)
                 status = response.get("status")
                 print(f"Current status: {status}")
                 if status == "completed":
