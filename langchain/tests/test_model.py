@@ -79,13 +79,13 @@ if __name__ == "__main__":
                 response = json.loads(response_str.text)
                 status = response.get("status")
                 print(f"Current status: {status}")
-                time.sleep(5)
+                time.sleep(10)
                 if status == "completed":
                     print("Processing completed.")
                     break  # Exit the loop]
 
             answer = response["response"].get("answer")
-            print(f"Answer is {answer}")
+            print(f"Answer is {answer} versus {actual}")
 
             cosine_score_reference = get_answer_quality(
                 answer_1=expected, answer_2=actual
