@@ -103,6 +103,7 @@ if __name__ == "__main__":
                 {
                     "vraag": question,
                     "antwoord": answer,
+                    "antwoord_referentie": actual,
                     "score_consine_similarity": round(float(cosine_score_now), 2),
                     "score_reranker": round(float(scores[1]), 2),
                     "score_consine_similarity_ref": round(
