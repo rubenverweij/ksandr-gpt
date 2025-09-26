@@ -30,6 +30,7 @@ request_responses = {}
 # Configuratievariabelen
 TEMPERATURE = float(os.getenv("TEMPERATURE", 0.2))
 SOURCE_MAX = int(os.getenv("SOURCE_MAX", 10))
+SOURCE_MAX_RERANKER = int(os.getenv("SOURCE_MAX_RERANKER", 0))
 SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 1.1))
 STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
 INCLUDE_FILTER = int(os.getenv("INCLUDE_FILTER", 1))
@@ -106,7 +107,8 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
             prompt=prompt,
             filter_chroma=filter,
             db=db,
-            source_max=SOURCE_MAX,
+            source_max_reranker=SOURCE_MAX_RERANKER,
+            source_max_dense=SOURCE_MAX,
             score_threshold=SCORE_THRESHOLD,
             where_document=document_search,
             include_summary=INCLUDE_SUMMARY,

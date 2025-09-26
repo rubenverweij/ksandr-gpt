@@ -10,6 +10,12 @@ from config import (
 )
 from typing import List
 from langchain_chroma import Chroma
+from sentence_transformers import CrossEncoder
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+reranker = CrossEncoder(
+    "NetherlandsForensicInstitute/robbert-2023-dutch-base-cross-encoder", device=device
+)
 
 # Gebruiken we voor het definieren van zelfstandig naamwoorden
 NLP = spacy.load("nl_core_news_sm")
@@ -136,19 +142,24 @@ def find_relevant_context(
     prompt: str,
     filter_chroma: dict[str, str],
     db: Chroma,
-    source_max: int,
+    source_max_reranker: int,
+    source_max_dense: int,
     score_threshold: float,
     where_document,
     include_summary: int,
     nx_max=20000,
 ):
     """Find the relevant context from Chroma based on prompt and filter."""
-    # Perform similarity search
+
     results = db.similarity_search_with_score(
-        prompt, k=source_max, filter=filter_chroma, where_document=where_document
+        prompt, k=source_max_dense, filter=filter_chroma, where_document=where_document
     )
     # Filter by score
     results = [(doc, score) for doc, score in results if score < score_threshold]
+
+    if source_max_reranker:
+        results = rerank(prompt, results, top_m=source_max_reranker)
+
     summary = ""
     if include_summary:
         if filter_chroma:
@@ -167,6 +178,24 @@ def find_relevant_context(
     # Truncate by max characters
     # context_text = context_text[:nx_max]
     return context_text, results, summary
+
+
+def rerank(query, candidates, top_m: int):
+    """
+    query: str
+    candidates: list of (text, metadata)
+    Returns top_m candidates ranked by relevance.
+    """
+    # Prepare input pairs (query, candidate text)
+    input_pairs = [(query, text.page_content) for text, _ in candidates]
+    input_docs_no_score = [text for text, _ in candidates]
+    # Get relevance scores
+    scores = reranker.predict(input_pairs)
+    # Combine candidates with scores
+    scored = list(zip(input_docs_no_score, scores))
+    # Sort by score descending
+    scored.sort(key=lambda x: x[1], reverse=True)
+    return scored[:top_m]
 
 
 if __name__ == "__main__":
