@@ -53,7 +53,7 @@ if __name__ == "__main__":
         total = sum(1 for _ in f) - 1
 
     def get_status_response(request_id):
-        return requests.get(url_question_output.format(request_id))
+        return requests.get(url_question_output.format(request_id)).text
 
     # Daarna verwerken
     with open(location_testdata, newline="", encoding="latin-1") as f:
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
             payload = {"prompt": question}
             response = requests.post(url_question, json=payload)
-            request_id = json.loads(response)["request_id"]
+            request_id = json.loads(response.text)["request_id"]
 
             while True:
                 response_str = get_status_response()
