@@ -102,10 +102,12 @@ if __name__ == "__main__":
                 {
                     "vraag": question,
                     "antwoord": response["response"]["answer"],
-                    "score_consine_similarity": cosine_score_now,
-                    "score_reranker": scores[1],
-                    "score_consine_similarity_ref": cosine_score_reference,
-                    "score_reranker_ref": scores[0],
+                    "score_consine_similarity": round(float(cosine_score_now), 2),
+                    "score_reranker": round(float(scores[1]), 2),
+                    "score_consine_similarity_ref": round(
+                        float(cosine_score_reference), 2
+                    ),
+                    "score_reranker_ref": round(float(scores[0]), 2),
                     "beste_antwoord": best_answer,
                 }
             )
