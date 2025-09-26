@@ -18,16 +18,14 @@ RERANKER = CrossEncoder(
 def compare_answers_with_cross_encoder(query, answer_1, answer_2):
     # Generate scores using the cross-encoder model
     scores = RERANKER.predict([(query, answer_1), (query, answer_2)])
-
     # Compare the two answers: higher score is better
     if scores[0] > scores[1]:
-        best_answer = "Answer 1"
+        best_answer = "referentie"
         score_difference = scores[0] - scores[1]
     else:
-        best_answer = "Answer 2"
+        best_answer = "nieuw"
         score_difference = scores[1] - scores[0]
-
-    return best_answer, score_difference
+    return best_answer, score_difference, scores
 
 
 def get_answer_quality(answer_1, answer_2):

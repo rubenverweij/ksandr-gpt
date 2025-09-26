@@ -84,22 +84,37 @@ if __name__ == "__main__":
                     print("Processing completed.")
                     break  # Exit the loop]
 
-            cosine_score_previous = get_answer_quality(
+            cosine_score_reference = get_answer_quality(
                 answer_1=expected, answer_2=actual
             )
             cosine_score_now = get_answer_quality(
                 answer_1=expected, answer_2=response["response"]["answer"]
             )
-            best_answer, score_diff = compare_answers_with_cross_encoder(
-                query=question, answer_1=response["response"]["answer"], answer_2=actual
+            best_answer, score_diff, scores = compare_answers_with_cross_encoder(
+                query=question, answer_1=actual, answer_2=response["response"]["answer"]
             )
 
             print(
-                f"The cosine score is {cosine_score_now}, the score was {cosine_score_previous}, the best answer according to the reranker {best_answer} with score diff {score_diff}"
+                f"The cosine score is now: {cosine_score_now}, the score was: {cosine_score_reference}, the best answer according to the reranker {best_answer} with score diff {score_diff}"
             )
 
-            if idx == 1:
+            results.append(
+                {
+                    "vraag": question,
+                    "antwoord": response["response"]["answer"],
+                    "score_consine_similarity": cosine_score_now,
+                    "score_reranker": scores[1],
+                    "score_consine_similarity_ref": cosine_score_reference,
+                    "score_reranker_ref": scores[0],
+                    "beste_antwoord": best_answer,
+                }
+            )
+
+            if idx == 3:
                 break
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
 
     #         payload = {"expected": expected, "actual": actual}
 

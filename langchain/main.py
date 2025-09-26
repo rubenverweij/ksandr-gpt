@@ -255,6 +255,15 @@ def evaluate_answer(expected: str, actual: str) -> str:
     return result.strip()
 
 
+def get_image_name() -> str:
+    return os.getenv("IMAGE_NAME", "Unknown")
+
+
+@app.get("/metadata")
+def get_metadata():
+    return {"image_name": get_image_name()}
+
+
 @app.on_event("startup")
 async def startup():
     """Start de worker om verzoeken sequentieel te verwerken."""
