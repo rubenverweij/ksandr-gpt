@@ -85,7 +85,7 @@ if __name__ == "__main__":
                     break  # Exit the loop]
 
             answer = response["response"].get("answer")
-            print(f"Response is {response.get('response')}")
+            print(f"Answer is {answer}")
 
             cosine_score_reference = get_answer_quality(
                 answer_1=expected, answer_2=actual
