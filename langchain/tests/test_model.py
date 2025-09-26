@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
             payload = {"prompt": question}
             response = requests.post(url_question, json=payload)
-            request_id = response.text["request_id"]
+            request_id = json.loads(response)["request_id"]
 
             while True:
                 response_str = get_status_response()
