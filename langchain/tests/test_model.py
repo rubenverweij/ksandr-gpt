@@ -57,7 +57,7 @@ if __name__ == "__main__":
             percent = (idx / total) * 100
             print(f"Processing test question {idx}/{total} ({percent:.1f}%)")
 
-            question = row[args.question]
+            question = row[args.question_col]
             expected = row[args.expected_col]
             actual = row[args.actual_col]
 
