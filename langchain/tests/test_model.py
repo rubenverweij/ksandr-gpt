@@ -84,9 +84,11 @@ if __name__ == "__main__":
                     print("Processing completed.")
                     break  # Exit the loop]
 
-            cosine_score_previous = get_answer_quality(X=expected, Y=actual)
+            cosine_score_previous = get_answer_quality(
+                answer_1=expected, answer_2=actual
+            )
             cosine_score_now = get_answer_quality(
-                X=expected, Y=response["response"]["answer"]
+                answer_1=expected, answer_2=response["response"]["answer"]
             )
             best_answer, score_diff = compare_answers_with_cross_encoder(
                 query=question, answer_1=response["response"]["answer"], answer_2=actual
