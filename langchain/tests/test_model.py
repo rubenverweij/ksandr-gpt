@@ -3,7 +3,12 @@ import requests
 import argparse
 from datetime import datetime
 import json
-from scoring import get_answer_quality, compare_answers_with_cross_encoder
+from scoring import (
+    get_answer_quality,
+    compare_answers_with_cross_encoder,
+    SENTENCE_TRANSFORMERS,
+    tfidf_cosine_sim,
+)
 import time
 
 url_question = "http://localhost:8080/ask"
@@ -88,17 +93,31 @@ if __name__ == "__main__":
             answer = response["response"].get("answer")
             print(f"Answer is {answer} versus {actual}")
 
-            cosine_score_reference = get_answer_quality(
-                answer_1=expected, answer_2=actual
-            )
-            cosine_score_now = get_answer_quality(answer_1=expected, answer_2=answer)
-            best_answer, score_diff, scores = compare_answers_with_cross_encoder(
+            results_ref = []
+            results_new = []
+            for name, transformer in SENTENCE_TRANSFORMERS.items():
+                results_ref.append(
+                    {
+                        name: get_answer_quality(
+                            transformer, answer_1=expected, answer_2=actual
+                        )
+                    }
+                )
+                results_new.append(
+                    {
+                        name: get_answer_quality(
+                            transformer, answer_1=expected, answer_2=answer
+                        )
+                    }
+                )
+
+            results_ref.append({"tfidf": tfidf_cosine_sim(expected, actual)})
+            results_new.append({"tfidf": tfidf_cosine_sim(expected, answer)})
+            _, score_diff, scores = compare_answers_with_cross_encoder(
                 query=question, answer_1=actual, answer_2=answer
             )
-
-            print(
-                f"The cosine score is now: {cosine_score_now}, the score was: {cosine_score_reference}, the best answer according to the reranker {best_answer} with score diff {score_diff}"
-            )
+            results_ref.append({"cross_encoder": scores[1]})
+            results_new.append({"cross_encoder": scores[0]})
 
             results.append(
                 {
@@ -107,15 +126,12 @@ if __name__ == "__main__":
                     "antwoord": answer,
                     "antwoord_referentie": actual,
                     "referentie_acceptabel": acceptable,
-                    "score_cosine_similarity": round(float(cosine_score_now), 2),
-                    "score_reranker": round(float(scores[1]), 2),
-                    "score_cosine_similarity_ref": round(
-                        float(cosine_score_reference), 2
-                    ),
-                    "score_reranker_ref": round(float(scores[0]), 2),
-                    "beste_antwoord": best_answer,
+                    "scores_ref": results_ref,
+                    "scores_new": results_new,
                 }
             )
+            if idx == 5:
+                break
 
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
