@@ -56,7 +56,7 @@ Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 
 **Belangrijke instructies bij de beantwoording:**
 - Verbeter spelling en grammatica.
 - Gebruik correct en helder Nederlands.
-- Wees volledig, maar als het kan kort en bondig.
+- Wees kort en bondig.
 - Herhaal het antwoord niet.
 - Gebruik geen markdown syntax.
 - Betrek geen onnodige details bij een algemene vraag.
