@@ -5,7 +5,7 @@ import argparse
 import statistics
 from collections import defaultdict
 
-SCORE_KEYS = ["robbert-2022", "mini-lm-l6", "tfidf", "cross_encoder"]
+SCORE_KEYS = ["robbert-2022", "mini-lm-l6"]
 
 
 # === HELPERS ===
