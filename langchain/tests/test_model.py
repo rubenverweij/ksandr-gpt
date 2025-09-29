@@ -67,6 +67,7 @@ if __name__ == "__main__":
             question = row[args.question_col]
             expected = row[args.expected_col]
             actual = row[args.actual_col]
+            acceptable = row["Antwoord_acceptabel"]
 
             payload = {"prompt": question}
             response = requests.post(url_question, json=payload)
@@ -102,11 +103,13 @@ if __name__ == "__main__":
             results.append(
                 {
                     "vraag": question,
+                    "verwacht_antwoord": expected,
                     "antwoord": answer,
                     "antwoord_referentie": actual,
-                    "score_consine_similarity": round(float(cosine_score_now), 2),
+                    "referentie_acceptabel": acceptable,
+                    "score_cosine_similarity": round(float(cosine_score_now), 2),
                     "score_reranker": round(float(scores[1]), 2),
-                    "score_consine_similarity_ref": round(
+                    "score_cosine_similarity_ref": round(
                         float(cosine_score_reference), 2
                     ),
                     "score_reranker_ref": round(float(scores[0]), 2),
