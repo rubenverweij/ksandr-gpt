@@ -126,7 +126,7 @@ if __name__ == "__main__":
                     results_ref["robbert-2022"] + results_ref["mini-lm-l6"]
                 ) / 2
             else:
-                score_threshold = 0.80
+                score_threshold = 75
 
             results.append(
                 {
