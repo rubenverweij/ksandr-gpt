@@ -74,6 +74,15 @@ def print_question_stats(q, index):
 # === MAIN SCRIPT ===
 def main(directory):
     all_questions = []
+    aggregate_ref_scores = defaultdict(list)
+    aggregate_new_scores = defaultdict(list)
+    aggregate_improvements = defaultdict(int)
+    threshold_pass_counts = defaultdict(int)
+    ref_acceptable_count = 0
+    not_ref_acceptable_count = 0
+    ref_acceptable_count = 0
+    not_ref_acceptable_count = 0
+
     aggregate_deltas = defaultdict(list)
 
     for filename in os.listdir(directory):
@@ -89,6 +98,26 @@ def main(directory):
 
         for q_data in questions:
             q_result = process_question(q_data)
+            if q_result["referentie_acceptabel"].lower() == "ja":
+                ref_acceptable_count += 1
+            else:
+                not_ref_acceptable_count += 1
+
+            for key in SCORE_KEYS:
+                delta = q_result["delta"][key]
+                ref = q_result["scores_ref"][key]
+                new = q_result["scores_new"][key]
+
+                aggregate_deltas[key].append(delta)
+                aggregate_ref_scores[key].append(ref)
+                aggregate_new_scores[key].append(new)
+
+                if new > ref:
+                    aggregate_improvements[key] += 1
+
+                if "threshold_passed" in q_result and q_result["threshold_passed"][key]:
+                    threshold_pass_counts[key] += 1
+
             all_questions.append(q_result)
 
             for key in SCORE_KEYS:
@@ -99,12 +128,31 @@ def main(directory):
     for i, q in enumerate(all_questions):
         print_question_stats(q, i)
 
-    print("\n=================== 📈 AGGREGATE SUMMARY ===================")
-    summary = summarize_deltas(aggregate_deltas)
-    for key, stats in summary.items():
-        print(f"{key:15}: Δ mean = {stats['mean']:+.4f}, std = {stats['std']:.4f}")
+    print("\n=================== 📈 EXTENDED AGGREGATE SUMMARY ===================")
+    for key in SCORE_KEYS:
+        deltas = aggregate_deltas[key]
+        ref_scores = aggregate_ref_scores[key]
+        new_scores = aggregate_new_scores[key]
+        improvements = aggregate_improvements[key]
+        passes = threshold_pass_counts[key]
 
-    print(f"\n✅ Total questions processed: {len(all_questions)}")
+        mean_delta = statistics.mean(deltas)
+        std_delta = statistics.stdev(deltas) if len(deltas) > 1 else 0.0
+        mean_ref = statistics.mean(ref_scores)
+        mean_new = statistics.mean(new_scores)
+
+        print(f"\n🔹 {key}")
+        print(f"   Avg Ref Score     : {mean_ref:.4f}")
+        print(f"   Avg New Score     : {mean_new:.4f}")
+        print(f"   Δ Mean            : {mean_delta:+.4f}")
+        print(f"   Δ Std Dev         : {std_delta:.4f}")
+        print(f"   # Improvements    : {improvements}/{len(deltas)}")
+        print(f"   # Passed Threshold: {passes}/{len(deltas)}")
+
+    print("\n=================== 📊 GLOBAL STATS ===================")
+    print(f"✅ Referentie acceptabel (Ja):   {ref_acceptable_count}")
+    print(f"❌ Referentie niet acceptabel:   {not_ref_acceptable_count}")
+    print(f"📄 Total questions processed:    {len(all_questions)}")
     print(f"📁 Directory: {directory}")
 
 
