@@ -93,10 +93,10 @@ if __name__ == "__main__":
             answer = response["response"].get("answer")
             print(f"Answer is {answer} versus {actual}")
 
-            results_ref = []
-            results_new = []
+            results_ref = {}
+            results_new = {}
             for name, transformer in SENTENCE_TRANSFORMERS.items():
-                results_ref.append(
+                results_ref.update(
                     {
                         name: float(
                             get_answer_quality(
@@ -105,7 +105,7 @@ if __name__ == "__main__":
                         )
                     }
                 )
-                results_new.append(
+                results_new.update(
                     {
                         name: get_answer_quality(
                             transformer, answer_1=expected, answer_2=answer
@@ -113,13 +113,20 @@ if __name__ == "__main__":
                     }
                 )
 
-            results_ref.append({"tfidf": tfidf_cosine_sim(expected, actual)})
-            results_new.append({"tfidf": tfidf_cosine_sim(expected, answer)})
+            results_ref.update({"tfidf": tfidf_cosine_sim(expected, actual)})
+            results_new.update({"tfidf": tfidf_cosine_sim(expected, answer)})
             _, score_diff, scores = compare_answers_with_cross_encoder(
                 query=question, answer_1=actual, answer_2=answer
             )
-            results_ref.append({"cross_encoder": float(scores[1])})
-            results_new.append({"cross_encoder": float(scores[0])})
+            results_ref.update({"cross_encoder": float(scores[1])})
+            results_new.update({"cross_encoder": float(scores[0])})
+
+            if acceptable == "Ja":
+                score_threshold = (
+                    results_ref["robbert-2022"] + results_ref["mini-lm-l6"]
+                ) / 2
+            else:
+                score_threshold = 0.80
 
             results.append(
                 {
@@ -128,6 +135,7 @@ if __name__ == "__main__":
                     "antwoord": answer,
                     "antwoord_referentie": actual,
                     "referentie_acceptabel": acceptable,
+                    "score_threshold": score_threshold,
                     "scores_ref": results_ref,
                     "scores_new": results_new,
                 }
