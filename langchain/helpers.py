@@ -50,6 +50,14 @@ def remove_repetitions(text: str) -> str:
     return "\n".join(cleaned_sentences)
 
 
+def clean_answer(answer: str) -> str:
+    marker = "Ik weet het antwoord niet."
+    index = answer.find(marker)
+    if index != -1:
+        return answer[index:].strip()
+    return answer.strip()
+
+
 def remove_last_unfinished_sentence(text: str) -> str:
     # Look for the last complete sentence ending with a period
     match = re.search(r"(.*?\.\s*)([^\.\n]*?)$", text, re.DOTALL)
@@ -63,7 +71,7 @@ def remove_last_unfinished_sentence(text: str) -> str:
 
 
 def uniek_antwoord(tekst):
-    return remove_last_unfinished_sentence(remove_repetitions(tekst))
+    return clean_answer(remove_last_unfinished_sentence(remove_repetitions(tekst)))
 
 
 def get_embedding_function():
