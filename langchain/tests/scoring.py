@@ -16,7 +16,7 @@ SENTENCE_TRANSFORMERS = [
     },
     {
         "mini-lm-l6": HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2s",
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
             model_kwargs={"device": "cuda"},
             encode_kwargs={"normalize_embeddings": True},
         )
