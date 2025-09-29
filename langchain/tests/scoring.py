@@ -6,22 +6,19 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-SENTENCE_TRANSFORMERS = [
-    {
-        "robbert-2022": HuggingFaceEmbeddings(
-            model_name="NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers",
-            model_kwargs={"device": "cuda"},
-            encode_kwargs={"normalize_embeddings": True},
-        )
-    },
-    {
-        "mini-lm-l6": HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2",
-            model_kwargs={"device": "cuda"},
-            encode_kwargs={"normalize_embeddings": True},
-        )
-    },
-]
+SENTENCE_TRANSFORMERS = {
+    "robbert-2022": HuggingFaceEmbeddings(
+        model_name="NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers",
+        model_kwargs={"device": "cuda"},
+        encode_kwargs={"normalize_embeddings": True},
+    ),
+    "mini-lm-l6": HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cuda"},
+        encode_kwargs={"normalize_embeddings": True},
+    ),
+}
+
 
 RERANKER = CrossEncoder(
     "NetherlandsForensicInstitute/robbert-2023-dutch-base-cross-encoder", device=DEVICE
