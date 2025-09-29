@@ -1,56 +1,111 @@
 import json
 import os
 import argparse
-from statistics import mean
+
+import statistics
+from collections import defaultdict
+
+SCORE_KEYS = ["robbert-2022", "mini-lm-l6", "tfidf", "cross_encoder"]
 
 
-def analyze_report(path, fname):
-    with open(path, encoding="utf-8") as f:
-        data = json.load(f)
+# === HELPERS ===
+def compare_scores(ref, new):
+    return {key: new[key] - ref[key] for key in SCORE_KEYS}
 
-    total = len(data)
 
-    num_referentie = sum(1 for r in data if r.get("beste_antwoord") == "referentie")
-    num_nieuw = sum(1 for r in data if r.get("beste_antwoord") == "nieuw")
+def summarize_deltas(all_deltas):
+    summary = {}
+    for key in SCORE_KEYS:
+        values = all_deltas[key]
+        if values:
+            summary[key] = {
+                "mean": statistics.mean(values),
+                "std": statistics.stdev(values) if len(values) > 1 else 0.0,
+            }
+        else:
+            summary[key] = {"mean": 0.0, "std": 0.0}
+    return summary
 
-    # Collect scores
-    reranker_scores = [
-        r.get("score_reranker") for r in data if r.get("score_reranker") is not None
-    ]
-    reranker_ref_scores = [
-        r.get("score_reranker_ref")
-        for r in data
-        if r.get("score_reranker_ref") is not None
-    ]
 
-    cosine_scores = [
-        r.get("score_consine_similarity")
-        for r in data
-        if r.get("score_consine_similarity") is not None
-    ]
-    cosine_ref_scores = [
-        r.get("score_consine_similarity_ref")
-        for r in data
-        if r.get("score_consine_similarity_ref") is not None
-    ]
+def process_question(data):
+    vraag = data.get("vraag")
+    ref_accepted = data.get("referentie_acceptabel", "Onbekend")
+    threshold = data.get("score_threshold", None)
 
-    stats = {
-        "file": fname,
-        "date": fname.replace("evaluation_results_", "").replace(".json", ""),
-        "total": total,
-        "referentie": num_referentie,
-        "nieuw": num_nieuw,
-        "pct_referentie": (num_referentie / total) * 100 if total else 0,
-        "pct_nieuw": (num_nieuw / total) * 100 if total else 0,
-        "avg_reranker": mean(reranker_scores) if reranker_scores else None,
-        "avg_reranker_ref": mean(reranker_ref_scores) if reranker_ref_scores else None,
-        "avg_cosine": mean(cosine_scores) if cosine_scores else None,
-        "avg_cosine_ref": mean(cosine_ref_scores) if cosine_ref_scores else None,
-        "min_cosine": min(cosine_scores) if cosine_scores else None,
-        "max_cosine": max(cosine_scores) if cosine_scores else None,
+    scores_ref = data["scores_ref"]
+    scores_new = data["scores_new"]
+    deltas = compare_scores(scores_ref, scores_new)
+
+    results = {
+        "vraag": vraag,
+        "referentie_acceptabel": ref_accepted,
+        "score_threshold": threshold,
+        "scores_ref": scores_ref,
+        "scores_new": scores_new,
+        "delta": deltas,
     }
 
-    return stats
+    if threshold:
+        results["threshold_passed"] = {
+            key: scores_new[key] >= threshold for key in SCORE_KEYS
+        }
+
+    return results
+
+
+def print_question_stats(q, index):
+    print(f"\n🔹 Vraag {index + 1}: {q['vraag']}")
+    print(f"   Referentie acceptabel: {q['referentie_acceptabel']}")
+    if "score_threshold" in q:
+        print(f"   Drempelwaarde: {q['score_threshold']}")
+
+    for key in SCORE_KEYS:
+        ref = q["scores_ref"][key]
+        new = q["scores_new"][key]
+        delta = q["delta"][key]
+        pass_status = ""
+        if "threshold_passed" in q:
+            passed = q["threshold_passed"][key]
+            pass_status = "✅ Passed" if passed else "❌ Failed"
+
+        print(f"   {key:15}: {new:.4f} (ref: {ref:.4f}) → Δ {delta:+.4f} {pass_status}")
+
+
+# === MAIN SCRIPT ===
+def main(directory):
+    all_questions = []
+    aggregate_deltas = defaultdict(list)
+
+    for filename in os.listdir(directory):
+        if not filename.endswith(".json"):
+            continue
+
+        path = os.path.join(directory, filename)
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Each file may be a single question or a list
+        questions = data if isinstance(data, list) else [data]
+
+        for q_data in questions:
+            q_result = process_question(q_data)
+            all_questions.append(q_result)
+
+            for key in SCORE_KEYS:
+                aggregate_deltas[key].append(q_result["delta"][key])
+
+    # === PRINT OUTPUT ===
+    print("\n=================== 📊 PER-QUESTION RESULTS ===================")
+    for i, q in enumerate(all_questions):
+        print_question_stats(q, i)
+
+    print("\n=================== 📈 AGGREGATE SUMMARY ===================")
+    summary = summarize_deltas(aggregate_deltas)
+    for key, stats in summary.items():
+        print(f"{key:15}: Δ mean = {stats['mean']:+.4f}, std = {stats['std']:.4f}")
+
+    print(f"\n✅ Total questions processed: {len(all_questions)}")
+    print(f"📁 Directory: {directory}")
 
 
 if __name__ == "__main__":
@@ -62,72 +117,4 @@ if __name__ == "__main__":
         help="Map waar de evaluatie_resultaten_*.json bestanden staan",
     )
     args = parser.parse_args()
-
-    all_stats = []
-    for fname in sorted(os.listdir(args.dir)):
-        if fname.startswith("evaluation_results_") and fname.endswith(".json"):
-            path = os.path.join(args.dir, fname)
-            stats = analyze_report(path, fname)
-            all_stats.append(stats)
-
-            print(f"📅 Rapport {stats['date']}:")
-            print(f"   Totale vragen: {stats['total']}")
-            print(
-                f"   Referentie beter: {stats['referentie']} ({stats['pct_referentie']:.1f}%)"
-            )
-            print(f"   Nieuw beter:      {stats['nieuw']} ({stats['pct_nieuw']:.1f}%)")
-
-            if stats["avg_reranker"] is not None:
-                print(
-                    f"   🔹 Reranker score gem.: {stats['avg_reranker']:.2f} (ref: {stats['avg_reranker_ref']:.2f})"
-                )
-
-            if stats["avg_cosine"] is not None:
-                print(
-                    f"   🔸 Cosine score gem.: {stats['avg_cosine']:.2f} (ref: {stats['avg_cosine_ref']:.2f})"
-                )
-                print(
-                    f"      Cosine min: {stats['min_cosine']:.2f}, max: {stats['max_cosine']:.2f}"
-                )
-
-            print("-" * 50)
-
-    # Totals across all reports
-    if all_stats:
-        total_qs = sum(s["total"] for s in all_stats)
-        total_ref = sum(s["referentie"] for s in all_stats)
-        total_nieuw = sum(s["nieuw"] for s in all_stats)
-
-        print("\n📊 Samenvatting over alle rapporten:")
-        print(f"   Totale vragen: {total_qs}")
-        print(f"   Referentie beter: {total_ref} ({(total_ref / total_qs) * 100:.1f}%)")
-        print(
-            f"   Nieuw beter:      {total_nieuw} ({(total_nieuw / total_qs) * 100:.1f}%)"
-        )
-
-        # Optional: average scores across reports
-        all_cosine = []
-        all_cosine_ref = []
-        all_reranker = []
-        all_reranker_ref = []
-
-        for s in all_stats:
-            if s["avg_cosine"] is not None:
-                all_cosine.append(s["avg_cosine"])
-            if s["avg_cosine_ref"] is not None:
-                all_cosine_ref.append(s["avg_cosine_ref"])
-            if s["avg_reranker"] is not None:
-                all_reranker.append(s["avg_reranker"])
-            if s["avg_reranker_ref"] is not None:
-                all_reranker_ref.append(s["avg_reranker_ref"])
-
-        if all_reranker:
-            print(
-                f"   🔹 Gem. reranker score: {mean(all_reranker):.2f} (ref: {mean(all_reranker_ref):.2f})"
-            )
-        if all_cosine:
-            print(
-                f"   🔸 Gem. cosine score: {mean(all_cosine):.2f} (ref: {mean(all_cosine_ref):.2f})"
-            )
-    else:
-        print("⚠️ Geen evaluatie rapporten gevonden.")
+    main(args.dir)
