@@ -98,8 +98,10 @@ if __name__ == "__main__":
             for name, transformer in SENTENCE_TRANSFORMERS.items():
                 results_ref.append(
                     {
-                        name: get_answer_quality(
-                            transformer, answer_1=expected, answer_2=actual
+                        name: float(
+                            get_answer_quality(
+                                transformer, answer_1=expected, answer_2=actual
+                            )
                         )
                     }
                 )
@@ -116,8 +118,8 @@ if __name__ == "__main__":
             _, score_diff, scores = compare_answers_with_cross_encoder(
                 query=question, answer_1=actual, answer_2=answer
             )
-            results_ref.append({"cross_encoder": scores[1]})
-            results_new.append({"cross_encoder": scores[0]})
+            results_ref.append({"cross_encoder": float(scores[1])})
+            results_new.append({"cross_encoder": float(scores[0])})
 
             results.append(
                 {

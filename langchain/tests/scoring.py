@@ -46,10 +46,10 @@ def get_answer_quality(transformer, answer_1, answer_2):
     similarity_score = cosine_similarity([embeddings_1], [embeddings_2])[0][0]
     # Convert similarity score to a quality scale (optional, can fine-tune thresholds)
     quality_score = similarity_score * 100  # scale to percentage
-    return quality_score
+    return round(float(quality_score), 1)
 
 
 def tfidf_cosine_sim(s1, s2):
     vectorizer = TfidfVectorizer()
     tfidf = vectorizer.fit_transform([s1, s2])
-    return cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0]
+    return round(float(cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0]), 2)
