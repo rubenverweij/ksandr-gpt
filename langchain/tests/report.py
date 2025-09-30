@@ -4,7 +4,7 @@ import statistics
 from pathlib import Path
 
 # === CONFIGURATION ===
-BASE = "home/ubuntu/onprem_data/tests"
+BASE = "/home/ubuntu/onprem_data/tests"
 REPORTS = os.path.join(BASE, "evaluation_reports")
 OUTPUT_DIR = os.path.join(BASE, "results")
 SCORE_KEYS = ["robbert-2022", "mini-lm-l6", "tfidf", "cross_encoder"]
