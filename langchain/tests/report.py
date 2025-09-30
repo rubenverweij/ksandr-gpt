@@ -14,33 +14,31 @@ def compare_scores(ref, new):
     return {key: new[key] - ref[key] for key in SCORE_KEYS}
 
 
-def summarize_scores(score_dicts):
-    return {
-        key: {
-            "mean_ref": statistics.mean([s["ref"][key] for s in score_dicts]),
-            "mean_new": statistics.mean([s["new"][key] for s in score_dicts]),
-            "mean_delta": statistics.mean([s["delta"][key] for s in score_dicts]),
-            "std_delta": statistics.stdev([s["delta"][key] for s in score_dicts])
-            if len(score_dicts) > 1
-            else 0,
-            "improved": sum(1 for s in score_dicts if s["delta"][key] > 0),
-            "threshold_passed": sum(
-                1 for s in score_dicts if s["threshold_passed"].get(key, False)
-            ),
-            "count": len(score_dicts),
-        }
-        for key in SCORE_KEYS
-    }
+EXCLUDED_ANSWERS = {
+    "Op basis van de informatie die ik tot mijn beschikking heb, weet ik het antwoord helaas niet.",
+    "Het antwoord is niet duidelijk uit de context.",
+    "Ik weet het antwoord niet.",
+}
 
 
 def process_question(q):
-    ref_scores = q["scores_ref"]
-    new_scores = q["scores_new"]
-    deltas = compare_scores(ref_scores, new_scores)
+    antwoord = q.get("antwoord", "").strip()
+    ref_scores = q.get("scores_ref", {})
+    new_scores = q.get("scores_new", {})
     threshold = q.get("score_threshold", None)
-    threshold_passed = {
-        key: new_scores[key] >= threshold if threshold else False for key in SCORE_KEYS
-    }
+
+    if antwoord in EXCLUDED_ANSWERS:
+        # Invalidate scores
+        ref_scores = {key: None for key in SCORE_KEYS}
+        new_scores = {key: None for key in SCORE_KEYS}
+        deltas = {key: None for key in SCORE_KEYS}
+        threshold_passed = {key: False for key in SCORE_KEYS}
+    else:
+        deltas = compare_scores(ref_scores, new_scores)
+        threshold_passed = {
+            key: new_scores[key] >= threshold if threshold is not None else False
+            for key in SCORE_KEYS
+        }
 
     return {
         "vraag": q.get("vraag", ""),
@@ -51,6 +49,39 @@ def process_question(q):
         "threshold": threshold,
         "threshold_passed": threshold_passed,
     }
+
+
+def summarize_scores(score_dicts):
+    summary = {}
+
+    for key in SCORE_KEYS:
+        ref_values = [s["ref"][key] for s in score_dicts if s["ref"][key] is not None]
+        new_values = [s["new"][key] for s in score_dicts if s["new"][key] is not None]
+        delta_values = [
+            s["delta"][key] for s in score_dicts if s["delta"][key] is not None
+        ]
+        threshold_passed = [
+            s["threshold_passed"][key] for s in score_dicts if s["new"][key] is not None
+        ]
+
+        count = len(new_values)
+        improved = sum(
+            1
+            for s in score_dicts
+            if s["delta"][key] is not None and s["delta"][key] > 0
+        )
+
+        summary[key] = {
+            "mean_ref": statistics.mean(ref_values) if ref_values else 0,
+            "mean_new": statistics.mean(new_values) if new_values else 0,
+            "mean_delta": statistics.mean(delta_values) if delta_values else 0,
+            "std_delta": statistics.stdev(delta_values) if len(delta_values) > 1 else 0,
+            "improved": improved,
+            "threshold_passed": sum(threshold_passed),
+            "count": count,
+        }
+
+    return summary
 
 
 def write_text_file_report(filename, score_data, summary):
@@ -66,9 +97,12 @@ def write_text_file_report(filename, score_data, summary):
             delta = q["delta"][key]
             passed = q["threshold_passed"].get(key, False)
             status = "✅ Passed" if passed else "❌ Failed" if q["threshold"] else ""
-            lines.append(
-                f"   {key:15}: {new:.4f} (ref: {ref:.4f}) → Δ {delta:+.4f} {status}"
-            )
+            if ref is None or new is None or delta is None:
+                lines.append(f"   {key:15}: N/A (excluded from evaluation)")
+            else:
+                lines.append(
+                    f"   {key:15}: {new:.4f} (ref: {ref:.4f}) → Δ {delta:+.4f} {status}"
+                )
 
     lines.append("\n📊 Summary per scoring model:")
     for key, stats in summary.items():
