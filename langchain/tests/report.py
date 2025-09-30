@@ -7,9 +7,7 @@ from pathlib import Path
 BASE = "/home/ubuntu/onprem_data/tests"
 REPORTS = os.path.join(BASE, "reports")
 OUTPUT_DIR = os.path.join(BASE, "results")
-SCORE_KEYS = ["robbert-2022", "mini-lm-l6", "tfidf", "cross_encoder"]
-
-Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+SCORE_KEYS = ["robbert-2022", "mini-lm-l6"]
 
 
 def compare_scores(ref, new):
@@ -57,37 +55,23 @@ def process_question(q):
     }
 
 
-def generate_file_report(filename, questions_data):
+def write_text_file_report(filename, score_data, summary):
     lines = [f"📄 Evaluation Report: {filename}\n"]
-    score_dicts = []
-
-    for i, q in enumerate(questions_data, 1):
-        result = process_question(q)
-        score_dicts.append(result)
-
-        lines.append(f"\n🔸 Vraag {i}: {result['vraag']}")
-        lines.append(f"   Referentie acceptabel: {result['ref_accepted']}")
-        if result["threshold"] is not None:
-            lines.append(f"   Drempelwaarde: {result['threshold']}")
-
+    for i, q in enumerate(score_data, 1):
+        lines.append(f"\n🔸 Vraag {i}: {q['vraag']}")
+        lines.append(f"   Referentie acceptabel: {q['ref_accepted']}")
+        if q["threshold"] is not None:
+            lines.append(f"   Drempelwaarde: {q['threshold']}")
         for key in SCORE_KEYS:
-            ref = result["ref"][key]
-            new = result["new"][key]
-            delta = result["delta"][key]
-            passed = result["threshold_passed"].get(key, False)
-            status = (
-                "✅ Passed"
-                if passed
-                else "❌ Failed"
-                if result["threshold"] is not None
-                else ""
-            )
+            ref = q["ref"][key]
+            new = q["new"][key]
+            delta = q["delta"][key]
+            passed = q["threshold_passed"].get(key, False)
+            status = "✅ Passed" if passed else "❌ Failed" if q["threshold"] else ""
             lines.append(
                 f"   {key:15}: {new:.4f} (ref: {ref:.4f}) → Δ {delta:+.4f} {status}"
             )
 
-    # Per-file summary
-    summary = summarize_scores(score_dicts)
     lines.append("\n📊 Summary per scoring model:")
     for key, stats in summary.items():
         lines.append(
@@ -100,18 +84,73 @@ def generate_file_report(filename, questions_data):
             f"   # Passed Threshold: {stats['threshold_passed']}/{stats['count']}"
         )
 
-    # Write to individual file
-    out_path = os.path.join(OUTPUT_DIR, f"file_report_{Path(filename).stem}.txt")
-    with open(out_path, "w", encoding="utf-8") as out_file:
-        out_file.write("\n".join(lines))
+    path = os.path.join(OUTPUT_DIR, f"file_report_{Path(filename).stem}.txt")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
 
-    return score_dicts, sum(1 for s in score_dicts if s["ref_accepted"].lower() == "ja")
+
+def write_html_report(
+    per_file_summaries, global_summary, total_acceptable, total_questions
+):
+    html = [
+        '<html><head><meta charset="UTF-8"><style>',
+        "body { font-family: Arial; }",
+        "summary { font-weight: bold; }",
+        "table { border-collapse: collapse; margin-bottom: 20px; }",
+        "td, th { border: 1px solid #aaa; padding: 4px 8px; text-align: left; }",
+        ".pass { color: green; } .fail { color: red; }",
+        "</style></head><body>",
+    ]
+
+    html.append("<h1>📊 Evaluation Summary</h1>")
+
+    html.append(f"<p>Total Questions: <b>{total_questions}</b><br>")
+    html.append(f"Referentie Acceptabel: <b>{total_acceptable}</b><br>")
+    html.append(
+        f"Referentie Niet Acceptabel: <b>{total_questions - total_acceptable}</b></p>"
+    )
+
+    html.append("<h2>📁 Per Report Summary</h2>")
+
+    for filename, summary, count in per_file_summaries:
+        html.append(f"<details><summary>{filename}</summary>")
+        html.append(
+            "<table><tr><th>Model</th><th>Avg Ref</th><th>Avg New</th><th>Δ Mean</th>"
+            "<th>Δ Std</th><th># Improvements</th><th># Passed Threshold</th></tr>"
+        )
+        for key in SCORE_KEYS:
+            s = summary[key]
+            html.append(
+                f"<tr><td>{key}</td><td>{s['mean_ref']:.2f}</td><td>{s['mean_new']:.2f}</td>"
+                f"<td>{s['mean_delta']:+.2f}</td><td>{s['std_delta']:.2f}</td>"
+                f"<td>{s['improved']}/{count}</td><td>{s['threshold_passed']}/{count}</td></tr>"
+            )
+        html.append("</table></details>")
+
+    html.append("<h2>🌍 Global Summary</h2>")
+    html.append(
+        "<table><tr><th>Model</th><th>Avg Ref</th><th>Avg New</th><th>Δ Mean</th>"
+        "<th>Δ Std</th><th># Improvements</th><th># Passed Threshold</th></tr>"
+    )
+    for key in SCORE_KEYS:
+        s = global_summary[key]
+        html.append(
+            f"<tr><td>{key}</td><td>{s['mean_ref']:.2f}</td><td>{s['mean_new']:.2f}</td>"
+            f"<td>{s['mean_delta']:+.2f}</td><td>{s['std_delta']:.2f}</td>"
+            f"<td>{s['improved']}/{s['count']}</td><td>{s['threshold_passed']}/{s['count']}</td></tr>"
+        )
+    html.append("</table></body></html>")
+
+    path = os.path.join(OUTPUT_DIR, "summary_report.html")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(html))
 
 
 def main():
-    all_scores = []
     total_questions = 0
     total_acceptable = 0
+    all_scores = []
+    per_file_summaries = []
 
     for filename in os.listdir(REPORTS):
         if not filename.endswith(".json"):
@@ -122,38 +161,27 @@ def main():
             data = json.load(f)
 
         questions = data if isinstance(data, list) else [data]
-        score_data, file_acceptable_count = generate_file_report(filename, questions)
+        score_data = [process_question(q) for q in questions]
+        summary = summarize_scores(score_data)
+
+        write_text_file_report(filename, score_data, summary)
+
         all_scores.extend(score_data)
-        total_acceptable += file_acceptable_count
-        total_questions += len(questions)
-
-    # Generate total summary report
-    lines = ["📊 Global Evaluation Summary\n"]
-    summary = summarize_scores(all_scores)
-
-    for key, stats in summary.items():
-        lines.append(
-            f"\n🔹 {key}\n"
-            f"   Avg Ref Score     : {stats['mean_ref']:.4f}\n"
-            f"   Avg New Score     : {stats['mean_new']:.4f}\n"
-            f"   Δ Mean            : {stats['mean_delta']:+.4f}\n"
-            f"   Δ Std Dev         : {stats['std_delta']:.4f}\n"
-            f"   # Improvements    : {stats['improved']}/{stats['count']}\n"
-            f"   # Passed Threshold: {stats['threshold_passed']}/{stats['count']}"
+        total_questions += len(score_data)
+        total_acceptable += sum(
+            1 for s in score_data if s["ref_accepted"].lower() == "ja"
         )
+        per_file_summaries.append((filename, summary, len(score_data)))
 
-    lines.append("\n================= TOTALS =================")
-    lines.append(f"✅ Referentie acceptabel (Ja): {total_acceptable}")
-    lines.append(f"❌ Referentie niet acceptabel: {total_questions - total_acceptable}")
-    lines.append(f"📄 Total questions processed: {total_questions}")
-    lines.append(f"📁 Directory: {REPORTS}")
+    # Global Summary
+    global_summary = summarize_scores(all_scores)
 
-    with open(
-        os.path.join(OUTPUT_DIR, "summary_report.txt"), "w", encoding="utf-8"
-    ) as out:
-        out.write("\n".join(lines))
+    # Generate HTML report
+    write_html_report(
+        per_file_summaries, global_summary, total_acceptable, total_questions
+    )
 
-    print(f"\n✅ Reports written to: {OUTPUT_DIR}")
+    print(f"✅ Reports saved in: {OUTPUT_DIR}")
 
 
 if __name__ == "__main__":
