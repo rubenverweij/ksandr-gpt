@@ -181,3 +181,5 @@ langchain/chroma/*
 nohup.out
 chroma/chroma.sqlite3
 langchain/docs/aad.json
+/archive
+/langchain/notebooks

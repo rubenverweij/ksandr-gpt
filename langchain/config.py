@@ -29,6 +29,7 @@ LIJST_ALGEMENE_WOORDEN = [
 
 LIJST_SPECIFIEKE_COMPONENTEN = [
     "db10",
+    "dr12",
     "bcc",
     "md",
     "mf",
