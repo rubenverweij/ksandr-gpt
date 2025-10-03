@@ -141,27 +141,28 @@ def extraheer_zelfstandig_naamwoorden(text):
     return nouns
 
 
-def maak_chroma_filter(question):
-    relevant_variants = set()
-    for token in extraheer_zelfstandig_naamwoorden(question):
-        surface = token.text.strip(string.punctuation)
-        lemma = token.lemma_.lower()
-        # Check if lemma appears often enough
-        count = LEMMA_COUNTS.get(lemma, 0)
-        print(f"Aantal keer dat de term {token} voorkomt {count}")
-        if (
-            count >= FREQUENCY_THRESHOLD
-            and count < FREQUENCY_THRESHOLD_MAX
-            and lemma not in LEMMA_EXCLUDE
-        ):
-            variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
-            relevant_variants.update(variants)
-    # 3. Create Chroma `$or` filter
-    if not relevant_variants:
-        return None
-    if len(relevant_variants) == 1:
-        return {"$contains": relevant_variants[0]}
-    return {"$or": [{"$contains": variant} for variant in relevant_variants]}
+def maak_chroma_filter(question, include_nouns):
+    if include_nouns:
+        relevant_variants = set()
+        for token in extraheer_zelfstandig_naamwoorden(question):
+            surface = token.text.strip(string.punctuation)
+            lemma = token.lemma_.lower()
+            # Check if lemma appears often enough
+            count = LEMMA_COUNTS.get(lemma, 0)
+            if (
+                count >= FREQUENCY_THRESHOLD
+                and count < FREQUENCY_THRESHOLD_MAX
+                and lemma not in LEMMA_EXCLUDE
+            ):
+                variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
+                relevant_variants.update(variants)
+        # 3. Create Chroma `$or` filter
+        if not relevant_variants:
+            return None
+        if len(relevant_variants) == 1:
+            return {"$contains": relevant_variants[0]}
+        return {"$or": [{"$contains": variant} for variant in relevant_variants]}
+    return None
 
 
 # def extract_nouns_and_propn(text: str, include_nouns) -> List[str]:

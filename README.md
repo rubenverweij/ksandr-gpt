@@ -25,7 +25,7 @@ apt install docker.io
 
 # Maak de api image and start een container
 docker build -t ksandr-gpt:0.XX .
-docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt:0.18
+docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt-langchain:0.34
 
 # Maak de ingest image en start de container
 docker build -t ksandr-ingest:0.XX .
