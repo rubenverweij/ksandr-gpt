@@ -1,14 +1,15 @@
 import re
 from langchain_huggingface import HuggingFaceEmbeddings
 import torch
+import pickle
+import string
 import spacy
 from config import (
-    PATROON_UITBREIDING,
     COMPONENTS,
     LIJST_SPECIFIEKE_COMPONENTEN,
     PATH_SUMMARY,
+    LEMMA_EXCLUDE,
 )
-from typing import List
 from langchain_chroma import Chroma
 from sentence_transformers import CrossEncoder
 
@@ -20,8 +21,19 @@ reranker = CrossEncoder(
 # Gebruiken we voor het definieren van zelfstandig naamwoorden
 NLP = spacy.load("nl_core_news_sm")
 
+# Variables to make use of keywords that are relevant
+FREQUENCY_THRESHOLD = 5  # Only include nouns used at least this many times
+FREQUENCY_THRESHOLD_MAX = 800
 
-def remove_repetitions(text: str) -> str:
+# Load saved data
+with open("/root/onprem_data/keywords/noun_counter.pkl", "rb") as f:
+    LEMMA_COUNTS = pickle.load(f)
+
+with open("/root/onprem_data/keywords/lemmas.pkl", "rb") as f:
+    LEMMA_TO_VARIANTS = pickle.load(f)
+
+
+def verwijder_herhalingen(text: str) -> str:
     # Split the text by newline first to preserve the structure
     sentences = text.split("\n")
 
@@ -50,7 +62,7 @@ def remove_repetitions(text: str) -> str:
     return "\n".join(cleaned_sentences)
 
 
-def clean_answer(answer: str) -> str:
+def schoon_antwoord(answer: str) -> str:
     marker = "Ik weet het antwoord niet."
     index = answer.find(marker)
     if index != -1:
@@ -58,7 +70,7 @@ def clean_answer(answer: str) -> str:
     return answer.strip()
 
 
-def remove_last_unfinished_sentence(text: str) -> str:
+def verwijder_onafgeronde_zinnen(text: str) -> str:
     # Look for the last complete sentence ending with a period
     match = re.search(r"(.*?\.\s*)([^\.\n]*?)$", text, re.DOTALL)
     if match:
@@ -71,7 +83,7 @@ def remove_last_unfinished_sentence(text: str) -> str:
 
 
 def uniek_antwoord(tekst):
-    return clean_answer(remove_last_unfinished_sentence(remove_repetitions(tekst)))
+    return schoon_antwoord(verwijder_onafgeronde_zinnen(verwijder_herhalingen(tekst)))
 
 
 def get_embedding_function():
@@ -118,35 +130,69 @@ def vind_relevante_componenten(vraag, componenten_dict):
     return {"type_id": gevonden_sleutels[0]} if len(gevonden_sleutels) == 1 else None
 
 
-def extract_nouns_and_propn(text: str, include_nouns) -> List[str]:
-    """Extract common nouns and proper nouns from Dutch text."""
+def extraheer_zelfstandig_naamwoorden(text):
     doc = NLP(text)
-    list_nouns = [token.text for token in doc if token.pos_ in ("NOUN", "PROPN")]
-    expanded_nouns = []
-    for noun in list_nouns:
-        for pattern, extras in PATROON_UITBREIDING.items():
-            if pattern.lower() in noun.lower():  # case-insensitive match
-                if len(extras) > 0:
-                    expanded_nouns.extend(extras)
-                expanded_nouns.append(noun)
-    if include_nouns:
-        total_list = expanded_nouns + list_nouns
-        return list(set(total_list))  # remove duplicates
-    else:
-        return list(set(expanded_nouns))
+    nouns = []
+    for token in doc:
+        if token.pos_ in ["NOUN", "PROPN"]:
+            cleaned = token.text.strip(string.punctuation).lower()
+            if cleaned:
+                nouns.append(token)
+    return nouns
 
 
-def similarity_search_with_nouns(query: str, include_nouns):
-    nouns = extract_nouns_and_propn(query, include_nouns)
-    if not nouns:
+def maak_chroma_filter(question):
+    relevant_variants = set()
+    for token in extraheer_zelfstandig_naamwoorden(question):
+        surface = token.text.strip(string.punctuation)
+        lemma = token.lemma_.lower()
+        # Check if lemma appears often enough
+        count = LEMMA_COUNTS.get(lemma, 0)
+        print(f"Aantal keer dat de term {token} voorkomt {count}")
+        if (
+            count >= FREQUENCY_THRESHOLD
+            and count < FREQUENCY_THRESHOLD_MAX
+            and lemma not in LEMMA_EXCLUDE
+        ):
+            variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
+            relevant_variants.update(variants)
+    # 3. Create Chroma `$or` filter
+    if not relevant_variants:
         return None
-    if len(nouns) == 1:
-        return {"$contains": nouns[0]}
-    else:
-        return {"$or": [{"$contains": noun} for noun in nouns]}
+    if len(relevant_variants) == 1:
+        return {"$contains": relevant_variants[0]}
+    return {"$or": [{"$contains": variant} for variant in relevant_variants]}
 
 
-def find_relevant_context(
+# def extract_nouns_and_propn(text: str, include_nouns) -> List[str]:
+#     """Extract common nouns and proper nouns from Dutch text."""
+#     doc = NLP(text)
+#     list_nouns = [token.text for token in doc if token.pos_ in ("NOUN", "PROPN")]
+#     expanded_nouns = []
+#     for noun in list_nouns:
+#         for pattern, extras in PATROON_UITBREIDING.items():
+#             if pattern.lower() in noun.lower():  # case-insensitive match
+#                 if len(extras) > 0:
+#                     expanded_nouns.extend(extras)
+#                 expanded_nouns.append(noun)
+#     if include_nouns:
+#         total_list = expanded_nouns + list_nouns
+#         return list(set(total_list))  # remove duplicates
+#     else:
+#         return list(set(expanded_nouns))
+
+
+# def similarity_search_with_nouns(query: str, include_nouns):
+#     nouns = extract_nouns_and_propn(query, include_nouns)
+#     if not nouns:
+#         return None
+#     if len(nouns) == 1:
+#         return {"$contains": nouns[0]}
+#     else:
+#         return {"$or": [{"$contains": noun} for noun in nouns]}
+
+
+def vind_relevante_context(
     prompt: str,
     filter_chroma: dict[str, str],
     db: Chroma,
@@ -166,7 +212,7 @@ def find_relevant_context(
     results = [(doc, score) for doc, score in results if score < score_threshold]
 
     if source_max_reranker:
-        results = rerank(prompt, results, top_m=source_max_reranker)
+        results = herschik(prompt, results, top_m=source_max_reranker)
 
     summary = ""
     if include_summary:
@@ -188,7 +234,7 @@ def find_relevant_context(
     return context_text, results, summary
 
 
-def rerank(query, candidates, top_m: int):
+def herschik(query, candidates, top_m: int):
     """
     query: str
     candidates: list of (text, metadata)
@@ -227,10 +273,9 @@ if __name__ == "__main__":
         print("-" * 40)
 
     print(
-        remove_last_unfinished_sentence(
-            remove_repetitions(
+        verwijder_onafgeronde_zinnen(
+            verwijder_herhalingen(
                 text="De Xiria is een serie. \n De Xiria is een gave serie. De Xiria is een"
             )
         )
     )
-    print(extract_nouns_and_propn("Wat is het vervangingsbeleid van de xiria?"))
