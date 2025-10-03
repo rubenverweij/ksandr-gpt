@@ -28,37 +28,36 @@ app = FastAPI()
 request_responses = {}
 
 # Configuratievariabelen
-TEMPERATURE = float(os.getenv("TEMPERATURE", 0.2))
-SOURCE_MAX = int(os.getenv("SOURCE_MAX", 10))
-SOURCE_MAX_RERANKER = int(os.getenv("SOURCE_MAX_RERANKER", 0))
-SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 1.1))
-STORE_TYPE = os.getenv("STORE_TYPE", "sparse")
-INCLUDE_FILTER = int(os.getenv("INCLUDE_FILTER", 1))
-MAX_TOKENS = int(os.getenv("MAX_TOKENS", 750))
-MAX_CTX = int(os.getenv("MAX_CTX", 8000))
-INCLUDE_SUMMARY = int(os.getenv("INCLUDE_SUMMARY", 0))
-INCLUDE_KEYWORDS = int(os.getenv("INCLUDE_KEYWORDS", 0))
+CONFIG = {
+    "TEMPERATURE": float(os.getenv("TEMPERATURE", 0.2)),
+    "SOURCE_MAX": int(os.getenv("SOURCE_MAX", 10)),
+    "SOURCE_MAX_RERANKER": int(os.getenv("SOURCE_MAX_RERANKER", 0)),
+    "SCORE_THRESHOLD": float(os.getenv("SCORE_THRESHOLD", 1.1)),
+    "INCLUDE_FILTER": int(os.getenv("INCLUDE_FILTER", 1)),
+    "MAX_TOKENS": int(os.getenv("MAX_TOKENS", 750)),
+    "MAX_CTX": int(os.getenv("MAX_CTX", 8000)),
+    "INCLUDE_SUMMARY": int(os.getenv("INCLUDE_SUMMARY", 0)),
+    "INCLUDE_KEYWORDS": int(os.getenv("INCLUDE_KEYWORDS", 0)),
+}
 DEFAULT_MODEL_PATH = "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf"
 CHROMA_PATH = "/root/onprem_data/chroma"
 
 # Initialisatie van het taalmodel
 LLM = LlamaCpp(
-    model_path=DEFAULT_MODEL_PATH,
-    max_tokens=MAX_TOKENS,
+    model_path=CONFIG["DEFAULT_MODEL_PATH"],
+    max_tokens=CONFIG["MAX_TOKENS"],
     n_gpu_layers=-1,
-    n_ctx=MAX_CTX,
+    n_ctx=CONFIG["MAX_CTX"],
     verbose=False,
     streaming=True,
-    temperature=TEMPERATURE,
+    temperature=CONFIG["TEMPERATURE"],
     top_p=0.9,
 )
 embedding_function = get_embedding_function()
 db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
 
-print(
-    f"Starting container with temperature: {TEMPERATURE}, source_max: {SOURCE_MAX}, score_theshold: {SCORE_THRESHOLD}, store: {STORE_TYPE} and filter: {INCLUDE_FILTER}"
-)
+print(f"Starting container with {CONFIG}")
 
 
 # Streaming handler
@@ -101,17 +100,17 @@ class EvaluationRequest(BaseModel):
 def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: int):
     if rag:
         document_search = maak_chroma_filter(
-            question=prompt, include_nouns=INCLUDE_KEYWORDS
+            question=prompt, include_nouns=CONFIG["INCLUDE_KEYWORDS"]
         )
         context_text, results, summary = vind_relevante_context(
             prompt=prompt,
             filter_chroma=filter,
             db=db,
-            source_max_reranker=SOURCE_MAX_RERANKER,
-            source_max_dense=SOURCE_MAX,
-            score_threshold=SCORE_THRESHOLD,
+            source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
+            source_max_dense=CONFIG["SOURCE_MAX"],
+            score_threshold=CONFIG["SCORE_THRESHOLD"],
             where_document=document_search,
-            include_summary=INCLUDE_SUMMARY,
+            include_summary=CONFIG["INCLUDE_SUMMARY"],
         )
         results_new_schema = []
         for doc, score in results:
@@ -142,7 +141,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
 # Verwerkt het verzoek en haalt de reactie op
 async def process_request(request: AskRequest):
     """Process a request asynchronously and stream the result."""
-    if INCLUDE_FILTER:
+    if CONFIG["INCLUDE_FILTER"]:
         active_filter = vind_relevante_componenten(
             vraag=request.prompt, componenten_dict=COMPONENTS
         )
@@ -261,7 +260,8 @@ def get_image_name() -> str:
 
 @app.get("/metadata")
 def get_metadata():
-    return {"image_name": get_image_name()}
+    CONFIG["image_name"] = get_image_name()
+    return CONFIG
 
 
 @app.on_event("startup")

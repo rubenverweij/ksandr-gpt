@@ -209,12 +209,12 @@ def vind_relevante_context(
     results = db.similarity_search_with_score(
         prompt, k=source_max_dense, filter=filter_chroma, where_document=where_document
     )
-    # Filter by score
-    results = [(doc, score) for doc, score in results if score < score_threshold]
 
     if source_max_reranker:
         results = herschik(prompt, results, top_m=source_max_reranker)
 
+    # Filter by score
+    results = [(doc, score) for doc, score in results if score < score_threshold]
     summary = ""
     if include_summary:
         if filter_chroma:
