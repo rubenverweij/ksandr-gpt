@@ -2,9 +2,6 @@
 ARG CUDA_IMAGE
 FROM nvidia/cuda:12.9.0-devel-ubuntu22.04
 
-WORKDIR /ksandr-gpt
-COPY ./ /ksandr-gpt/api
-
 RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y git build-essential \
     python3 python3-pip gcc wget \
@@ -26,4 +23,8 @@ RUN python3 -m pip install torch torchvision torchaudio \
 # Installeer llama-cpp-python (met cuda)
 RUN CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python
 RUN python3 -m pip install bs4 redis chromadb langchain_chroma sentence-transformers langchain langchain-huggingface langchain-community fastapi[standard]
+
+WORKDIR /ksandr-gpt
+COPY ./ /ksandr-gpt/api
+
 CMD ["fastapi", "run", "api/main.py", "--port", "8080"]
