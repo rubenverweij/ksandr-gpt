@@ -39,8 +39,9 @@ CONFIG = {
     "MAX_CTX": int(os.getenv("MAX_CTX", 8000)),
     "INCLUDE_SUMMARY": int(os.getenv("INCLUDE_SUMMARY", 0)),
     "INCLUDE_KEYWORDS": int(os.getenv("INCLUDE_KEYWORDS", 0)),
+    "DEFAULT_MODEL_PATH": "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
 }
-DEFAULT_MODEL_PATH = "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf"
+
 CHROMA_PATH = "/root/onprem_data/chroma"
 
 # Initialisatie van het taalmodel
