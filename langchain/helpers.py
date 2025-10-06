@@ -154,11 +154,10 @@ def extract_netbeheerder_variants(question, netbeheerders_dict):
 
 
 def maak_chroma_filter(question, include_nouns):
-    relevant_variants = set()
+    noun_variants = set()
+    netbeheerder_variants = set()
     # Voeg netbeheerder-varianten toe als ze voorkomen in de vraag
-    netbeheerder_variants = extract_netbeheerder_variants(question, NETBEHEERDERS)
-    relevant_variants.update(netbeheerder_variants)
-
+    netbeheerder_variants.update(extract_netbeheerder_variants(question, NETBEHEERDERS))
     # Verwerk zelfstandige naamwoorden als include_nouns True is
     if include_nouns:
         for token in extraheer_zelfstandig_naamwoorden(question):
@@ -171,14 +170,20 @@ def maak_chroma_filter(question, include_nouns):
                 and lemma not in LEMMA_EXCLUDE
             ):
                 variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
-                relevant_variants.update(variants)
-
+                noun_variants.update(variants)
     # Bouw Chroma-filter
-    if not relevant_variants:
+    filters = []
+    if noun_variants:
+        filters.append({"$or": [{"$contains": variant} for variant in noun_variants]})
+    if netbeheerder_variants:
+        filters.append(
+            {"$or": [{"$contains": variant} for variant in netbeheerder_variants]}
+        )
+    if not filters:
         return None
-    if len(relevant_variants) == 1:
-        return {"$contains": list(relevant_variants)[0]}
-    return {"$or": [{"$contains": variant} for variant in relevant_variants]}
+    if len(filters) == 1:
+        return filters[0]
+    return {"$and": filters}
 
 
 def count_tokens(model, text: str) -> int:
