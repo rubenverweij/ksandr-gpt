@@ -12,6 +12,7 @@ from helpers import (
     get_embedding_function,
     vind_relevante_context,
     maak_chroma_filter,
+    trim_context_to_fit,
 )
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -112,6 +113,14 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
             where_document=document_search,
             include_summary=CONFIG["INCLUDE_SUMMARY"],
         )
+        available_tokens_for_context, trimmed_context_text = trim_context_to_fit(
+            model=model,
+            template=DEFAULT_QA_PROMPT,
+            context_text=context_text,
+            question=prompt,
+            n_ctx=CONFIG["MAX_CTX"],
+            max_tokens=CONFIG["MAX_TOKENS"],
+        )
         results_new_schema = []
         for doc, score in results:
             doc_dict = {
@@ -123,7 +132,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
             doc_dict["metadata"]["score"] = score
             results_new_schema.append(doc_dict)
         prompt_with_template = DEFAULT_QA_PROMPT.format(
-            context=context_text, question=prompt
+            context=trimmed_context_text, question=prompt
         )
     else:
         prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(question=prompt)
@@ -135,6 +144,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
         "source_documents": results_new_schema,
         "where_document": document_search,
         "summary": summary,
+        "available_tokens_for_context": available_tokens_for_context,
     }
 
 

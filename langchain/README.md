@@ -38,14 +38,14 @@ image="ksandr-gpt-langchain:0.34"
 
 docker run --network host -d --gpus=all --cap-add SYS_RESOURCE \
 -e USE_MLOCK=0 \
--e TEMPERATURE=0.5 \
+-e TEMPERATURE=0.7 \
 -e INCLUDE_FILTER=1 \
--e SCORE_THRESHOLD=0.9 \
+-e SCORE_THRESHOLD=500 \
 -e SOURCE_MAX=5 \
 -e INCLUDE_SUMMARY=0 \
--e INCLUDE_KEYWORDS=0 \
+-e INCLUDE_KEYWORDS=1 \
 -e MAX_CTX=4000 \
--e IMAGE_NAME=$image
+-e IMAGE_NAME=$image \
 -v /home/ubuntu/nltk_data:/root/nltk_data \
 -v /home/ubuntu/huggingface:/root/.cache/huggingface \
 -v /home/ubuntu/onprem_data:/root/onprem_data \

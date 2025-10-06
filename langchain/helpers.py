@@ -9,6 +9,7 @@ from config import (
     LIJST_SPECIFIEKE_COMPONENTEN,
     PATH_SUMMARY,
     LEMMA_EXCLUDE,
+    NETBEHEERDERS,
 )
 from langchain_chroma import Chroma
 from sentence_transformers import CrossEncoder
@@ -141,13 +142,28 @@ def extraheer_zelfstandig_naamwoorden(text):
     return nouns
 
 
+def extract_netbeheerder_variants(question, netbeheerders_dict):
+    question_lower = question.lower()
+    matched_variants = set()
+    for variants in netbeheerders_dict.values():
+        for variant in variants:
+            if variant.lower() in question_lower:
+                matched_variants.update(variants)
+                break  # Eén match per netbeheerder is genoeg
+    return matched_variants
+
+
 def maak_chroma_filter(question, include_nouns):
+    relevant_variants = set()
+    # Voeg netbeheerder-varianten toe als ze voorkomen in de vraag
+    netbeheerder_variants = extract_netbeheerder_variants(question, NETBEHEERDERS)
+    relevant_variants.update(netbeheerder_variants)
+
+    # Verwerk zelfstandige naamwoorden als include_nouns True is
     if include_nouns:
-        relevant_variants = set()
         for token in extraheer_zelfstandig_naamwoorden(question):
             surface = token.text.strip(string.punctuation)
             lemma = token.lemma_.lower()
-            # Check if lemma appears often enough
             count = LEMMA_COUNTS.get(lemma, 0)
             if (
                 count >= FREQUENCY_THRESHOLD
@@ -156,41 +172,35 @@ def maak_chroma_filter(question, include_nouns):
             ):
                 variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
                 relevant_variants.update(variants)
-        # 3. Create Chroma `$or` filter
-        if not relevant_variants:
-            return None
-        if len(relevant_variants) == 1:
-            return {"$contains": relevant_variants[0]}
-        return {"$or": [{"$contains": variant} for variant in relevant_variants]}
-    return None
+
+    # Bouw Chroma-filter
+    if not relevant_variants:
+        return None
+    if len(relevant_variants) == 1:
+        return {"$contains": list(relevant_variants)[0]}
+    return {"$or": [{"$contains": variant} for variant in relevant_variants]}
 
 
-# def extract_nouns_and_propn(text: str, include_nouns) -> List[str]:
-#     """Extract common nouns and proper nouns from Dutch text."""
-#     doc = NLP(text)
-#     list_nouns = [token.text for token in doc if token.pos_ in ("NOUN", "PROPN")]
-#     expanded_nouns = []
-#     for noun in list_nouns:
-#         for pattern, extras in PATROON_UITBREIDING.items():
-#             if pattern.lower() in noun.lower():  # case-insensitive match
-#                 if len(extras) > 0:
-#                     expanded_nouns.extend(extras)
-#                 expanded_nouns.append(noun)
-#     if include_nouns:
-#         total_list = expanded_nouns + list_nouns
-#         return list(set(total_list))  # remove duplicates
-#     else:
-#         return list(set(expanded_nouns))
+def count_tokens(model, text: str) -> int:
+    return len(model.tokenize(text.encode("utf-8")))
 
 
-# def similarity_search_with_nouns(query: str, include_nouns):
-#     nouns = extract_nouns_and_propn(query, include_nouns)
-#     if not nouns:
-#         return None
-#     if len(nouns) == 1:
-#         return {"$contains": nouns[0]}
-#     else:
-#         return {"$or": [{"$contains": noun} for noun in nouns]}
+def trim_context_to_fit(
+    model, template: str, context_text: str, question: str, n_ctx: int, max_tokens: int
+) -> str:
+    # Build a prompt with an empty context just to measure overhead
+    dummy_prompt = template.format(context="", question=question)
+    prompt_overhead_tokens = count_tokens(model, dummy_prompt)
+    # Available space for context
+    available_tokens_for_context = n_ctx - max_tokens - prompt_overhead_tokens
+    context_tokens = model.tokenize(context_text.encode("utf-8"))
+    if len(context_tokens) > available_tokens_for_context:
+        trimmed_tokens = context_tokens[
+            -available_tokens_for_context:
+        ]  # Keep latest context
+        context_text = model.detokenize(trimmed_tokens).decode("utf-8", errors="ignore")
+
+    return available_tokens_for_context, context_text
 
 
 def vind_relevante_context(
@@ -205,14 +215,11 @@ def vind_relevante_context(
     nx_max=20000,
 ):
     """Find the relevant context from Chroma based on prompt and filter."""
-
     results = db.similarity_search_with_score(
         prompt, k=source_max_dense, filter=filter_chroma, where_document=where_document
     )
-
     if source_max_reranker:
         results = herschik(prompt, results, top_m=source_max_reranker)
-
     # Filter by score
     results = [(doc, score) for doc, score in results if score < score_threshold]
     summary = ""

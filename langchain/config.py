@@ -47,11 +47,23 @@ LIJST_SPECIFIEKE_COMPONENTEN = [
     "rm6",
     "nvc00",
     "nxplusc",
+    "laagspanning",
     "mms",
     "fmx",
     "xiria",
     "capitole",
 ]
+
+NETBEHEERDERS = {
+    "Coteq Netbeheer": ["Coteq", "COTEQ", "coteq"],
+    "Enduris B.V.": ["Enduris", "ENDURIS", "enduris"],
+    "Enexis B.V.": ["Enexis", "ENEXIS", "enexis"],
+    "Liander N.V.": ["Liander", "LIANDER", "liander"],
+    "Stedin Netbeheer B.V.": ["Stedin", "STEDIN", "stedin"],
+    "Westland Infra B.V.": ["Westland", "WESTLAND", "westland"],
+    "Rendo N.V.": ["Rendo", "RENDO", "rendo"],
+    "Tennet": ["Tennet", "TENNET", "tennet"],
+}
 
 # Definieer de componenten
 COMPONENTS = {
@@ -61,6 +73,7 @@ COMPONENTS = {
     "10542": "Siemens NXplusC schakelaar",
     "10545": "Siemens 8DJH schakelaar",
     "10546": "Eaton FMX schakelinstallatie",
+    "10551": "Laagspanning",
     "1555": "Merlin Gerin RM6 schakelaar",
     "1556": "Hazemeijer CONEL schakelinstallatie",
     "1557": "Eaton 10 kV COQ schakelaar",
