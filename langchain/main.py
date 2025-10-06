@@ -115,7 +115,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
             include_summary=CONFIG["INCLUDE_SUMMARY"],
         )
         available_tokens_for_context, trimmed_context_text = trim_context_to_fit(
-            model=model,
+            model=model.client,
             template=DEFAULT_QA_PROMPT,
             context_text=context_text,
             question=prompt,
