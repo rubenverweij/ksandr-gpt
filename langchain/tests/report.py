@@ -169,11 +169,8 @@ def main():
     total_acceptable = 0
     all_scores = []
     per_file_summaries = []
-
-    for filename in os.listdir(REPORTS):
-        if not filename.endswith(".json"):
-            continue
-
+    files = sorted([f for f in os.listdir(REPORTS) if f.endswith(".json")])
+    for filename in files:
         path = os.path.join(REPORTS, filename)
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
