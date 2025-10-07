@@ -178,7 +178,7 @@ def main():
         questions = data if isinstance(data, list) else [data]
         score_data = [process_question(q) for q in questions]
         summary = summarize_scores(score_data)
-        model_info = data.get("model_info", "unknown")
+        model_info = data[0].get("model_info", "unknown")
 
         write_text_file_report(filename, score_data, summary, model_info=model_info)
 
