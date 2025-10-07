@@ -49,7 +49,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     location_testdata = args.file
-    results = []
+    model_metadata = requests.get("http://localhost:8080/metadata")
+    results = [json.loads(model_metadata.text)]
 
     # Datumstempel voor outputfile
     today = datetime.today().strftime("%Y-%m-%d")
@@ -91,8 +92,6 @@ if __name__ == "__main__":
                     break  # Exit the loop]
 
             answer = response["response"].get("answer")
-            print(f"Answer is {answer} versus {actual}")
-
             results_ref = {}
             results_new = {}
             for name, transformer in SENTENCE_TRANSFORMERS.items():
