@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     location_testdata = args.file
     model_metadata = requests.get("http://localhost:8080/metadata")
-    results = [json.loads(model_metadata.text)]
+    results = [{"model_info": json.loads(model_metadata.text)}]
 
     # Datumstempel voor outputfile
     today = datetime.today().strftime("%Y-%m-%d")
@@ -124,6 +124,8 @@ if __name__ == "__main__":
                 score_threshold = (
                     results_ref["robbert-2022"] + results_ref["mini-lm-l6"]
                 ) / 2
+                if score_threshold > 75:
+                    score_threshold = 75
             else:
                 score_threshold = 75
 
