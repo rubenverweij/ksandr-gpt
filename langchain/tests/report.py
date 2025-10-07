@@ -175,7 +175,7 @@ def main():
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        questions = data if isinstance(data, list) else [data]
+        questions = data[1:] if isinstance(data, list) else [data]
         score_data = [process_question(q) for q in questions]
         summary = summarize_scores(score_data)
         model_info = data[0].get("model_info", "unknown")
