@@ -115,14 +115,14 @@ def write_text_file_report(filename, score_data, summary, model_info):
             f"   # Improvements    : {stats['improved']}/{stats['count']}\n"
             f"   # Passed Threshold: {stats['threshold_passed']}/{stats['count']}"
         )
-    lines.append("\n Model info: {model_info}")
+    lines.append(f"\n Model info: {model_info}")
     path = os.path.join(OUTPUT_DIR, f"file_report_{Path(filename).stem}.txt")
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
 
 def write_summary_report(
-    per_file_summaries, global_summary, total_acceptable, total_questions, model_info
+    per_file_summaries, global_summary, total_acceptable, total_questions
 ):
     lines = []
 
@@ -139,8 +139,10 @@ def write_summary_report(
         )
 
     lines.append("\n================= 📄 PER-FILE SUMMARIES =================")
-    for filename, summary_data, count in per_file_summaries:
-        lines.append(f"\n📄 Summary for: {filename} with model parameters {model_info}")
+    for filename, summary_data, count, model_info in per_file_summaries:
+        lines.append(
+            f"\n📄 Summary for: {filename} with model_info {model_info.get('IMAGE_NAME', 'unknown')}"
+        )
         for key in SCORE_KEYS:
             stats = summary_data[key]
             lines.append(
@@ -180,22 +182,23 @@ def main():
         summary = summarize_scores(score_data)
         model_info = data[0].get("model_info", "unknown")
 
-        write_text_file_report(filename, score_data, summary, model_info=model_info)
+        write_text_file_report(
+            filename,
+            score_data,
+            summary,
+            model_info=model_info,
+        )
 
         all_scores.extend(score_data)
         total_questions += len(score_data)
         total_acceptable += sum(
             1 for s in score_data if s["ref_accepted"].lower() == "ja"
         )
-        per_file_summaries.append((filename, summary, len(score_data)))
+        per_file_summaries.append((filename, summary, len(score_data), model_info))
 
     global_summary = summarize_scores(all_scores)
     write_summary_report(
-        per_file_summaries,
-        global_summary,
-        total_acceptable,
-        total_questions,
-        model_info,
+        per_file_summaries, global_summary, total_acceptable, total_questions
     )
 
     print(f"✅ Reports saved in: {OUTPUT_DIR}")
