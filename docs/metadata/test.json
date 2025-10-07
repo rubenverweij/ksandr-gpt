@@ -1,8 +1,0 @@
-{
-  "name": "Transformer Model",
-  "type": "Deep Learning Architecture",
-  "introduced": "2017",
-  "key_feature": "Self Attention",
-  "applications": "NLP",
-  "addition": "Test"
-}
