@@ -36,6 +36,7 @@ LIJST_SPECIFIEKE_COMPONENTEN = [
     "magnefix",
     "merlin",
     "safeplus",
+    "conel",
     "svs",
     "coq",
     "8djh",
