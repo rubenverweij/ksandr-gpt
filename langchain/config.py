@@ -2,7 +2,7 @@ from typing import List, Dict
 
 PATH_SUMMARY = "/root/onprem_data/summary"
 
-LEMMA_EXCLUDE = ["lijst", "dossier"]
+LEMMA_EXCLUDE = ["lijst", "dossier", "onderscheid"]
 
 PATROON_UITBREIDING: Dict[str, List[str]] = {
     "onderhoud": ["Onderhoud", "onderhoud"],
