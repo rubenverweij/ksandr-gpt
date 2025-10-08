@@ -99,6 +99,10 @@ class EvaluationRequest(BaseModel):
     actual: str
 
 
+class ContextRequest(BaseModel):
+    prompt: str
+
+
 def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: int):
     if rag:
         document_search = maak_chroma_filter(
@@ -256,6 +260,13 @@ async def get_status(request_id: str):
 def evaluate(req: EvaluationRequest):
     result = evaluate_answer(req.expected, req.actual)
     return {"evaluation": result}
+
+
+@app.post("/context")
+def context(req: ContextRequest):
+    return {
+        "answer": LLM.invoke(req.prompt),
+    }
 
 
 def evaluate_answer(expected: str, actual: str) -> str:
