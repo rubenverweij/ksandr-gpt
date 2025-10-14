@@ -221,11 +221,14 @@ if __name__ == "__main__":
     )
     parser.add_argument("-source", type=str)
     parser.add_argument(
-        "-chunk_size",
+        "-min_chunk_size_json",
+        type=int,
+    )
+    parser.add_argument(
+        "-min_chunk_size_text",
         type=int,
     )
     parser.add_argument("-include_text", type=int, default=1)
-
     args = parser.parse_args()
     CHROMA_PATH = Path(args.chroma)
     SOURCE_DIR = Path(args.source)
