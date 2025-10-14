@@ -25,7 +25,7 @@ NLP = spacy.load("nl_core_news_sm")
 
 # Variables to make use of keywords that are relevant
 FREQUENCY_THRESHOLD = 5  # Only include nouns used at least this many times
-FREQUENCY_THRESHOLD_MAX = 800
+FREQUENCY_THRESHOLD_MAX = 6000
 
 # Load saved data
 with open("/root/onprem_data/keywords/noun_counter.pkl", "rb") as f:
@@ -230,7 +230,7 @@ def vind_relevante_context(
     results = db.similarity_search_with_score(
         prompt, k=max_dense, filter=filter_chroma, where_document=where_document
     )
-    results = geef_categorie_prioriteit(results)
+    results = geef_categorie_prioriteit(results, source_max_dense)
     if source_max_reranker:
         results = herschik(prompt, results, top_m=source_max_reranker)
     # Filter by score
