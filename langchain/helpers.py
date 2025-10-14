@@ -9,6 +9,7 @@ from config import (
     LIJST_SPECIFIEKE_COMPONENTEN,
     PATH_SUMMARY,
     LEMMA_EXCLUDE,
+    LEMMA_INCLUDE,
     NETBEHEERDERS,
 )
 from langchain_chroma import Chroma
@@ -101,34 +102,26 @@ def get_embedding_function():
 
 def vind_relevante_componenten(vraag, componenten_dict):
     """
-    Zoekt naar relevante componenten op basis van de vraag. Eerst zoekt het naar specifieke componenten, en daarna naar
-    algemene woorden als er geen specifieke match is.
+    Zoekt naar relevante componenten op basis van de vraag. Retourneert een Chroma filter.
 
     Parameters:
     vraag (str): De vraag van de gebruiker.
     componenten_dict (dict): Een dictionary van componenten, met de sleutel als ID en de waarde als naam.
 
     Returns:
-    list: Lijst van de sleutels van de relevante componenten.
+    dict: Chroma filter met 'type_id' als lijst van relevante component-IDs (kan leeg zijn).
     """
     vraag = vraag.lower()
-
     gevonden_sleutels = []
     for sleutel, waarde in componenten_dict.items():
         for component in LIJST_SPECIFIEKE_COMPONENTEN:
             if component in waarde.lower() and component in vraag:
                 gevonden_sleutels.append(sleutel)
                 break
-
-    # FIXME kan nog niet omgaan met verschillende dossiers
-    # if not gevonden_sleutels:
-    #     for sleutel, waarde in componenten_dict.items():
-    #         for woord in LIJST_ALGEMENE_WOORDEN:
-    #             if woord in waarde.lower() and woord in vraag:
-    #                 gevonden_sleutels.append(sleutel)
-    #                 break
-
-    return {"type_id": gevonden_sleutels[0]} if len(gevonden_sleutels) == 1 else None
+    if gevonden_sleutels:
+        return {"type_id": {"$in": gevonden_sleutels}}
+    else:
+        return None
 
 
 def extraheer_zelfstandig_naamwoorden(text):
@@ -168,7 +161,7 @@ def maak_chroma_filter(question, include_nouns):
                 count >= FREQUENCY_THRESHOLD
                 and count < FREQUENCY_THRESHOLD_MAX
                 and lemma not in LEMMA_EXCLUDE
-            ):
+            ) or lemma in LEMMA_INCLUDE:
                 variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
                 noun_variants.update(variants)
     # Bouw Chroma-filter
