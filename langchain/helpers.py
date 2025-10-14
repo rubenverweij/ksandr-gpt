@@ -234,7 +234,12 @@ def vind_relevante_context(
                 except Exception as e:
                     print(f"Error reading file {file_path}: {e}")
     # Combine page content
-    context_text = summary + "\n".join([doc.page_content for doc, _ in results])
+    context_text = summary + "\n".join(
+        [
+            f"Betreft {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
+            for doc, _ in results
+        ]
+    )
     # Truncate by max characters
     # context_text = context_text[:nx_max]
     return context_text, results, summary
