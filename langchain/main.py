@@ -146,9 +146,9 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
     return {
         "question": prompt,
         "answer": model.invoke(prompt_with_template),
+        "prompt": prompt_with_template,
         "source_documents": results_new_schema,
         "where_document": document_search,
-        "prompt": prompt_with_template,
         "summary": summary,
         "available_tokens_for_context": available_tokens_for_context,
     }

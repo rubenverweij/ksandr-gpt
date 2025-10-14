@@ -54,7 +54,7 @@ LIJST_SPECIFIEKE_COMPONENTEN = [
 ]
 
 LEMMA_EXCLUDE = ["lijst", "dossier", "onderscheid"] + LIJST_SPECIFIEKE_COMPONENTEN
-LEMMA_INCLUDE = ["faalvorm", "inspectie"]
+LEMMA_INCLUDE = ["faalvorm", "inspectie", "fabrikant"]
 
 NETBEHEERDERS = {
     "Coteq Netbeheer": ["Coteq", "COTEQ", "coteq"],
