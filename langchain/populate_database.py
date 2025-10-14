@@ -107,7 +107,7 @@ def load_documents(directory: Path) -> List[Document]:
             with file_path.open("r", encoding="utf-8") as f:
                 content = json.load(f)
                 content = clean_html(content)
-                splitter = RecursiveJsonSplitter(max_chunk_size=CHUNK_SIZE)
+                splitter = RecursiveJsonSplitter(min_chunk_size=MIN_CHUNK_SIZE_JSON)
                 chunks = splitter.split_text(json_data=content, convert_lists=True)
                 for idx, chunk in enumerate(chunks):
                     try:
@@ -146,7 +146,7 @@ def load_documents(directory: Path) -> List[Document]:
 
     if INCLUDE_TEXT:
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=CHUNK_SIZE,
+            chunk_size=MIN_CHUNK_SIZE_TEXT,
             chunk_overlap=100,
         )
         for file_path in directory.rglob("*.txt"):
@@ -229,7 +229,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     CHROMA_PATH = Path(args.chroma)
     SOURCE_DIR = Path(args.source)
-    CHUNK_SIZE = args.chunk_size
+    MIN_CHUNK_SIZE_JSON = args.min_chunk_size_json
+    MIN_CHUNK_SIZE_TEXT = args.min_chunk_size_text
     INCLUDE_TEXT = args.include_text
     clear_database()
     chunks = load_documents(SOURCE_DIR)
