@@ -201,6 +201,19 @@ def trim_context_to_fit(
     return available_tokens_for_context, context_text
 
 
+def geef_categorie_prioriteit(documents, source_max_dense):
+    ranked = sorted(
+        documents,
+        key=lambda doc_tuple: (
+            doc_tuple[1] * 0.7
+            if doc_tuple[0].get("metadata", {}).get("extension") == "json"
+            else doc_tuple[1]
+        ),
+        reverse=True,
+    )
+    return ranked[:source_max_dense]
+
+
 def vind_relevante_context(
     prompt: str,
     filter_chroma: dict[str, str],
@@ -213,9 +226,11 @@ def vind_relevante_context(
     nx_max=20000,
 ):
     """Find the relevant context from Chroma based on prompt and filter."""
+    max_dense = source_max_dense + 2
     results = db.similarity_search_with_score(
-        prompt, k=source_max_dense, filter=filter_chroma, where_document=where_document
+        prompt, k=max_dense, filter=filter_chroma, where_document=where_document
     )
+    results = geef_categorie_prioriteit(results)
     if source_max_reranker:
         results = herschik(prompt, results, top_m=source_max_reranker)
     # Filter by score
