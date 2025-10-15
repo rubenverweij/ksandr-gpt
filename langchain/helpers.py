@@ -170,7 +170,7 @@ def maak_chroma_filter(question, include_nouns):
     filters = []
     if years:
         # flatten and remove duplicates, since re.findall with groups returns tuples
-        year_values = {y if isinstance(y, str) else "".join(y) for y in years}
+        year_values = sorted(set(years))
         if len(year_values) == 1:
             filters.append({"$contains": year_values[0]})
         else:
