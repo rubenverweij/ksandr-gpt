@@ -147,29 +147,36 @@ def extract_netbeheerder_variants(question, netbeheerders_dict):
 
 
 def maak_chroma_filter(question, include_nouns):
-    all_or_groups = []  # will contain {"$or": [...] } groups
-    netbeheerder_variants = set(extract_netbeheerder_variants(question, NETBEHEERDERS))
-    if netbeheerder_variants:
-        all_or_groups.append({"$or": [{"$contains": v} for v in netbeheerder_variants]})
-    # --- Zelfstandige naamwoorden (nouns) ---
+    noun_variants = set()
+    netbeheerder_variants = set()
+    # Voeg netbeheerder-varianten toe als ze voorkomen in de vraag
+    netbeheerder_variants.update(extract_netbeheerder_variants(question, NETBEHEERDERS))
+    # Verwerk zelfstandige naamwoorden als include_nouns True is
     if include_nouns:
         for token in extraheer_zelfstandig_naamwoorden(question):
             surface = token.text.strip(string.punctuation)
             lemma = token.lemma_.lower()
             count = LEMMA_COUNTS.get(lemma, 0)
             if (
-                FREQUENCY_THRESHOLD <= count < FREQUENCY_THRESHOLD_MAX
+                count >= FREQUENCY_THRESHOLD
+                and count < FREQUENCY_THRESHOLD_MAX
                 and lemma not in LEMMA_EXCLUDE
             ) or lemma in LEMMA_INCLUDE:
                 variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
-                # 👇 Each lemma’s variants form their own OR-group
-                if variants:
-                    all_or_groups.append({"$or": [{"$contains": v} for v in variants]})
-    if not all_or_groups:
+                noun_variants.update(variants)
+    # Bouw Chroma-filter
+    filters = []
+    if noun_variants:
+        filters.append({"$or": [{"$contains": variant} for variant in noun_variants]})
+    if netbeheerder_variants:
+        filters.append(
+            {"$or": [{"$contains": variant} for variant in netbeheerder_variants]}
+        )
+    if not filters:
         return None
-    if len(all_or_groups) == 1:
-        return all_or_groups[0]
-    return {"$and": all_or_groups}
+    if len(filters) == 1:
+        return filters[0]
+    return {"$and": filters}
 
 
 def count_tokens(model, text: str) -> int:
