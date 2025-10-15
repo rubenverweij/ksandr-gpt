@@ -165,13 +165,16 @@ def maak_chroma_filter(question, include_nouns):
                 variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
                 noun_variants.update(variants)
     # Extract jaartallen
-    years = re.findall(r"\b(19|20)\d{2}\b", question)
+    years = re.findall(r"\b(?:19|20)\d{2}\b", question)
     # Bouw Chroma-filter
     filters = []
     if years:
         # flatten and remove duplicates, since re.findall with groups returns tuples
         year_values = {y if isinstance(y, str) else "".join(y) for y in years}
-        filters.append({"$or": [{"$contains": year} for year in year_values]})
+        if len(year_values) == 1:
+            filters.append({"$contains": year_values[0]})
+        else:
+            filters.append({"$or": [{"$contains": year} for year in year_values]})
     if noun_variants:
         filters.append({"$or": [{"$contains": variant} for variant in noun_variants]})
     if netbeheerder_variants:
