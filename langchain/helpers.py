@@ -257,7 +257,7 @@ def vind_relevante_context(
     # Combine page content
     context_text = summary + "\n".join(
         [
-            f"Bestand locatie is {COMPONENTS.get(doc.metadata.get('file_path', ''), '')} en betreft {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
+            f"Bestand locatie en link {COMPONENTS.get(doc.metadata.get('file_path', ''), '')} en betreft {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
             for doc, _ in results
         ]
     )
