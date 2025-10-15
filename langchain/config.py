@@ -53,7 +53,14 @@ LIJST_SPECIFIEKE_COMPONENTEN = [
     "capitole",
 ]
 
-LEMMA_EXCLUDE = ["lijst", "dossier", "onderscheid"] + LIJST_SPECIFIEKE_COMPONENTEN
+LEMMA_EXCLUDE = [
+    "lijst",
+    "dossier",
+    "onderscheid",
+    "verschil",
+    "samenvatting",
+    "opsomming",
+] + LIJST_SPECIFIEKE_COMPONENTEN
 LEMMA_INCLUDE = [
     "faalvorm",
     "inspectie",
