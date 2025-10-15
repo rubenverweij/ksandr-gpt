@@ -105,9 +105,11 @@ class ContextRequest(BaseModel):
 
 def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: int):
     if rag:
+        time_start = time.time()
         document_search = maak_chroma_filter(
             question=prompt, include_nouns=CONFIG["INCLUDE_KEYWORDS"]
         )
+        time_doc_search = time.time()
         context_text, results, summary = vind_relevante_context(
             prompt=prompt,
             filter_chroma=filter,
@@ -118,6 +120,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
             where_document=document_search,
             include_summary=CONFIG["INCLUDE_SUMMARY"],
         )
+        time_build_context = time.time()
         available_tokens_for_context, trimmed_context_text = trim_context_to_fit(
             model=model.client,
             template=DEFAULT_QA_PROMPT,
@@ -126,6 +129,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
             n_ctx=CONFIG["MAX_CTX"],
             max_tokens=CONFIG["MAX_TOKENS"],
         )
+        time_reranker_trimming = time.time()
         results_new_schema = []
         for doc, score in results:
             doc_dict = {
@@ -151,6 +155,11 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
         "where_document": document_search,
         "summary": summary,
         "available_tokens_for_context": available_tokens_for_context,
+        "time_stages": {
+            "maak_chroma_filter": time_doc_search - time_start,
+            "vind_relevante_context": time_build_context - time_doc_search,
+            "trim_context_to_fit": time_reranker_trimming - time_build_context,
+        },
     }
 
 
