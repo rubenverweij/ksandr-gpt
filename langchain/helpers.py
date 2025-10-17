@@ -233,7 +233,6 @@ def vind_relevante_context(
     score_threshold: float,
     where_document,
     include_summary: int,
-    nx_max=20000,
 ):
     """Find the relevant context from Chroma based on prompt and filter."""
     time_start = time.time()
@@ -271,7 +270,6 @@ def vind_relevante_context(
     )
     time_build_context = time.time()
     # Truncate by max characters
-    # context_text = context_text[:nx_max]
     return (
         context_text,
         results,
