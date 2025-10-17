@@ -3,6 +3,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 import pickle
 import string
+import time
 import spacy
 from config import (
     COMPONENTS,
@@ -235,14 +236,18 @@ def vind_relevante_context(
     nx_max=20000,
 ):
     """Find the relevant context from Chroma based on prompt and filter."""
+    time_start = time.time()
     max_dense = source_max_dense + 2
     results = db.similarity_search_with_score(
         prompt, k=max_dense, filter=filter_chroma, where_document=where_document
     )
+    time_sim_search = time.time()
     results = geef_categorie_prioriteit(results, source_max_dense)
+    time_prio_cats = time.time()
     if source_max_reranker:
         results = herschik(prompt, results, top_m=source_max_reranker)
     # Filter by score
+    time_reranker = time.time()
     results = [(doc, score) for doc, score in results if score < score_threshold]
     summary = ""
     if include_summary:
@@ -264,9 +269,22 @@ def vind_relevante_context(
             for doc, _ in results
         ]
     )
+    time_build_context = time.time()
     # Truncate by max characters
     # context_text = context_text[:nx_max]
-    return context_text, results, summary
+    return (
+        context_text,
+        results,
+        summary,
+        {
+            "time_stages": {
+                "similarity_search_with_score": time_sim_search - time_start,
+                "geef_categorie_prioriteit": time_prio_cats - time_sim_search,
+                "herschik": time_reranker - time_prio_cats,
+                "build_context": time_build_context - time_reranker,
+            }
+        },
+    )
 
 
 def herschik(query, candidates, top_m: int):

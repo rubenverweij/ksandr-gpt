@@ -110,7 +110,7 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
             question=prompt, include_nouns=CONFIG["INCLUDE_KEYWORDS"]
         )
         time_doc_search = time.time()
-        context_text, results, summary = vind_relevante_context(
+        context_text, results, summary, time_stages = vind_relevante_context(
             prompt=prompt,
             filter_chroma=filter,
             db=db,
@@ -147,6 +147,14 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
         prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(question=prompt)
         results_new_schema = None
         document_search = None
+    # Monitor time stages
+    time_stages.update(
+        {
+            "maak_chroma_filter": time_doc_search - time_start,
+            "vind_relevante_context": time_build_context - time_doc_search,
+            "trim_context_to_fit": time_reranker_trimming - time_build_context,
+        }
+    )
     return {
         "question": prompt,
         "answer": model.invoke(prompt_with_template),
@@ -155,24 +163,21 @@ def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: in
         "where_document": document_search,
         "summary": summary,
         "available_tokens_for_context": available_tokens_for_context,
-        "time_stages": {
-            "maak_chroma_filter": time_doc_search - time_start,
-            "vind_relevante_context": time_build_context - time_doc_search,
-            "trim_context_to_fit": time_reranker_trimming - time_build_context,
-        },
+        "time_stages": time_stages,
     }
 
 
 # Verwerkt het verzoek en haalt de reactie op
 async def process_request(request: AskRequest):
     """Process a request asynchronously and stream the result."""
+    time_start = time.time()
     if CONFIG["INCLUDE_FILTER"]:
         active_filter = vind_relevante_componenten(
             vraag=request.prompt, componenten_dict=COMPONENTS
         )
     else:
         active_filter = None
-
+    time_vind_component = time.time()
     try:
         # Pass request_id for tracking the streaming response
         response = await asyncio.get_event_loop().run_in_executor(
@@ -184,8 +189,17 @@ async def process_request(request: AskRequest):
                 rag=request.rag,
             ),
         )
+        time_ask_llm = time.time()
         response["active_filter"] = str(active_filter)
         response["answer"] = uniek_antwoord(response["answer"])
+        time_uniek_antwoord = time.time()
+        response["time_stages"].update(
+            {
+                "vind_relevante_componenten": time_vind_component - time_start,
+                "ask_llm": time_ask_llm - time_vind_component,
+                "uniek_antwoord": time_uniek_antwoord - time_ask_llm,
+            }
+        )
         if request.rag:
             if not response.get("source_documents"):
                 response["answer"] = (
