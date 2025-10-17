@@ -10,7 +10,6 @@ from config import (
     LIJST_SPECIFIEKE_COMPONENTEN,
     PATH_SUMMARY,
     LEMMA_EXCLUDE,
-    LEMMA_INCLUDE,
     NETBEHEERDERS,
 )
 from langchain_chroma import Chroma
@@ -26,10 +25,10 @@ NLP = spacy.load("nl_core_news_sm")
 
 # Variables to make use of keywords that are relevant
 FREQUENCY_THRESHOLD = 5  # Only include nouns used at least this many times
-FREQUENCY_THRESHOLD_MAX = 6000
+FREQUENCY_THRESHOLD_MAX = 5e5
 
 # Load saved data
-with open("/root/onprem_data/keywords/noun_counter.pkl", "rb") as f:
+with open("/root/onprem_data/keywords/lemma_counter.pkl", "rb") as f:
     LEMMA_COUNTS = pickle.load(f)
 
 with open("/root/onprem_data/keywords/lemmas.pkl", "rb") as f:
@@ -162,7 +161,7 @@ def maak_chroma_filter(question, include_nouns):
                 count >= FREQUENCY_THRESHOLD
                 and count < FREQUENCY_THRESHOLD_MAX
                 and lemma not in LEMMA_EXCLUDE
-            ) or lemma in LEMMA_INCLUDE:
+            ):
                 variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
                 noun_variants.update(variants)
     # Extract jaartallen
@@ -177,7 +176,12 @@ def maak_chroma_filter(question, include_nouns):
         else:
             filters.append({"$or": [{"$contains": year} for year in year_values]})
     if noun_variants:
-        filters.append({"$or": [{"$contains": variant} for variant in noun_variants]})
+        if len(noun_variants) == 1:
+            filters.append({"$contains": noun_variants[0]})
+        else:
+            filters.append(
+                {"$or": [{"$contains": variant} for variant in noun_variants]}
+            )
     if netbeheerder_variants:
         filters.append(
             {"$or": [{"$contains": variant} for variant in netbeheerder_variants]}

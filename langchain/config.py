@@ -53,22 +53,6 @@ LIJST_SPECIFIEKE_COMPONENTEN = [
     "capitole",
 ]
 
-LEMMA_EXCLUDE = [
-    "lijst",
-    "dossier",
-    "onderscheid",
-    "verschil",
-    "samenvatting",
-    "opsomming",
-] + LIJST_SPECIFIEKE_COMPONENTEN
-LEMMA_INCLUDE = [
-    "faalvorm",
-    "inspectie",
-    "fabrikant",
-    "goedkeuringseisen",
-    "inspectieronde",
-]
-
 NETBEHEERDERS = {
     "Coteq Netbeheer": ["Coteq", "COTEQ", "coteq"],
     "Enduris B.V.": ["Enduris", "ENDURIS", "enduris"],
@@ -79,6 +63,30 @@ NETBEHEERDERS = {
     "Rendo N.V.": ["Rendo", "RENDO", "rendo"],
     "Tennet": ["Tennet", "TENNET", "tennet"],
 }
+
+LEMMA_EXCLUDE = (
+    [
+        "lijst",
+        "dossier",
+        "onderscheid",
+        "probleem",
+        "verschil",
+        "bestand",
+        "overleg",
+        "gebruik",
+        "link",
+        "werking",
+        "samenvatting",
+        "onderdeel",
+        "installatie",
+        "opsomming",
+    ]
+    + LIJST_SPECIFIEKE_COMPONENTEN
+    + [variant for variants in NETBEHEERDERS.values() for variant in variants]
+)
+
+LEMMA_INCLUDE = []
+
 
 # Definieer de componenten
 COMPONENTS = {
