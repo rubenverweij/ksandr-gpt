@@ -1,10 +1,23 @@
 import hashlib
 import json
 from langchain_chroma import Chroma
-from helpers import get_embedding_function
+import torch
+from langchain_huggingface import HuggingFaceEmbeddings
 
 CHROMA_PATH = "/home/ubuntu/onprem_data/chroma"
 OUTPUT_JSON_PATH = "/home/ubuntu/onprem_data/duplicates.json"
+
+
+def get_embedding_function():
+    embedding_encode_kwargs: dict = {"normalize_embeddings": True}
+    device = torch.device("cuda")
+    embedding_model_kwargs = {"device": device}
+    embeddings = HuggingFaceEmbeddings(
+        model_name="NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers",
+        model_kwargs=embedding_model_kwargs,
+        encode_kwargs=embedding_encode_kwargs,
+    )
+    return embeddings
 
 
 def hash_doc(text: str) -> str:
