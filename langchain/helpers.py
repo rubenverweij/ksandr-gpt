@@ -129,7 +129,7 @@ def _bouw_permissie_filter(
             # Als de waarde een dictionary is, doorloop dan elke categorie en bijbehorende ID's
             for categorie, ids in waarde.items():
                 for id_ in ids:
-                    permissions.append(f"{id_}_{categorie}")
+                    permissions.append(f"{categorie}_{id_}")
         elif isinstance(waarde, list):
             # Als de waarde een lijst is, voeg elk ID toe met de bron als categorie
             for id_ in waarde:
