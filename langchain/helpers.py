@@ -2,6 +2,7 @@ import re
 from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 import pickle
+from typing import Dict, Optional, Union, List, Any
 import string
 import time
 import spacy
@@ -100,28 +101,81 @@ def get_embedding_function():
     return embeddings
 
 
-def vind_relevante_componenten(vraag, componenten_dict):
+def _bouw_permissie_filter(
+    permissie_data: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]],
+) -> Dict[str, Any]:
     """
-    Zoekt naar relevante componenten op basis van de vraag. Retourneert een Chroma filter.
+    Bouwt een permissiefilter op basis van de opgegeven permissiegegevens.
 
     Parameters:
-    vraag (str): De vraag van de gebruiker.
-    componenten_dict (dict): Een dictionary van componenten, met de sleutel als ID en de waarde als naam.
+    permissie_data (dict of None): Een dictionary die de toegangsrechten specificeert.
+        - De sleutels zijn bronnen (bijv. 'user', 'group', etc.).
+        - De waarden kunnen zijn:
+            - Een dictionary met categorieën als sleutel en lijsten van IDs als waarde.
+            - Een lijst van IDs.
+            - Een boolean (toegang of geen toegang).
 
     Returns:
-    dict: Chroma filter met 'type_id' als lijst van relevante component-IDs (kan leeg zijn).
+    dict: Een filter die gebruikt kan worden in een query (bijv. voor Chroma of een database).
     """
-    vraag = vraag.lower()
+    if not permissie_data:
+        # Als er geen permissiegegevens zijn, is toegang tot 'table' niet toegestaan
+        return {"table": False}
+
+    permissions = []
+
+    for bron, waarde in permissie_data.items():
+        if isinstance(waarde, dict):
+            # Als de waarde een dictionary is, doorloop dan elke categorie en bijbehorende ID's
+            for categorie, ids in waarde.items():
+                for id_ in ids:
+                    permissions.append(f"{id_}_{categorie}")
+        elif isinstance(waarde, list):
+            # Als de waarde een lijst is, voeg elk ID toe met de bron als categorie
+            for id_ in waarde:
+                permissions.append(f"{id_}_{bron}")
+        elif isinstance(waarde, bool):
+            # Als de waarde een boolean is, voeg 'true_bron' of 'false_bron' toe
+            permissions.append(f"{'true' if waarde else 'false'}_{bron}")
+
+    # Retourneer een filter waarin gezocht wordt naar permissies die overeenkomen met de gegenereerde lijst
+    return {"permission_and_type": {"$in": permissions}}
+
+
+def maak_metadata_filter(request, componenten_dict):
+    """
+    Maakt een filter op basis van de vraag in de request en beschikbare componenten.
+    Wordt gebruikt om relevante data op te halen uit een vectorstore zoals Chroma.
+
+    Parameters:
+    request (AskRequest): De vraag van de gebruiker inclusief permissiegegevens.
+    componenten_dict (dict): Een dictionary waarbij de sleutel een component-ID is en de waarde de naam.
+
+    Returns:
+    dict: Een samengestelde Chroma-filter met type-ID's (indien gevonden) en permissies.
+    """
+    vraag = (
+        request.prompt.lower()
+    )  # Converteer de gebruikersvraag naar kleine letters voor betere matching
+    permissie_filter = _bouw_permissie_filter(
+        request.permission
+    )  # Bouw het permissiefilter op basis van request
+
     gevonden_sleutels = []
+
+    # Doorloop alle componenten om te kijken of er specifieke componenten in de vraag worden genoemd
     for sleutel, waarde in componenten_dict.items():
         for component in LIJST_SPECIFIEKE_COMPONENTEN:
             if component in waarde.lower() and component in vraag:
                 gevonden_sleutels.append(sleutel)
-                break
+                break  # Stop met zoeken zodra een match is gevonden voor deze component
+
     if gevonden_sleutels:
-        return {"type_id": {"$in": gevonden_sleutels}}
+        # Als er relevante componenten zijn gevonden, combineer ze met het permissiefilter
+        return {"$and": [{"type_id": {"$in": gevonden_sleutels}}, permissie_filter]}
     else:
-        return None
+        # Als er geen componenten zijn gevonden, gebruik alleen het permissiefilter
+        return permissie_filter
 
 
 def extraheer_zelfstandig_naamwoorden(text):
@@ -320,7 +374,7 @@ if __name__ == "__main__":
 
     for vraag in vragen:
         print(f"Vraag: {vraag}")
-        gevonden_sleutels = vind_relevante_componenten(
+        gevonden_sleutels = maak_metadata_filter(
             vraag,
             COMPONENTS,
         )

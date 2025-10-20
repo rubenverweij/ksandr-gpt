@@ -6,7 +6,7 @@ from datetime import datetime
 
 from templates import DEFAULT_QA_PROMPT, DEFAULT_QA_PROMPT_SIMPLE, EVALUATIE_PROMPT
 from helpers import (
-    vind_relevante_componenten,
+    maak_metadata_filter,
     COMPONENTS,
     uniek_antwoord,
     get_embedding_function,
@@ -172,12 +172,13 @@ async def process_request(request: AskRequest):
     """Process a request asynchronously and stream the result."""
     time_start = time.time()
     if CONFIG["INCLUDE_FILTER"]:
-        active_filter = vind_relevante_componenten(
-            vraag=request.prompt, componenten_dict=COMPONENTS
+        active_filter = maak_metadata_filter(
+            request=request, componenten_dict=COMPONENTS
         )
     else:
         active_filter = None
     time_vind_component = time.time()
+
     try:
         # Pass request_id for tracking the streaming response
         response = await asyncio.get_event_loop().run_in_executor(
@@ -325,7 +326,7 @@ async def get_request_position_in_queue(request_id: str) -> int:
     return 0
 
 
-def _build_filter(
+def _build_permission_filter(
     permission_data: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]],
 ) -> Dict[str, Any]:
     """Bouwt een filter op basis van de opgegeven permissies."""
