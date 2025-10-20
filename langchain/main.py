@@ -16,7 +16,7 @@ from helpers import (
 )
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Dict, Optional, Union, List, Any
+from typing import Dict, Optional, Union, List
 from langchain_chroma import Chroma
 from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
@@ -324,23 +324,3 @@ async def get_request_position_in_queue(request_id: str) -> int:
         if queued_request.id == request_id:
             return index + 1
     return 0
-
-
-def _build_permission_filter(
-    permission_data: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]],
-) -> Dict[str, Any]:
-    """Bouwt een filter op basis van de opgegeven permissies."""
-    if not permission_data:
-        return {"table": False}
-    permissions = []
-    for source, value in permission_data.items():
-        if isinstance(value, dict):
-            for category, ids in value.items():
-                for id_ in ids:
-                    permissions.append(f"{id_}_{category}")
-        elif isinstance(value, list):
-            for id_ in value:
-                permissions.append(f"{id_}_{source}")
-        elif isinstance(value, bool):
-            permissions.append(f"{'true' if value else 'false'}_{source}")
-    return {"permission_and_type": {"$in": permissions}}
