@@ -56,7 +56,6 @@ Een AAD bevat standaard de volgende onderwerpen: algemene gegevens over de compo
 Belangrijke instructies:
 - Verbeter altijd spelling, grammatica en formulering.
 - Gebruik duidelijk, natuurlijk en professioneel Nederlands.
-- Als de gebruikersvraag een opvolgvraag lijkt (dus afhankelijk van eerdere context), vraag de gebruiker dan om de vraag te verduidelijken zodat deze zelfstandig te beantwoorden is.
 - Antwoord beknopt maar volledig, en vermijd dubbelzinnigheid
 
 <|im_end|>

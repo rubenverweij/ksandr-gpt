@@ -219,7 +219,7 @@ def geef_categorie_prioriteit(documents, source_max_dense):
     ranked = sorted(
         documents,
         key=lambda doc_tuple: (
-            doc_tuple[1] * 0.7
+            doc_tuple[1] * 0.5
             if doc_tuple[0].metadata.get("extension") == "json"
             else doc_tuple[1]
         ),
@@ -268,7 +268,7 @@ def vind_relevante_context(
     # Combine page content
     context_text = summary + "\n".join(
         [
-            f"Bestand locatie en link {COMPONENTS.get(doc.metadata.get('source', ''), '')} en betreft {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
+            f"De locatie van dit bestand is: {doc.metadata.get('source', '')} en betreft component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
             for doc, _ in results
         ]
     )
