@@ -274,7 +274,7 @@ def geef_categorie_prioriteit(documents, source_max_dense):
         documents,
         key=lambda doc_tuple: (
             doc_tuple[1] * 0.5
-            if doc_tuple[0].metadata.get("extension") == "json"
+            if doc_tuple[0].metadata.get("extension") == ".json"
             else doc_tuple[1]
         ),
         reverse=True,
