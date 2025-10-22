@@ -271,15 +271,15 @@ def trim_context_to_fit(
 
 
 def geef_categorie_prioriteit(documents, source_max_dense):
-    ranked = sorted(
-        documents,
-        key=lambda doc_tuple: (
-            doc_tuple[1] * 0.5
-            if doc_tuple[0].metadata.get("extension") == ".json"
-            else doc_tuple[1]
-        ),
-        reverse=True,
-    )
+    adjusted = [
+        (
+            doc,
+            score * 0.5 if doc.metadata.get("extension") == ".json" else score,
+        )
+        for doc, score in documents
+    ]
+    # lower lagere scores zijn beter
+    ranked = sorted(adjusted, key=lambda x: x[1])
     return ranked[:source_max_dense]
 
 
