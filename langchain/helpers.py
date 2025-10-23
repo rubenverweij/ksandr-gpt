@@ -274,7 +274,7 @@ def geef_categorie_prioriteit(documents, source_max_dense):
     adjusted = [
         (
             doc,
-            score * 0.01 if doc.metadata.get("extension") == ".json" else score,
+            score * 0.01 if doc.metadata.get("extension") == "json" else score,
         )
         for doc, score in documents
     ]
