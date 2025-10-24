@@ -22,7 +22,7 @@ RUN python3 -m pip install torch torchvision torchaudio \
 
 # Installeer llama-cpp-python (met cuda)
 RUN CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python
-RUN python3 -m pip install bs4 redis chromadb langchain_chroma sentence-transformers langchain langchain-huggingface langchain-community fastapi[standard]
+RUN python3 -m pip install bs4 redis chromadb langchain_chroma sentence-transformers langchain langchain-huggingface langchain-community fastapi[standard] neo4j neo2py
 
 WORKDIR /ksandr-gpt
 COPY ./ /ksandr-gpt/api
