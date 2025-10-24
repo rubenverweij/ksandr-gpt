@@ -274,7 +274,7 @@ def geef_categorie_prioriteit(documents, source_max_dense):
     adjusted = [
         (
             doc,
-            score * 0.75 if doc.metadata.get("extension") == "json" else score,
+            score * 0.85 if doc.metadata.get("extension") == "json" else score,
         )
         for doc, score in documents
     ]
@@ -295,7 +295,7 @@ def vind_relevante_context(
 ):
     """Find the relevant context from Chroma based on prompt and filter."""
     time_start = time.time()
-    max_dense = 25
+    max_dense = source_max_dense + 5
     results = db.similarity_search_with_score(
         prompt, k=max_dense, filter=filter_chroma, where_document=where_document
     )
