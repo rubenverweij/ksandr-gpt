@@ -4,6 +4,7 @@ import uuid
 import os
 from datetime import datetime
 
+from neo4j.cypher_queries import cypher_templates
 from templates import DEFAULT_QA_PROMPT, DEFAULT_QA_PROMPT_SIMPLE, EVALUATIE_PROMPT
 from helpers import (
     maak_metadata_filter,
@@ -101,6 +102,11 @@ class EvaluationRequest(BaseModel):
 
 class ContextRequest(BaseModel):
     prompt: str
+
+
+class Neo4jRequest(BaseModel):
+    question: str
+    template: Optional[str]
 
 
 def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: int):
@@ -299,6 +305,41 @@ def evaluate_answer(expected: str, actual: str) -> str:
     comparison_prompt = EVALUATIE_PROMPT.format(actual=actual, expected=expected)
     result = LLM(comparison_prompt)
     return result.strip()
+
+
+@app.post("/template")
+def kies_template(req: Neo4jRequest):
+    prompt = f"""
+    Je hebt een set Cypher-query templates:
+    {list(cypher_templates.keys())}
+
+    Gebruikersvraag: "{req.question}"
+
+    Kies de meest geschikte template die past bij deze vraag.
+    Geef alleen de key van de template terug.
+    """
+    response = LLM(prompt)
+    template_key = response.strip()
+    if template_key not in cypher_templates:
+        raise ValueError(f"LLM stelde een onbekende template voor: {template_key}")
+    return template_key
+
+
+@app.post("/parameters")
+def haal_parameters_van_vraag(req: Neo4jRequest):
+    vereiste_params = cypher_templates[req.template]["parameters"]
+    if not vereiste_params:
+        return {}
+    prompt = f"""
+    De gebruiker vroeg: "{req.question}"
+    De template heeft de volgende parameters nodig: {vereiste_params}.
+    Haal de correcte waarden uit de vraag en geef ze terug in JSON-formaat.
+    """
+    response = LLM(prompt)
+    parameters = response.strip()
+    if parameters:
+        return parameters
+    return None
 
 
 def get_image_name() -> str:
