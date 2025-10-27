@@ -141,7 +141,7 @@ def ask_llm(
                     "type": doc.type,
                 }
                 doc_dict["metadata"]["score"] = score
-            results_new_schema.append(doc_dict)
+                results_new_schema.append(doc_dict)
         else:
             context_text = neo_context_text
         time_build_context = time.time()
