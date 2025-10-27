@@ -4,7 +4,7 @@ import uuid
 import os
 from datetime import datetime
 
-from neo4j.cypher_queries import cypher_templates
+from neo4j.cypher_queries import query_neo4j
 from templates import DEFAULT_QA_PROMPT, DEFAULT_QA_PROMPT_SIMPLE, EVALUATIE_PROMPT
 from helpers import (
     maak_metadata_filter,
@@ -109,23 +109,29 @@ class Neo4jRequest(BaseModel):
     template: Optional[str]
 
 
-def ask_llm(prompt: str, filter: Optional[Dict | None], model: LlamaCpp, rag: int):
+def ask_llm(
+    prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp, rag: int
+):
     if rag:
         time_start = time.time()
         document_search = maak_chroma_filter(
             question=prompt, include_nouns=CONFIG["INCLUDE_KEYWORDS"]
         )
         time_doc_search = time.time()
-        context_text, results, summary, time_stages = vind_relevante_context(
-            prompt=prompt,
-            filter_chroma=filter,
-            db=db,
-            source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
-            source_max_dense=CONFIG["SOURCE_MAX"],
-            score_threshold=CONFIG["SCORE_THRESHOLD"],
-            where_document=document_search,
-            include_summary=CONFIG["INCLUDE_SUMMARY"],
-        )
+        neo_context_text = query_neo4j(prompt, chroma_filter)
+        if not neo_context_text:
+            context_text, results, summary, time_stages = vind_relevante_context(
+                prompt=prompt,
+                filter_chroma=chroma_filter,
+                db=db,
+                source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
+                source_max_dense=CONFIG["SOURCE_MAX"],
+                score_threshold=CONFIG["SCORE_THRESHOLD"],
+                where_document=document_search,
+                include_summary=CONFIG["INCLUDE_SUMMARY"],
+            )
+        else:
+            context_text = neo_context_text
         time_build_context = time.time()
         available_tokens_for_context, trimmed_context_text = trim_context_to_fit(
             model=model.client,
@@ -192,7 +198,7 @@ async def process_request(request: AskRequest):
             lambda: ask_llm(
                 prompt=request.prompt,
                 model=LLM,
-                filter=active_filter,
+                chroma_filter=active_filter,
                 rag=request.rag,
             ),
         )
@@ -305,41 +311,6 @@ def evaluate_answer(expected: str, actual: str) -> str:
     comparison_prompt = EVALUATIE_PROMPT.format(actual=actual, expected=expected)
     result = LLM(comparison_prompt)
     return result.strip()
-
-
-@app.post("/template")
-def kies_template(req: Neo4jRequest):
-    prompt = f"""
-    Je hebt een set Cypher-query templates:
-    {list(cypher_templates.keys())}
-
-    Gebruikersvraag: "{req.question}"
-
-    Kies de meest geschikte template die past bij deze vraag.
-    Geef alleen de key van de template terug.
-    """
-    response = LLM(prompt)
-    template_key = response.strip()
-    if template_key not in cypher_templates:
-        raise ValueError(f"LLM stelde een onbekende template voor: {template_key}")
-    return template_key
-
-
-@app.post("/parameters")
-def haal_parameters_van_vraag(req: Neo4jRequest):
-    vereiste_params = cypher_templates[req.template]["parameters"]
-    if not vereiste_params:
-        return {}
-    prompt = f"""
-    De gebruiker vroeg: "{req.question}"
-    De template heeft de volgende parameters nodig: {vereiste_params}.
-    Haal de correcte waarden uit de vraag en geef ze terug in JSON-formaat.
-    """
-    response = LLM(prompt)
-    parameters = response.strip()
-    if parameters:
-        return parameters
-    return None
 
 
 def get_image_name() -> str:

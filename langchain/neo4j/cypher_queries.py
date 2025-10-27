@@ -1,110 +1,83 @@
-# Dictionary met Cypher-templates (case-insensitive)
+from neo4j import GraphDatabase
+
+driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
+
 cypher_templates = {
     "alle_faalvormen_per_component": {
         "query": """
-            MATCH (c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
-            WHERE toLower(c.naam) = toLower($component)
-            RETURN f.Nummer AS Nummer,
-                   f.Naam AS Naam,
-                   f.Beschrijving AS Beschrijving,
-                   f.MogelijkGevolg AS MogelijkGevolg,
-                   f.Faaltempo AS Faaltempo
-            ORDER BY f.Nummer
-        """,
-        "parameters": ["component"],
-    },
-    "meest_voorkomende_faalvormen": {
-        "query": """
-            MATCH (f:Faaltype)
-            RETURN f.Nummer AS Nummer,
-                   f.Naam AS Naam,
-                   f.GemiddeldAantalIncidenten AS GemiddeldAantalIncidenten
-            ORDER BY CASE f.GemiddeldAantalIncidenten
+            MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
+            WHERE a.aad_id IN $aad_ids
+            RETURN 
+                c.naam AS component_naam,
+                f.Nummer AS nummer_faalvorm,
+                f.Naam AS naam_faalvorm,
+                f.Beschrijving AS beschrijving,
+                coalesce(f.GemiddeldAantalIncidenten, 'Onbekend') AS aantal_incidenten
+            ORDER BY CASE coalesce(f.GemiddeldAantalIncidenten, 'Onbekend')
                         WHEN 'Zeer regelmatig (>5)' THEN 5
                         WHEN 'Regelmatig (3-5)' THEN 4
                         WHEN 'Incidenteel (1-2)' THEN 3
                         WHEN 'Onbekend' THEN 2
                         ELSE 1
                      END DESC
-            LIMIT 5
         """,
-        "parameters": [],
+        "parameters": ["aad_ids"],
     },
-    "faalvormen_met_indicator": {
+    "alle_faalvormen_per_component_clean": {
         "query": """
-            MATCH (f:Faaltype)
-            WHERE toLower(f.Faalindicatoren) CONTAINS toLower($indicator)
-            RETURN f.Nummer AS Nummer,
-                   f.Naam AS Naam,
-                   f.Faalindicatoren AS Indicatoren
+            MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
+            WHERE a.aad_id IN $aad_ids
+            RETURN 
+                c.naam AS component_naam,
+                f.Nummer AS nummer,
+                f.Naam AS naam_faalvorm,
+                f.Beschrijving AS beschrijving,
+                f.GemiddeldAantalIncidenten AS aantal_incidenten
         """,
-        "parameters": ["indicator"],
-    },
-    "gemeenschappelijke_faalvormen_tussen_2_componenten": {
-        "query": """
-        MATCH (c1:Component)-[:HEEFT_FAALTYPE]->(f1:Faaltype)
-        MATCH (c2:Component)-[:HEEFT_FAALTYPE]->(f2:Faaltype)
-        WHERE toLower(c1.naam) = toLower($component1)
-        AND toLower(c2.naam) = toLower($component2)
-        AND toLower(f1.Naam) = toLower(f2.Naam)
-        RETURN f1.Nummer AS Nummer,
-            f1.Naam AS Naam,
-            f1.Beschrijving AS Beschrijving
-        ORDER BY f1.Nummer
-        """,
-        "parameters": ["component1", "component2"],
-    },
-    "faalvormen_voor_component_voor_oorzaak": {
-        "query": """
-        MATCH (c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
-        WHERE toLower(c.naam) = toLower($component)
-          AND toLower(f.OorzaakGeneriek) = toLower($generieke_oorzaak)
-        RETURN f.Nummer AS Nummer,
-               f.Naam AS Naam,
-               f.Beschrijving AS Beschrijving,
-               f.OorzaakGeneriek AS GeneriekeOorzaak
-        ORDER BY f.Nummer
-        """,
-        "parameters": ["component", "generieke_oorzaak"],
-    },
-    "meest_voorkomende_faalvormen_per_component": {
-        "query": """
-        UNWIND $componenten AS compNaam
-        MATCH (c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
-        WHERE toLower(c.naam) = toLower(compNaam)
-        RETURN c.naam AS Component,
-               f.Nummer AS Nummer,
-               f.Naam AS Naam,
-               f.GemiddeldAantalIncidenten AS Frequentie
-        ORDER BY c.naam,
-                 CASE f.GemiddeldAantalIncidenten
-                   WHEN 'Zeer regelmatig (>5)' THEN 1
-                   WHEN 'Regelmatig (2-5)' THEN 2
-                   WHEN 'Incidenteel' THEN 3
-                   ELSE 4
-                 END ASC
-        """,
-        "parameters": ["componenten"],
-    },
-    "faalvormen_filter": {
-        "query": """
-        UNWIND $componenten AS compNaam
-        MATCH (c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
-        WHERE toLower(c.naam) = toLower(compNaam)
-          AND ($generieke_oorzaak IS NULL OR toLower(f.OorzaakGeneriek) = toLower($generieke_oorzaak))
-        RETURN c.naam AS Component,
-               f.Nummer AS Nummer,
-               f.Naam AS Naam,
-               f.OorzaakGeneriek AS GeneriekeOorzaak,
-               f.GemiddeldAantalIncidenten AS Frequentie
-        ORDER BY c.naam,
-                 CASE f.GemiddeldAantalIncidenten
-                   WHEN 'Zeer regelmatig (>5)' THEN 1
-                   WHEN 'Regelmatig (2-5)' THEN 2
-                   WHEN 'Incidenteel' THEN 3
-                   ELSE 4
-                 END ASC
-        """,
-        "parameters": ["componenten", "generieke_oorzaak"],
+        "parameters": ["aad_ids"],
     },
 }
+
+
+def run_cypher(query, parameters=None):
+    with driver.session() as session:
+        result = session.run(query, parameters or {})
+        return [record.data() for record in result]
+
+
+def query_neo4j(prompt: str, chroma_filter):
+    """Haal informatie op uit neo4j database."""
+    if "faalvorm" in prompt.lower():
+        parameters = {}
+        for clause in chroma_filter.get("$and", []):
+            if "type_id" in clause:
+                parameters["aad_ids"] = clause["type_id"].get("$in", [])
+        return neo4j_records_to_context(
+            run_cypher(
+                query=cypher_templates["alle_faalvormen_per_component"]["query"],
+                parameters=parameters,
+            )
+        )
+    return None
+
+
+def neo4j_records_to_context(records):
+    """
+    Converteert Neo4j-records naar een tekstuele RAG-context.
+    Vervangt None door 'Onbekend' en formatteert per faalvorm.
+    """
+    context_parts = []
+    for r in records:
+        component = r.get("component_naam", "Onbekend")
+        nummer = r.get("nummer_faalvorm", "Onbekend")
+        naam = r.get("naam_faalvorm", "Onbekend")
+        beschrijving = r.get("beschrijving", "Onbekend")
+        incidenten = r.get("aantal_incidenten") or "Onbekend"
+        entry = (
+            f"Component: {component}\n"
+            f"Faalvorm: {naam} ({nummer})\n"
+            f"Beschrijving: {beschrijving}\n"
+            f"Aantal incidenten: {incidenten}\n"
+        )
+        context_parts.append(entry.strip())
+    return "\n\n".join(context_parts)
