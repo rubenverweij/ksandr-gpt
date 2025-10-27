@@ -119,6 +119,7 @@ def ask_llm(
         )
         time_doc_search = time.time()
         neo_context_text, results_new_schema = query_neo4j(prompt, chroma_filter)
+        time_stages = {}
         if not neo_context_text:
             context_text, results, summary, time_stages = vind_relevante_context(
                 prompt=prompt,
