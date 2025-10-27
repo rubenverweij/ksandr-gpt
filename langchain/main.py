@@ -140,7 +140,7 @@ def ask_llm(
                     "metadata": doc.metadata,
                     "type": doc.type,
                 }
-            doc_dict["metadata"]["score"] = score
+                doc_dict["metadata"]["score"] = score
             results_new_schema.append(doc_dict)
         else:
             context_text = neo_context_text
