@@ -6,7 +6,7 @@ cypher_templates = {
     "alle_faalvormen_per_component": {
         "query": """
             MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
-            WHERE a.aad_id IN $aad_ids
+            WHERE ($aad_ids IS NULL OR size($aad_ids) = 0 OR a.aad_id IN $aad_ids)
             RETURN 
                 c.naam AS component_naam,
                 f.Nummer AS nummer_faalvorm,
@@ -20,24 +20,10 @@ cypher_templates = {
                         WHEN 'Incidenteel (1-2)' THEN 3
                         WHEN 'Onbekend' THEN 2
                         ELSE 1
-                     END DESC
+                    END DESC
         """,
         "parameters": ["aad_ids"],
-    },
-    "alle_faalvormen_per_component_clean": {
-        "query": """
-            MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
-            WHERE a.aad_id IN $aad_ids
-            RETURN 
-                c.naam AS component_naam,
-                f.Nummer AS nummer,
-                f.Naam AS naam_faalvorm,
-                f.Beschrijving AS beschrijving,
-                f.GemiddeldAantalIncidenten AS aantal_incidenten
-                f.Bestandspad as bestandspad
-        """,
-        "parameters": ["aad_ids"],
-    },
+    }
 }
 
 
@@ -49,11 +35,14 @@ def run_cypher(query, parameters=None):
 
 def query_neo4j(prompt: str, chroma_filter):
     """Haal informatie op uit neo4j database."""
+    parameters = {"aad_ids": []}  # standaard lege lijst
     if "faalvorm" in prompt.lower():
-        parameters = {}
         for clause in chroma_filter.get("$and", []):
             if "type_id" in clause:
                 parameters["aad_ids"] = clause["type_id"].get("$in", [])
+        # fallback als filter direct op chroma_filter staat
+        if not parameters["aad_ids"] and "type_id" in chroma_filter:
+            parameters["aad_ids"] = chroma_filter["type_id"].get("$in", [])
         return neo4j_records_to_context(
             run_cypher(
                 query=cypher_templates["alle_faalvormen_per_component"]["query"],
