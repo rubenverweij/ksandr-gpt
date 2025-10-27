@@ -118,7 +118,7 @@ def ask_llm(
             question=prompt, include_nouns=CONFIG["INCLUDE_KEYWORDS"]
         )
         time_doc_search = time.time()
-        neo_context_text = query_neo4j(prompt, chroma_filter)
+        neo_context_text, results_new_schema = query_neo4j(prompt, chroma_filter)
         if not neo_context_text:
             context_text, results, summary, time_stages = vind_relevante_context(
                 prompt=prompt,
@@ -130,6 +130,16 @@ def ask_llm(
                 where_document=document_search,
                 include_summary=CONFIG["INCLUDE_SUMMARY"],
             )
+            results_new_schema = []
+            for doc, score in results:
+                doc_dict = {
+                    "id": doc.id,
+                    "page_content": doc.page_content,
+                    "metadata": doc.metadata,
+                    "type": doc.type,
+                }
+            doc_dict["metadata"]["score"] = score
+            results_new_schema.append(doc_dict)
         else:
             context_text = neo_context_text
         time_build_context = time.time()
@@ -142,16 +152,6 @@ def ask_llm(
             max_tokens=CONFIG["MAX_TOKENS"],
         )
         time_reranker_trimming = time.time()
-        results_new_schema = []
-        for doc, score in results:
-            doc_dict = {
-                "id": doc.id,
-                "page_content": doc.page_content,
-                "metadata": doc.metadata,
-                "type": doc.type,
-            }
-            doc_dict["metadata"]["score"] = score
-            results_new_schema.append(doc_dict)
         prompt_with_template = DEFAULT_QA_PROMPT.format(
             context=trimmed_context_text, question=prompt
         )

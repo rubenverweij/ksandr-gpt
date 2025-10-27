@@ -5,7 +5,9 @@ import os
 driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
 
 
-def create_component_faaltype(session, aad_id, component_name, faaltype_data):
+def create_component_faaltype(
+    session, aad_id, component_name, faaltype_data, file_path
+):
     cypher = """
     MERGE (a:AAD {aad_id: $aad_id})
     MERGE (c:Component {naam: $component_name})
@@ -24,7 +26,8 @@ def create_component_faaltype(session, aad_id, component_name, faaltype_data):
                     f.Faalindicatoren = $faalindicatoren,
                     f.Faalcurve = $faalcurve,
                     f.Faaltempo = $faaltempo,
-                    f.GemiddeldAantalIncidenten = $gemiddeld_aantal_incidenten
+                    f.GemiddeldAantalIncidenten = $gemiddeld_aantal_incidenten,
+                    f.Bestandspad = $bestandspad
     MERGE (a)-[:HEEFT_COMPONENT]->(c)
     MERGE (c)-[:HEEFT_FAALTYPE]->(f)
     """
@@ -51,6 +54,7 @@ def create_component_faaltype(session, aad_id, component_name, faaltype_data):
             "gemiddeld_aantal_incidenten": faaltype_data.get(
                 "Gemiddeld aantal incidenten"
             ),
+            "bestandspad": file_path,
         },
     )
 
@@ -92,7 +96,7 @@ with driver.session() as session:
                     if faaltype_data:
                         print(f"Processing {file_path}... for component {component}")
                         create_component_faaltype(
-                            session, component_id, component, faaltype_data
+                            session, component_id, component, faaltype_data, file_path
                         )
 
 driver.close()

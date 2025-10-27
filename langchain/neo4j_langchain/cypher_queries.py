@@ -12,7 +12,8 @@ cypher_templates = {
                 f.Nummer AS nummer_faalvorm,
                 f.Naam AS naam_faalvorm,
                 f.Beschrijving AS beschrijving,
-                coalesce(f.GemiddeldAantalIncidenten, 'Onbekend') AS aantal_incidenten
+                coalesce(f.GemiddeldAantalIncidenten, 'Onbekend') AS aantal_incidenten,
+                f.Bestandspad as bestandspad
             ORDER BY CASE coalesce(f.GemiddeldAantalIncidenten, 'Onbekend')
                         WHEN 'Zeer regelmatig (>5)' THEN 5
                         WHEN 'Regelmatig (3-5)' THEN 4
@@ -33,6 +34,7 @@ cypher_templates = {
                 f.Naam AS naam_faalvorm,
                 f.Beschrijving AS beschrijving,
                 f.GemiddeldAantalIncidenten AS aantal_incidenten
+                f.Bestandspad as bestandspad
         """,
         "parameters": ["aad_ids"],
     },
@@ -58,7 +60,7 @@ def query_neo4j(prompt: str, chroma_filter):
                 parameters=parameters,
             )
         )
-    return None
+    return None, None
 
 
 def neo4j_records_to_context(records):
@@ -67,6 +69,7 @@ def neo4j_records_to_context(records):
     Vervangt None door 'Onbekend' en formatteert per faalvorm.
     """
     context_parts = []
+    metadata = []
     for r in records:
         component = r.get("component_naam", "Onbekend")
         nummer = r.get("nummer_faalvorm", "Onbekend")
@@ -80,4 +83,11 @@ def neo4j_records_to_context(records):
             f"Aantal incidenten: {incidenten}\n"
         )
         context_parts.append(entry.strip())
-    return "\n\n".join(context_parts)
+        metadata.append(
+            {
+                "id": nummer,
+                "metadata": {"source": r.get("bestandspad")},
+                "type": "Document",
+            }
+        )
+    return "\n\n".join(context_parts), metadata
