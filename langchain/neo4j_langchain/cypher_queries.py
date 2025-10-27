@@ -75,7 +75,12 @@ def neo4j_records_to_context(records):
         metadata.append(
             {
                 "id": nummer,
-                "metadata": {"source": r.get("bestandspad")},
+                "metadata": {
+                    "source": r.get("bestandspad"),
+                    "source_search": r.get("bestandspad"),
+                    "file_path": r.get("bestandspad"),
+                    "score": 0.50,
+                },
                 "type": "Document",
             }
         )
