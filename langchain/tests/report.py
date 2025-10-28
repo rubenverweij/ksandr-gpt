@@ -170,6 +170,7 @@ def main():
     total_questions = 0
     total_acceptable = 0
     all_scores = []
+    report_json = []
     per_file_summaries = []
     files = sorted([f for f in os.listdir(REPORTS) if f.endswith(".json")])
     for filename in files:
@@ -181,7 +182,12 @@ def main():
         score_data = [process_question(q) for q in questions]
         summary = summarize_scores(score_data)
         model_info = data[0].get("model_info", {})
-
+        report = {
+            "file": filename,
+            "model": model_info,
+            "scores": summary,
+        }
+        report_json.append(report)
         write_text_file_report(
             filename,
             score_data,
@@ -195,6 +201,9 @@ def main():
             1 for s in score_data if s["ref_accepted"].lower() == "ja"
         )
         per_file_summaries.append((filename, summary, len(score_data), model_info))
+
+    with open("/home/ubuntu/onprem_data/tests/results/visual_report.json", "w") as f:
+        json.dump(data, f, indent=3)
 
     global_summary = summarize_scores(all_scores)
     write_summary_report(
