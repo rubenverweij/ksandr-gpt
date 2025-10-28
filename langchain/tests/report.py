@@ -203,7 +203,7 @@ def main():
         per_file_summaries.append((filename, summary, len(score_data), model_info))
 
     with open("/home/ubuntu/onprem_data/tests/results/visual_report.json", "w") as f:
-        json.dump(data, f, indent=3)
+        json.dump(report_json, f, indent=3)
 
     global_summary = summarize_scores(all_scores)
     write_summary_report(
