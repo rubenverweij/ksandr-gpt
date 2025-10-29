@@ -15,6 +15,7 @@ from config import (
 )
 from langchain_chroma import Chroma
 from sentence_transformers import CrossEncoder
+from templates import SYSTEM_PROMPT
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 reranker = CrossEncoder(
@@ -256,7 +257,9 @@ def trim_context_to_fit(
     model, template: str, context_text: str, question: str, n_ctx: int, max_tokens: int
 ) -> str:
     # Build a prompt with an empty context just to measure overhead
-    dummy_prompt = template.format(context="", question=question)
+    dummy_prompt = template.format(
+        system_context=SYSTEM_PROMPT, context="", question=question
+    )
     prompt_overhead_tokens = count_tokens(model, dummy_prompt)
     # Available space for context
     available_tokens_for_context = n_ctx - max_tokens - prompt_overhead_tokens
