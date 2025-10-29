@@ -156,7 +156,7 @@ def ask_llm(
         time_build_context = time.time()
         available_tokens_for_context, trimmed_context_text = trim_context_to_fit(
             model=model.client,
-            template=DEFAULT_QA_PROMPT.format(system_prompt=SYSTEM_PROMPT),
+            template=DEFAULT_QA_PROMPT,
             context_text=context_text,
             question=prompt,
             n_ctx=CONFIG["MAX_CTX"],

@@ -258,7 +258,7 @@ def trim_context_to_fit(
 ) -> str:
     # Build a prompt with an empty context just to measure overhead
     dummy_prompt = template.format(
-        system_context=SYSTEM_PROMPT, context="", question=question
+        system_prompt=SYSTEM_PROMPT, context="", question=question
     )
     prompt_overhead_tokens = count_tokens(model, dummy_prompt)
     # Available space for context
