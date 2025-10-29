@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 from neo4j_langchain.cypher_queries import query_neo4j
-from templates import DEFAULT_QA_PROMPT, DEFAULT_QA_PROMPT_SIMPLE, EVALUATIE_PROMPT
+from templates import TEMPLATES, SYSTEM_PROMPT
 from helpers import (
     maak_metadata_filter,
     COMPONENTS,
@@ -40,9 +40,23 @@ CONFIG = {
     "MAX_CTX": int(os.getenv("MAX_CTX", 8000)),
     "INCLUDE_SUMMARY": int(os.getenv("INCLUDE_SUMMARY", 0)),
     "INCLUDE_KEYWORDS": int(os.getenv("INCLUDE_KEYWORDS", 0)),
-    "DEFAULT_MODEL_PATH": "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
+    "DEFAULT_MODEL_PATH": str(
+        os.getenv(
+            "DEFAULT_MODEL_PATH",
+            "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
+        )
+    ),
 }
 
+DEFAULT_QA_PROMPT = TEMPLATES[os.basename(CONFIG["DEFAULT_MODEL_PATH"])][
+    "DEFAULT_QA_PROMPT"
+]
+EVALUATIE_PROMPT = TEMPLATES[os.basename(CONFIG["DEFAULT_MODEL_PATH"])][
+    "EVALUATIE_PROMPT"
+]
+DEFAULT_QA_PROMPT_SIMPLE = TEMPLATES[os.basename(CONFIG["DEFAULT_MODEL_PATH"])][
+    "DEFAULT_QA_PROMPT_SIMPLE"
+]
 CHROMA_PATH = "/root/onprem_data/chroma"
 
 # Initialisatie van het taalmodel
@@ -155,10 +169,12 @@ def ask_llm(
         )
         time_reranker_trimming = time.time()
         prompt_with_template = DEFAULT_QA_PROMPT.format(
-            context=trimmed_context_text, question=prompt
+            system_prompt=SYSTEM_PROMPT, context=trimmed_context_text, question=prompt
         )
     else:
-        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(question=prompt)
+        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
+            system_prompt=SYSTEM_PROMPT, question=prompt
+        )
         results_new_schema = None
         document_search = None
     # Monitor time stages

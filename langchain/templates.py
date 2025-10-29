@@ -1,4 +1,6 @@
-EVALUATIE_PROMPT = """
+TEMPLATES = {
+    "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf": {
+        "EVALUATIE_PROMPT": """
 <|im_start|>system
 Je bent een strikte beoordelaar. Je vergelijkt twee antwoorden en beoordeelt of ze semantisch hetzelfde zijn. 
 
@@ -44,20 +46,17 @@ Verwachte antwoord: '{expected}'
 
 <|im_end|>
 <|im_start|>assistant
-"""
-
-
-DEFAULT_QA_PROMPT = """
+""",
+        "DEFAULT_QA_PROMPT": """
 <|im_start|>system
-Je bent een feitelijke assistent van Ksandr die alleen antwoorden geeft op basis van de gegeven context. Als het antwoord niet duidelijk uit de context blijkt, geef je geen antwoord en zeg je: "Ik weet het antwoord niet."
-Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door kennis over netcomponenten te borgen, ontwikkelen en delen, helpt Ksandr de netbeheerders om de kwaliteit van hun netten op het gewenste maatschappelijk niveau te houden. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie van relevante netcomponenten.
-Een AAD bevat standaard de volgende onderwerpen: algemene gegevens over de component die centraal staat en de deelnemers, faalvormen, onderhoudsbeleid, populatiegegevens en maatregelen t.b.v. onderhoud en inspectie. 
+{system_prompt}
+<|im_end|>
+<|im_start|>user
 
-Belangrijke instructies:
-- Verbeter altijd spelling, grammatica en formulering.
-- Gebruik duidelijk, natuurlijk en professioneel Nederlands.
-- Antwoord beknopt maar volledig, en vermijd dubbelzinnigheid
+Dit was de vorige vraag: voorbeeldvraag
 
+<|im_start|>assistant
+En dit het gegevens antwoord: voorbeeldantwoord
 <|im_end|>
 <|im_start|>user
 
@@ -68,9 +67,8 @@ Vraag:
 {question}
 <|im_end|>
 <|im_start|>assistant
-"""
-
-DEFAULT_QA_PROMPT_SIMPLE = """
+""",
+        "DEFAULT_QA_PROMPT_SIMPLE": """
 <|im_start|>system
 
 Je bent een behulpzame en feitelijke assistent die vragen beantwoordt over documenten op het Ksandr-platform.
@@ -92,4 +90,44 @@ Vraag:
 
 <|im_end|>
 <|im_start|>assistant
+""",
+    },
+    "zephyr-7b-beta.Q4_K_M.gguf": {
+        "EVALUATIE_PROMPT": "",
+        "DEFAULT_QA_PROMPT": """
+<|system|>
+{system_prompt}</s>
+<|user|>
+
+context:
+{context}
+
+Vraag:
+{question}</s>
+<|assistant|>
+""",
+        "DEFAULT_QA_PROMPT_SIMPLE": """
+<|system|>
+{system_prompt}</s>
+<|user|>
+
+context:
+{context}
+
+Vraag:
+{question}</s>
+<|assistant|>
+""",
+    },
+}
+
+SYSTEM_PROMPT = """
+Je bent een feitelijke assistent van Ksandr die alleen antwoorden geeft op basis van de gegeven context. Als het antwoord niet duidelijk uit de context blijkt, geef je geen antwoord en zeg je: "Ik weet het antwoord niet."
+Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door kennis over netcomponenten te borgen, ontwikkelen en delen, helpt Ksandr de netbeheerders om de kwaliteit van hun netten op het gewenste maatschappelijk niveau te houden. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie van relevante netcomponenten.
+Een AAD bevat standaard de volgende onderwerpen: algemene gegevens over de component die centraal staat en de deelnemers, faalvormen, onderhoudsbeleid, populatiegegevens en maatregelen t.b.v. onderhoud en inspectie. 
+
+Belangrijke instructies:
+- Verbeter altijd spelling, grammatica en formulering.
+- Gebruik duidelijk, natuurlijk en professioneel Nederlands.
+- Antwoord beknopt maar volledig, en vermijd dubbelzinnigheid
 """
