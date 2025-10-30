@@ -160,6 +160,7 @@ def maak_metadata_filter(request, componenten_dict, include_permission):
     vraag = (
         request.prompt.lower()
     )  # Converteer de gebruikersvraag naar kleine letters voor betere matching
+    permissie_filter = None
     if include_permission:
         permissie_filter = _bouw_permissie_filter(
             request.permission
