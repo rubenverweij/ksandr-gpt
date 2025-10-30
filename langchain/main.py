@@ -47,13 +47,14 @@ CONFIG = {
         )
     ),
     "INCLUDE_PERMISSION": int(os.getenv("INCLUDE_PERMISSION", 0)),
+    "CHROMA_PATH": os.getenv("CHROMA_PATH", "/root/onprem_data/chroma"),
+    "CHROMA_PATH_JSON": os.getenv("CHROMA_PATH_JSON", "/root/onprem_data/chroma_json"),
 }
 
 model = os.path.basename(CONFIG["DEFAULT_MODEL_PATH"])
 DEFAULT_QA_PROMPT = TEMPLATES[model]["DEFAULT_QA_PROMPT"]
 EVALUATIE_PROMPT = TEMPLATES[model]["EVALUATIE_PROMPT"]
 DEFAULT_QA_PROMPT_SIMPLE = TEMPLATES[model]["DEFAULT_QA_PROMPT_SIMPLE"]
-CHROMA_PATH = "/root/onprem_data/chroma"
 
 # Initialisatie van het taalmodel
 LLM = LlamaCpp(
@@ -67,8 +68,12 @@ LLM = LlamaCpp(
     top_p=0.9,
 )
 embedding_function = get_embedding_function()
-db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
-
+db = Chroma(
+    persist_directory=CONFIG["CHROMA_PATH"], embedding_function=embedding_function
+)
+db_json = Chroma(
+    persist_directory=CONFIG["CHROMA_PATH_JSON"], embedding_function=embedding_function
+)
 
 print(f"Starting container with {CONFIG}")
 

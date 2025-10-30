@@ -297,6 +297,7 @@ def vind_relevante_context(
     prompt: str,
     filter_chroma: dict[str, str],
     db: Chroma,
+    db_json: Chroma,
     source_max_reranker: int,
     source_max_dense: int,
     score_threshold: float,
@@ -305,18 +306,28 @@ def vind_relevante_context(
 ):
     """Find the relevant context from Chroma based on prompt and filter."""
     time_start = time.time()
-    max_dense = source_max_dense + 5
-    results = db.similarity_search_with_score(
-        prompt, k=max_dense, filter=filter_chroma, where_document=where_document
+
+    # Zoek eerst door de website/aads
+    results = db_json.similarity_search_with_score(
+        prompt, k=source_max_dense, filter=filter_chroma, where_document=where_document
     )
+    results = [(doc, score) for doc, score in results if score < score_threshold]
+    if len(results) == 0:
+        results = db.similarity_search_with_score(
+            prompt,
+            k=source_max_dense,
+            filter=filter_chroma,
+            where_document=where_document,
+        )
+        results = [(doc, score) for doc, score in results if score < score_threshold]
     time_sim_search = time.time()
-    results = geef_categorie_prioriteit(results, source_max_dense)
+    # results = geef_categorie_prioriteit(results, source_max_dense)
     time_prio_cats = time.time()
     if source_max_reranker:
         results = herschik(prompt, results, top_m=source_max_reranker)
     # Filter by score
     time_reranker = time.time()
-    results = [(doc, score) for doc, score in results if score < score_threshold]
+
     summary = ""
     if include_summary:
         if filter_chroma:
