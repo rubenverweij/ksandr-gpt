@@ -139,11 +139,12 @@ def _bouw_permissie_filter(
             # Als de waarde een boolean is, voeg 'true_bron' of 'false_bron' toe
             permissions.append(f"{'true' if waarde else 'false'}_{bron}")
 
+    permissions.append("true_general")
     # Retourneer een filter waarin gezocht wordt naar permissies die overeenkomen met de gegenereerde lijst
     return {"permission_and_type": {"$in": permissions}}
 
 
-def maak_metadata_filter(request, componenten_dict):
+def maak_metadata_filter(request, componenten_dict, include_permission):
     """
     Maakt een filter op basis van de vraag in de request en beschikbare componenten.
     Wordt gebruikt om relevante data op te halen uit een vectorstore zoals Chroma.
@@ -151,6 +152,7 @@ def maak_metadata_filter(request, componenten_dict):
     Parameters:
     request (AskRequest): De vraag van de gebruiker inclusief permissiegegevens.
     componenten_dict (dict): Een dictionary waarbij de sleutel een component-ID is en de waarde de naam.
+    include_permission: wel of niet permissie meenemen
 
     Returns:
     dict: Een samengestelde Chroma-filter met type-ID's (indien gevonden) en permissies.
@@ -158,9 +160,10 @@ def maak_metadata_filter(request, componenten_dict):
     vraag = (
         request.prompt.lower()
     )  # Converteer de gebruikersvraag naar kleine letters voor betere matching
-    permissie_filter = _bouw_permissie_filter(
-        request.permission
-    )  # Bouw het permissiefilter op basis van request
+    if include_permission:
+        permissie_filter = _bouw_permissie_filter(
+            request.permission
+        )  # Bouw het permissiefilter op basis van request
 
     gevonden_sleutels = []
 
@@ -172,8 +175,11 @@ def maak_metadata_filter(request, componenten_dict):
                 break  # Stop met zoeken zodra een match is gevonden voor deze component
 
     if gevonden_sleutels:
-        # Als er relevante componenten zijn gevonden, combineer ze met het permissiefilter
-        return {"$and": [{"type_id": {"$in": gevonden_sleutels}}, permissie_filter]}
+        if include_permission:
+            # Als er relevante componenten zijn gevonden, combineer ze met het permissiefilter
+            return {"$and": [{"type_id": {"$in": gevonden_sleutels}}, permissie_filter]}
+        else:
+            return {"type_id": {"$in": gevonden_sleutels}}
     else:
         # Als er geen componenten zijn gevonden, gebruik alleen het permissiefilter
         return permissie_filter

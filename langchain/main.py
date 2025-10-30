@@ -46,6 +46,7 @@ CONFIG = {
             "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
         )
     ),
+    "INCLUDE_PERMISSION": int(os.getenv("INCLUDE_PERMISSION", 0)),
 }
 
 model = os.path.basename(CONFIG["DEFAULT_MODEL_PATH"])
@@ -198,7 +199,9 @@ async def process_request(request: AskRequest):
     time_start = time.time()
     if CONFIG["INCLUDE_FILTER"]:
         active_filter = maak_metadata_filter(
-            request=request, componenten_dict=COMPONENTS
+            request=request,
+            componenten_dict=COMPONENTS,
+            include_permission=CONFIG["INCLUDE_PERMISSION"],
         )
     else:
         active_filter = None

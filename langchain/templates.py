@@ -53,18 +53,12 @@ Verwachte antwoord: '{expected}'
 <|im_end|>
 <|im_start|>user
 
-Dit was de vorige vraag: voorbeeldvraag
-
-<|im_start|>assistant
-En dit het gegevens antwoord: voorbeeldantwoord
-<|im_end|>
-<|im_start|>user
-
 context:
 {context}
 
 Vraag:
 {question}
+
 <|im_end|>
 <|im_start|>assistant
 """,
