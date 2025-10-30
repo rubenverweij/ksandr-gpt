@@ -141,6 +141,7 @@ def ask_llm(
                 prompt=prompt,
                 filter_chroma=chroma_filter,
                 db=db,
+                db_json=db_json,
                 source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
                 source_max_dense=CONFIG["SOURCE_MAX"],
                 score_threshold=CONFIG["SCORE_THRESHOLD"],
