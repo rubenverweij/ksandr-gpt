@@ -1,7 +1,7 @@
 #!/bin/bash
 # Automate container spin-up, run performance test, and teardown
 
-TEST_SCRIPT="test_model.py"
+TEST_SCRIPT="langchain/tests/test_model.py"
 IMAGE="ksandr-gpt-langchain:0.43"
 
 # Define configurations — you can easily add or modify combinations here
@@ -52,7 +52,7 @@ for CONFIG in "${CONFIGS[@]}"; do
     echo "🧹 Stopping and removing container..."
     docker stop "$CONTAINER_NAME" >/dev/null
     sleep 60
-    
+
     docker rm "$CONTAINER_NAME" >/dev/null
 
     echo "✅ Completed test for STJ=$SCORE_THRESHOLD_JSON, MAX_CTX=$MAX_CTX, SOURCE_MAX=$SOURCE_MAX"
