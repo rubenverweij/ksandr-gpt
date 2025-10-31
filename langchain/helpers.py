@@ -301,6 +301,7 @@ def vind_relevante_context(
     source_max_reranker: int,
     source_max_dense: int,
     score_threshold: float,
+    score_threshold_json: float,
     where_document,
     include_summary: int,
 ):
@@ -311,7 +312,7 @@ def vind_relevante_context(
     results = db_json.similarity_search_with_score(
         prompt, k=source_max_dense, filter=filter_chroma, where_document=where_document
     )
-    results = [(doc, score) for doc, score in results if score < score_threshold]
+    results = [(doc, score) for doc, score in results if score < score_threshold_json]
     if len(results) == 0:
         results = db.similarity_search_with_score(
             prompt,

@@ -34,6 +34,7 @@ CONFIG = {
     "TEMPERATURE": float(os.getenv("TEMPERATURE", 0.2)),
     "SOURCE_MAX": int(os.getenv("SOURCE_MAX", 10)),
     "SOURCE_MAX_RERANKER": int(os.getenv("SOURCE_MAX_RERANKER", 0)),
+    "SCORE_THRESHOLD_JSON": float(os.getenv("SCORE_THRESHOLD_JSON", 1.1)),
     "SCORE_THRESHOLD": float(os.getenv("SCORE_THRESHOLD", 1.1)),
     "INCLUDE_FILTER": int(os.getenv("INCLUDE_FILTER", 1)),
     "MAX_TOKENS": int(os.getenv("MAX_TOKENS", 750)),
@@ -145,6 +146,7 @@ def ask_llm(
                 source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
                 source_max_dense=CONFIG["SOURCE_MAX"],
                 score_threshold=CONFIG["SCORE_THRESHOLD"],
+                score_threshold_json=CONFIG["SCORE_THRESHOLD_JSON"],
                 where_document=document_search,
                 include_summary=CONFIG["INCLUDE_SUMMARY"],
             )
