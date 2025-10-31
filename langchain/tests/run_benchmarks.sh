@@ -1,7 +1,7 @@
 #!/bin/bash
 # Automate container spin-up, run performance test, and teardown
 
-TEST_SCRIPT="langchain/tests/test_model.py"
+TEST_SCRIPT="test_model.py"
 IMAGE="ksandr-gpt-langchain:0.43"
 
 # Define configurations — you can easily add or modify combinations here
@@ -47,7 +47,7 @@ for CONFIG in "${CONFIGS[@]}"; do
     sleep 60
 
     echo "⏱️ Running performance test in $CONTAINER_NAME..."
-    docker exec "$CONTAINER_NAME" python $(basename "$TEST_SCRIPT")
+    python3 $(basename "$TEST_SCRIPT")
 
     echo "🧹 Stopping and removing container..."
     docker stop "$CONTAINER_NAME" >/dev/null
