@@ -15,7 +15,7 @@ cypher_templates = {
             Naam: f.Naam,
             GemiddeldAantalIncidenten: coalesce(f.GemiddeldAantalIncidenten, 'Onbekend'),
             NummerInt: f.NummerInt,
-            BestandPad: f.Bestandspad
+            Bestandspad: f.Bestandspad
         }) AS faalvormen
         RETURN 
             a.aad_id AS aad_id,
