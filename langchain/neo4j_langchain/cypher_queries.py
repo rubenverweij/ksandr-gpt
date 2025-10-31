@@ -37,6 +37,8 @@ def run_cypher(query, parameters=None):
 def query_neo4j(prompt: str, chroma_filter):
     """Haal informatie op uit neo4j database."""
     parameters = {"aad_ids": []}  # standaard lege lijst
+    if not chroma_filter:
+        chroma_filter = {}
     if "faalvorm" in prompt.lower():
         for clause in chroma_filter.get("$and", []):
             if "type_id" in clause:
