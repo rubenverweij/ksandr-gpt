@@ -63,12 +63,11 @@ def neo4j_records_to_context(records):
         component = record["component_naam"]
         aad_id = record["aad_id"]
         faalvormen = record["faalvormen"]
+        faalvorm_teksten = []
         for faalvorm in faalvormen:
-            faalvorm_tekst = "\n".join(
-                [
-                    f"- {faalvorm['Nummer']}: {faalvorm['Naam']} "
-                    f"(Frequentie: {faalvorm['GemiddeldAantalIncidenten']})"
-                ]
+            faalvorm_teksten.append(
+                f"- {faalvorm['Nummer']}: {faalvorm['Naam']} "
+                f"(Frequentie: {faalvorm['GemiddeldAantalIncidenten']})"
             )
             metadata.append(
                 {
@@ -82,6 +81,7 @@ def neo4j_records_to_context(records):
                     "type": "Document",
                 }
             )
+        faalvorm_tekst = "\n".join(faalvorm_teksten)
         context = textwrap.dedent(
             f"""
         Component: {component} (AAD {aad_id})
@@ -90,4 +90,4 @@ def neo4j_records_to_context(records):
         """
         ).strip()
         context_blocks.append(context)
-    return context_blocks, metadata
+    return "\n".join(context_blocks), metadata
