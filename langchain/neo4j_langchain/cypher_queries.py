@@ -11,7 +11,6 @@ cypher_templates = {
                 c.naam AS component_naam,
                 f.Nummer AS nummer_faalvorm,
                 f.Naam AS naam_faalvorm,
-                f.Beschrijving AS beschrijving,
                 coalesce(f.GemiddeldAantalIncidenten, 'Onbekend') AS aantal_incidenten,
                 f.Bestandspad as bestandspad
             ORDER BY CASE coalesce(f.GemiddeldAantalIncidenten, 'Onbekend')
@@ -43,6 +42,8 @@ def query_neo4j(prompt: str, chroma_filter):
         # fallback als filter direct op chroma_filter staat
         if not parameters["aad_ids"] and "type_id" in chroma_filter:
             parameters["aad_ids"] = chroma_filter["type_id"].get("$in", [])
+        if not parameters["aad_ids"]:
+            return None, None
         return neo4j_records_to_context(
             run_cypher(
                 query=cypher_templates["alle_faalvormen_per_component"]["query"],
