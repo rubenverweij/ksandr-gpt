@@ -53,7 +53,7 @@ if __name__ == "__main__":
     results = [{"model_info": json.loads(model_metadata.text)}]
 
     # Datumstempel voor outputfile
-    today = datetime.today().strftime("%Y-%m-%d")
+    today = datetime.today().strftime("%Y-%m-%d_%H:%M")
     output_file = f"{args.output_dir}/evaluation_results_{today}.json"
 
     # Eerst tellen
