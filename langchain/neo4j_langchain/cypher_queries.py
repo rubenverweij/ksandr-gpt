@@ -1,28 +1,30 @@
 from neo4j import GraphDatabase
+import textwrap
 
 driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
 
 cypher_templates = {
     "alle_faalvormen_per_component": {
         "query": """
-            MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
-            WHERE ($aad_ids IS NULL OR size($aad_ids) = 0 OR a.aad_id IN $aad_ids)
-            RETURN 
-                c.naam AS component_naam,
-                f.Nummer AS nummer_faalvorm,
-                f.Naam AS naam_faalvorm,
-                coalesce(f.GemiddeldAantalIncidenten, 'Onbekend') AS aantal_incidenten,
-                f.Bestandspad as bestandspad
-            ORDER BY CASE coalesce(f.GemiddeldAantalIncidenten, 'Onbekend')
-                        WHEN 'Zeer regelmatig (>5)' THEN 5
-                        WHEN 'Regelmatig (3-5)' THEN 4
-                        WHEN 'Incidenteel (1-2)' THEN 3
-                        WHEN 'Onbekend' THEN 2
-                        ELSE 1
-                    END DESC
+          MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
+        WHERE ($aad_ids IS NULL OR size($aad_ids) = 0 OR a.aad_id IN $aad_ids)
+        WITH a, c, f
+        ORDER BY toInteger(f.NummerInt) ASC, f.Nummer ASC
+        WITH a, c, collect({
+            Nummer: f.Nummer,
+            Naam: f.Naam,
+            GemiddeldAantalIncidenten: coalesce(f.GemiddeldAantalIncidenten, 'Onbekend'),
+            NummerInt: f.NummerInt,
+            BestandPad: f.Bestandspad
+        }) AS faalvormen
+        RETURN 
+            a.aad_id AS aad_id,
+            c.naam AS component_naam,
+            faalvormen
+        ORDER BY c.naam
         """,
         "parameters": ["aad_ids"],
-    }
+    },
 }
 
 
@@ -54,35 +56,38 @@ def query_neo4j(prompt: str, chroma_filter):
 
 
 def neo4j_records_to_context(records):
-    """
-    Converteert Neo4j-records naar een tekstuele RAG-context.
-    Vervangt None door 'Onbekend' en formatteert per faalvorm.
-    """
-    context_parts = []
+    """Haal alle faalvormen per component op en vorm ze om tot tekstcontext voor een prompt."""
     metadata = []
-    for r in records:
-        component = r.get("component_naam", "Onbekend")
-        nummer = r.get("nummer_faalvorm", "Onbekend")
-        naam = r.get("naam_faalvorm", "Onbekend")
-        beschrijving = r.get("beschrijving", "Onbekend")
-        incidenten = r.get("aantal_incidenten") or "Onbekend"
-        entry = (
-            f"Component: {component}\n"
-            f"Faalvorm: {naam} ({nummer})\n"
-            f"Beschrijving: {beschrijving}\n"
-            f"Aantal incidenten: {incidenten}\n"
-        )
-        context_parts.append(entry.strip())
-        metadata.append(
-            {
-                "id": nummer,
-                "metadata": {
-                    "source": r.get("bestandspad"),
-                    "source_search": r.get("bestandspad"),
-                    "file_path": r.get("bestandspad"),
-                    "score": 0.50,
-                },
-                "type": "Document",
-            }
-        )
-    return "\n\n".join(context_parts), metadata
+    context_blocks = []
+    for record in records:
+        component = record["component_naam"]
+        aad_id = record["aad_id"]
+        faalvormen = record["faalvormen"]
+        for faalvorm in faalvormen:
+            faalvorm_tekst = "\n".join(
+                [
+                    f"- {faalvorm['Nummer']}: {faalvorm['Naam']} "
+                    f"(Frequentie: {faalvorm['GemiddeldAantalIncidenten']})"
+                ]
+            )
+            metadata.append(
+                {
+                    "id": faalvorm["Nummer"],
+                    "metadata": {
+                        "source": faalvorm["Bestandspad"],
+                        "source_search": faalvorm["Bestandspad"],
+                        "file_path": faalvorm["Bestandspad"],
+                        "score": 0.50,
+                    },
+                    "type": "Document",
+                }
+            )
+        context = textwrap.dedent(
+            f"""
+        Component: {component} (AAD {aad_id})
+        Faalvormen:
+        {faalvorm_tekst}
+        """
+        ).strip()
+        context_blocks.append(context)
+    return context_blocks, metadata

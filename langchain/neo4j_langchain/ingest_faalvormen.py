@@ -1,18 +1,35 @@
 from neo4j import GraphDatabase
 import json
 import os
+import re
 
 driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
+
+
+def extract_nummer_info(nummer_str):
+    """Extraheer het volledige nummer en het numerieke deel uit iets als 'MAG-1'."""
+    if not nummer_str:
+        return None, None
+    match = re.match(r"([A-Za-z\-]+)-?(\d+)?", nummer_str.strip())
+    if match:
+        prefix = match.group(1)  # bijv. 'MAG'
+        nummer = match.group(2)  # bijv. '1'
+        return prefix, int(nummer) if nummer else None
+    return nummer_str, None
 
 
 def create_component_faaltype(
     session, aad_id, component_name, faaltype_data, file_path
 ):
+    nummer_str = faaltype_data.get("Nummer")
+    prefix, nummer_int = extract_nummer_info(nummer_str)
     cypher = """
     MERGE (a:AAD {aad_id: $aad_id})
     MERGE (c:Component {naam: $component_name})
     MERGE (f:Faaltype {Nummer: $nummer})
       ON CREATE SET f.Naam = $naam,
+                    f.NummerInt = $nummer_int,
+                    f.Prefix = $prefix,
                     f.Beschrijving = $beschrijving,
                     f.MogelijkGevolg = $mogelijk_gevolg,
                     f.Uitvoering = $uitvoering,
@@ -36,7 +53,9 @@ def create_component_faaltype(
         {
             "aad_id": aad_id,
             "component_name": component_name,
-            "nummer": faaltype_data.get("Nummer"),
+            "nummer": nummer_str,
+            "nummer_int": nummer_int,
+            "prefix": prefix,
             "naam": faaltype_data.get("Naam"),
             "beschrijving": faaltype_data.get("Beschrijving"),
             "mogelijk_gevolg": faaltype_data.get("Mogelijk gevolg"),
