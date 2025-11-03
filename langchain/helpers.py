@@ -211,6 +211,7 @@ def extract_netbeheerder_variants(question, netbeheerders_dict):
 
 def maak_chroma_filter(question, include_nouns):
     noun_variants = set()
+    filters = []
     netbeheerder_variants = set()
     # Voeg netbeheerder-varianten toe als ze voorkomen in de vraag
     netbeheerder_variants.update(extract_netbeheerder_variants(question, NETBEHEERDERS))
@@ -227,17 +228,6 @@ def maak_chroma_filter(question, include_nouns):
             ):
                 variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
                 noun_variants.update(variants)
-        # Extract jaartallen
-        years = re.findall(r"\b(?:19|20)\d{2}\b", question)
-        # Bouw Chroma-filter
-        filters = []
-        if years:
-            # flatten and remove duplicates, since re.findall with groups returns tuples
-            year_values = sorted(set(years))
-            if len(year_values) == 1:
-                filters.append({"$contains": year_values[0]})
-            else:
-                filters.append({"$or": [{"$contains": year} for year in year_values]})
         if noun_variants:
             if len(noun_variants) == 1:
                 filters.append({"$contains": noun_variants[0]})
@@ -245,14 +235,23 @@ def maak_chroma_filter(question, include_nouns):
                 filters.append(
                     {"$or": [{"$contains": variant} for variant in noun_variants]}
                 )
-        if netbeheerder_variants:
-            filters.append(
-                {"$or": [{"$contains": variant} for variant in netbeheerder_variants]}
-            )
-        if not filters:
-            return None
-        if len(filters) == 1:
-            return filters[0]
+    # Extract jaartallen
+    years = re.findall(r"\b(?:19|20)\d{2}\b", question)
+    # Bouw Chroma-filter
+    if years:
+        # flatten and remove duplicates, since re.findall with groups returns tuples
+        year_values = sorted(set(years))
+        if len(year_values) == 1:
+            filters.append({"$contains": year_values[0]})
+        else:
+            filters.append({"$or": [{"$contains": year} for year in year_values]})
+    if netbeheerder_variants:
+        filters.append(
+            {"$or": [{"$contains": variant} for variant in netbeheerder_variants]}
+        )
+    if len(filters) == 1:
+        return filters[0]
+    if len(filters) > 1:
         return {"$and": filters}
     return None
 
