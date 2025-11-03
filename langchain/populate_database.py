@@ -18,6 +18,25 @@ from helpers import get_embedding_function
 VALID_PERMISSIONS = {"cat-1", "cat-2"}
 
 
+def looks_like_clean_text(text):
+    # Remove newlines for analysis
+    text = text.strip()
+    if not text:
+        return False
+    # Count alphabetic words vs symbols/numbers
+    words = re.findall(r"[a-zA-Z]+", text)
+    numbers = re.findall(r"\d+", text)
+    word_ratio = len(words) / max(len(text.split()), 1)
+    number_ratio = len(numbers) / max(len(text.split()), 1)
+    if word_ratio > 0.6 and number_ratio < 0.3:
+        return True
+    if "Dossier" in text:
+        return True
+    if "Populatiegegevens" in text:
+        return True
+    return False
+
+
 def extract_file_data(file_path: str) -> Dict[str, Union[int, str]]:
     """Extraheer type, permissie en bestandsnaam uit het pad."""
     parts = file_path.strip("/").split("/")
@@ -110,6 +129,8 @@ def load_documents(directory: Path) -> List[Document]:
                 splitter = RecursiveJsonSplitter(min_chunk_size=MIN_CHUNK_SIZE_JSON)
                 chunks = splitter.split_text(json_data=content, convert_lists=True)
                 for idx, chunk in enumerate(chunks):
+                    if not looks_like_clean_text(chunk):
+                        continue
                     try:
                         parsed = json.loads(chunk)  # parse back into dict
                         main_key = (
@@ -156,6 +177,8 @@ def load_documents(directory: Path) -> List[Document]:
                     content_cleaned = prepare_text_for_vector_store(content)
                     chunks = splitter.split_text(content_cleaned)
                     for idx, chunk in enumerate(chunks):
+                        if not looks_like_clean_text(chunk):
+                            continue
                         chunk_cleaned = str(chunk)
                         chunk_cleaned = chunk_cleaned.replace("'", '"')
                         chunk_cleaned = chunk_cleaned.replace("\\'", "'")
