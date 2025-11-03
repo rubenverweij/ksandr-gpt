@@ -350,7 +350,7 @@ if __name__ == "__main__":
             else:
                 score_threshold = 75
 
-            drop_keys(
+            response = drop_keys(
                 obj=response,
                 keys_to_drop=["question", "answer", "prompt", "page_content"],
             )
