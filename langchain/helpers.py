@@ -2,6 +2,7 @@ import re
 from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 import pickle
+import os
 from typing import Dict, Optional, Union, List, Any
 import string
 import time
@@ -298,6 +299,7 @@ def vind_relevante_context(
     filter_chroma: dict[str, str],
     db: Chroma,
     db_json: Chroma,
+    include_db_json: bool,
     source_max_reranker: int,
     source_max_dense: int,
     score_threshold: float,
@@ -309,10 +311,18 @@ def vind_relevante_context(
     time_start = time.time()
 
     # Zoek eerst door de website/aads
-    results = db_json.similarity_search_with_score(
-        prompt, k=source_max_dense, filter=filter_chroma, where_document=where_document
-    )
-    results = [(doc, score) for doc, score in results if score < score_threshold_json]
+    if include_db_json:
+        results = db_json.similarity_search_with_score(
+            prompt,
+            k=source_max_dense,
+            filter=filter_chroma,
+            where_document=where_document,
+        )
+        results = [
+            (doc, score) for doc, score in results if score < score_threshold_json
+        ]
+    else:
+        results = []
     if len(results) == 0:
         results = db.similarity_search_with_score(
             prompt,
@@ -345,7 +355,7 @@ def vind_relevante_context(
     # Combine page content
     context_text = summary + "\n".join(
         [
-            f"De locatie van dit bestand is: {doc.metadata.get('source', '')} en betreft component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
+            f"Het ID van deze bron is: {os.path.splitext(os.path.basename(doc.metadata.get('source', '')))} en betreft component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
             for doc, _ in results
         ]
     )

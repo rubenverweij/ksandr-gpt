@@ -50,6 +50,7 @@ CONFIG = {
     "INCLUDE_PERMISSION": int(os.getenv("INCLUDE_PERMISSION", 0)),
     "CHROMA_PATH": os.getenv("CHROMA_PATH", "/root/onprem_data/chroma"),
     "CHROMA_PATH_JSON": os.getenv("CHROMA_PATH_JSON", "/root/onprem_data/chroma_json"),
+    "INCLUDE_CHROMA_JSON": os.getenv("INCLUDE_CHROMA_JSON", 0),
 }
 
 model = os.path.basename(CONFIG["DEFAULT_MODEL_PATH"])
@@ -143,6 +144,7 @@ def ask_llm(
                 filter_chroma=chroma_filter,
                 db=db,
                 db_json=db_json,
+                include_db_json=CONFIG["INCLUDE_CHROMA_JSON"],
                 source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
                 source_max_dense=CONFIG["SOURCE_MAX"],
                 score_threshold=CONFIG["SCORE_THRESHOLD"],
