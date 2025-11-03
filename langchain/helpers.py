@@ -355,7 +355,7 @@ def vind_relevante_context(
     # Combine page content
     context_text = summary + "\n".join(
         [
-            f"Het ID van deze bron is: {os.path.splitext(os.path.basename(doc.metadata.get('source', '')))} en betreft component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
+            f"Het ID van deze bron is: {os.path.splitext(os.path.basename(doc.metadata.get('source', '')))[0]} en betreft component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
             for doc, _ in results
         ]
     )

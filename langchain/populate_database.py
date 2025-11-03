@@ -30,6 +30,8 @@ def looks_like_clean_text(text):
     number_ratio = len(numbers) / max(len(text.split()), 1)
     if word_ratio > 0.6 and number_ratio < 0.3:
         return True
+    if ">" in text:
+        return False
     if "Dossier" in text:
         return True
     if "Populatiegegevens" in text:
