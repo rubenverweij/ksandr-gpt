@@ -15,6 +15,23 @@ url_question = "http://localhost:8080/ask"
 url_question_output = "http://localhost:8080/status/{request_id}"
 url_evaluate = "http://localhost:8080/evaluate"
 
+
+def drop_keys(obj, keys_to_drop):
+    """
+    Recursively drop all keys in `keys_to_drop` from nested dicts/lists.
+    """
+    if isinstance(obj, dict):
+        return {
+            k: drop_keys(v, keys_to_drop)
+            for k, v in obj.items()
+            if k not in keys_to_drop
+        }
+    elif isinstance(obj, list):
+        return [drop_keys(i, keys_to_drop) for i in obj]
+    else:
+        return obj
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Evaluate test questions against model."
@@ -64,7 +81,7 @@ if __name__ == "__main__":
         return requests.get(f"http://localhost:8080/status/{request_id}")
 
     # Daarna verwerken
-    with open(location_testdata, newline="", encoding="latin-1") as f:
+    with open(location_testdata, encoding="latin-1") as f:
         reader = csv.DictReader(f, delimiter=";")
         for idx, row in enumerate(reader, start=1):
             percent = (idx / total) * 100
@@ -290,8 +307,7 @@ if __name__ == "__main__":
                 response_str = get_status_response(request_id)
                 response = json.loads(response_str.text)
                 status = response.get("status")
-                print(f"Current status: {status}")
-                time.sleep(10)
+                time.sleep(1)
                 if status == "completed":
                     print("Processing completed.")
                     break  # Exit the loop]
@@ -334,13 +350,17 @@ if __name__ == "__main__":
             else:
                 score_threshold = 75
 
+            drop_keys(
+                obj=response,
+                keys_to_drop=["question", "answer", "prompt", "page_content"],
+            )
             results.append(
                 {
                     "vraag": question,
                     "verwacht_antwoord": expected,
                     "antwoord": answer,
-                    "antwoord_referentie": actual,
-                    "referentie_acceptabel": acceptable,
+                    "response": response,
+                    "duration": response.get("time_duration"),
                     "score_threshold": score_threshold,
                     "scores_ref": results_ref,
                     "scores_new": results_new,
