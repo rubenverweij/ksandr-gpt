@@ -352,7 +352,7 @@ if __name__ == "__main__":
 
             response = drop_keys(
                 obj=response,
-                keys_to_drop=["question", "answer", "prompt", "page_content"],
+                keys_to_drop=["question", "answer", "page_content"],
             )
             results.append(
                 {
