@@ -15,6 +15,8 @@ RETURN
     f.Nummer AS nummer_faalvorm,
     f.NummerInt AS nummer_int,
     f.Naam AS naam_faalvorm,
+    f.OorzaakGeneriek as oorzaak_generiek,
+    f.OorzaakDetail as oorzaak_detail,
     coalesce(f.GemiddeldAantalIncidenten, 'Onbekend') AS aantal_incidenten,
     f.Bestandspad AS bestandspad
 ORDER BY 
