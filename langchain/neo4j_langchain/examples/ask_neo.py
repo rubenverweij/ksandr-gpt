@@ -1,4 +1,6 @@
 from neo4j import GraphDatabase
+import argparse
+
 
 # Connect to your Neo4j database
 driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
@@ -39,4 +41,7 @@ def main(question: str):
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("question", help="echo the string you use here")
+    args = parser.parse_args()
+    main(args.question)
