@@ -25,19 +25,32 @@ ORDER BY
 
 # Run the query and print results
 def main(question: str):
-    with driver.session() as session:
-        result = session.run(query, {"aad_ids": []})  # Empty = all AADs
-        print("=== FAALVORMEN RESULTATEN ===")
-        for record in result:
-            print(
-                f"Component: {record['component_naam']:<40} | "
-                f"Nummer: {record['nummer_faalvorm']:<6} | "
-                f"Int: {record['nummer_int']:<3} | "
-                f"Naam: {record['naam_faalvorm']:<40} | "
-                f"Incidenten: {record['aantal_incidenten']}"
-            )
-
-    driver.close()
+    if "oorzaak" in question:
+        with driver.session() as session:
+            result = session.run(query, {"aad_ids": []})  # Empty = all AADs
+            print("=== FAALVORMEN RESULTATEN ===")
+            for record in result:
+                print(
+                    f"Component: {record['component_naam']:<40} | "
+                    f"Nummer: {record['nummer_faalvorm']:<6} | "
+                    f"Int: {record['nummer_int']:<3} | "
+                    f"Naam: {record['naam_faalvorm']:<40} | "
+                    f"Oorzaak: {record['oorzaak_generiek']}"
+                )
+            driver.close()
+    else:
+        with driver.session() as session:
+            result = session.run(query, {"aad_ids": []})  # Empty = all AADs
+            print("=== FAALVORMEN RESULTATEN ===")
+            for record in result:
+                print(
+                    f"Component: {record['component_naam']:<40} | "
+                    f"Nummer: {record['nummer_faalvorm']:<6} | "
+                    f"Int: {record['nummer_int']:<3} | "
+                    f"Naam: {record['naam_faalvorm']:<40} | "
+                    f"Incidenten: {record['aantal_incidenten']}"
+                )
+        driver.close()
 
 
 if __name__ == "__main__":
