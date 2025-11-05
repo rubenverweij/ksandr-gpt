@@ -22,7 +22,7 @@ def dump_onbruikbare_data(directory: Path):
                     if not looks_like_clean_text(chunk):
                         examples.append(
                             {
-                                "Pad": file_path.absolute(),
+                                "Pad": file_path.as_posix(),
                                 "bestand": file_path.name,
                                 "chunk": idx,
                                 "inhoud": chunk,
