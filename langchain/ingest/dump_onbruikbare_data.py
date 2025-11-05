@@ -12,7 +12,7 @@ def dump_onbruikbare_data(directory: Path):
         chunk_overlap=100,
     )
     for index, file_path in enumerate(directory.rglob("*.txt")):
-        if index < 20:
+        if index < 200:
             print(f"Start reading nr: {index} filename {file_path}")
             with file_path.open("r", encoding="utf-8") as f:
                 content = f.read()
