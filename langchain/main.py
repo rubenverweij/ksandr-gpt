@@ -4,7 +4,7 @@ import uuid
 import os
 from datetime import datetime
 
-from neo4j_langchain.cypher_queries import query_neo4j
+from graphdb.cypher_queries import query_neo4j
 from templates import TEMPLATES, SYSTEM_PROMPT
 from helpers import (
     maak_metadata_filter,
