@@ -21,7 +21,12 @@ def dump_onbruikbare_data(directory: Path):
                 for idx, chunk in enumerate(chunks):
                     if not looks_like_clean_text(chunk):
                         examples.append(
-                            {"bestand": file_path.name, "chunk": idx, "inhoud": chunk}
+                            {
+                                "Pad": file_path.absolute(),
+                                "bestand": file_path.name,
+                                "chunk": idx,
+                                "inhoud": chunk,
+                            }
                         )
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(examples, f, ensure_ascii=False, indent=2)
