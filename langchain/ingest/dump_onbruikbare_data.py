@@ -13,6 +13,7 @@ def dump_onbruikbare_data(directory: Path):
     )
     for index, file_path in enumerate(directory.rglob("*.txt")):
         if index < 20:
+            print(f"Start reading nr: {index} filename {file_path}")
             with file_path.open("r", encoding="utf-8") as f:
                 content = f.read()
                 content_cleaned = prepare_text_for_vector_store(content)
@@ -27,4 +28,5 @@ def dump_onbruikbare_data(directory: Path):
 
 
 if __name__ == "__main__":
-    dump_onbruikbare_data()
+    dir = Path("/home/ubuntu/ksandr_files/")
+    dump_onbruikbare_data(dir)
