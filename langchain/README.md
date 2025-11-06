@@ -34,21 +34,34 @@ INCLUDE_KEYWORDS = int(os.getenv("INCLUDE_KEYWORDS", 0))  # standaard 0
 Om de container te starten:
 
 ```shell
-image="ksandr-gpt-langchain:0.34"
+image="ksandr-gpt-langchain:0.43"
 
 docker run --network host -d --gpus=all --cap-add SYS_RESOURCE \
 -e USE_MLOCK=0 \
 -e TEMPERATURE=0.7 \
 -e INCLUDE_FILTER=1 \
--e SCORE_THRESHOLD=500 \
--e SOURCE_MAX=5 \
+-e SCORE_THRESHOLD=0.8 \
+-e SCORE_THRESHOLD_JSON=0.8 \
+-e INCLUDE_CHROMA_JSON=0 \
+-e MAX_TOKENS=400 \
+-e SOURCE_MAX=4 \
 -e INCLUDE_SUMMARY=0 \
--e INCLUDE_KEYWORDS=1 \
--e MAX_CTX=4000 \
+-e INCLUDE_KEYWORDS=0 \
+-e MAX_CTX=2048 \
+-e INCLUDE_PERMISSION=0 \
 -e IMAGE_NAME=$image \
 -v /home/ubuntu/nltk_data:/root/nltk_data \
 -v /home/ubuntu/huggingface:/root/.cache/huggingface \
 -v /home/ubuntu/onprem_data:/root/onprem_data \
 -v /home/ubuntu/ksandr_files:/root/ksandr_files \
 $image
+
+# -e DEFAULT_MODEL_PATH=/root/onprem_data/models/zephyr-7b-beta.Q4_K_M.gguf \
+```
+
+Database vernieuwen:
+
+```shell
+python3 api/populate_database.py -chroma /root/onprem_data/chroma_json/ -source /root/ksandr_files -min_chunk_size_json 200 
+python3 api/populate_database.py -chroma /root/onprem_data/chroma/ -source /root/ksandr_files -min_chunk_size_json 400 -min_chunk_size_text 600
 ```
