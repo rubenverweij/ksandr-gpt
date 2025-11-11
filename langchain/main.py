@@ -341,7 +341,7 @@ cypher_parser = RegexParser(
 chain = GraphCypherQAChain.from_llm(
     LLM,
     graph=graph,
-    verbose=False,
+    verbose=True,
     allow_dangerous_requests=True,
     cypher_parser=cypher_parser,
 )
