@@ -365,14 +365,15 @@ class CypherOutputParser(BaseOutputParser):
                 # Stop once we reach the first RETURN
                 if "RETURN" in stripped_line.upper():
                     break
-
-        return "\n".join(unique_lines)
+        query = "\n".join(unique_lines)
+        print(query)
+        return query
 
 
 chain = GraphCypherQAChain.from_llm(
     LLM,
     graph=graph,
-    verbose=True,
+    verbose=False,
     allow_dangerous_requests=True,
     cypher_parser=CypherOutputParser(),
 )
