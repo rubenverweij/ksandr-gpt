@@ -23,7 +23,7 @@ from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_community.graphs import Neo4jGraph
 from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
-from langchain.schema import BaseOutputParser
+from langchain_community.output_parsers import BaseOutputParser
 
 # Configuratie voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
@@ -337,10 +337,9 @@ graph = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="pass
 
 
 class CypherOutputParser(BaseOutputParser):
-    """Extracts only the Cypher query from LLM output."""
+    """Extracts only the Cypher query from LLM output, stopping after the first RETURN."""
 
     def parse(self, text: str) -> str:
-        # Match Cypher keywords at line start (MATCH, CREATE, MERGE, RETURN, etc.)
         lines = text.splitlines()
         keywords = [
             "MATCH",
@@ -352,12 +351,22 @@ class CypherOutputParser(BaseOutputParser):
             "WITH",
             "RETURN",
         ]
-        cypher_lines = [
-            line
-            for line in lines
-            if any(line.strip().upper().startswith(k) for k in keywords)
-        ]
-        return "\n".join(cypher_lines)
+
+        seen = set()
+        unique_lines = []
+
+        for line in lines:
+            stripped_line = line.strip()
+            if any(stripped_line.upper().startswith(k) for k in keywords):
+                if stripped_line not in seen:
+                    seen.add(stripped_line)
+                    unique_lines.append(stripped_line)
+
+                # Stop once we reach the first RETURN
+                if "RETURN" in stripped_line.upper():
+                    break
+
+        return "\n".join(unique_lines)
 
 
 chain = GraphCypherQAChain.from_llm(
