@@ -21,7 +21,8 @@ from typing import Dict, Optional, Union, List
 from langchain_chroma import Chroma
 from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
-
+from langchain_community.graphs import Neo4jGraph
+from langchain_community.chains import GraphCypherQAChain
 
 # Configuratie voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
@@ -122,8 +123,7 @@ class ContextRequest(BaseModel):
 
 
 class Neo4jRequest(BaseModel):
-    question: str
-    template: Optional[str]
+    prompt: str
 
 
 def ask_llm(
@@ -329,6 +329,22 @@ def evaluate(req: EvaluationRequest):
 def context(req: ContextRequest):
     return {
         "answer": LLM.invoke(req.prompt),
+    }
+
+
+graph = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="password")
+chain = GraphCypherQAChain.from_llm(
+    LLM,
+    graph=graph,
+    verbose=True,
+    allow_dangerous_requests=True,
+)
+
+
+@app.post("/neo")
+def neo(req: Neo4jRequest):
+    return {
+        "answer": chain.invoke({"query": req.prompt}),
     }
 
 
