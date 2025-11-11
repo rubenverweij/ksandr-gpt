@@ -23,7 +23,7 @@ from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_community.graphs import Neo4jGraph
 from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
-from langchain_community.output_parsers import RegexParser
+from langchain.schema import BaseOutputParser
 
 # Configuratie voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
@@ -334,16 +334,38 @@ def context(req: ContextRequest):
 
 
 graph = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="password")
-cypher_parser = RegexParser(
-    regex=r"(MATCH|CREATE|MERGE|CALL|OPTIONAL|UNWIND|WITH|RETURN).*",
-    output_keys=["cypher"],
-)
+
+
+class CypherOutputParser(BaseOutputParser):
+    """Extracts only the Cypher query from LLM output."""
+
+    def parse(self, text: str) -> str:
+        # Match Cypher keywords at line start (MATCH, CREATE, MERGE, RETURN, etc.)
+        lines = text.splitlines()
+        keywords = [
+            "MATCH",
+            "CREATE",
+            "MERGE",
+            "CALL",
+            "OPTIONAL",
+            "UNWIND",
+            "WITH",
+            "RETURN",
+        ]
+        cypher_lines = [
+            line
+            for line in lines
+            if any(line.strip().upper().startswith(k) for k in keywords)
+        ]
+        return "\n".join(cypher_lines)
+
+
 chain = GraphCypherQAChain.from_llm(
     LLM,
     graph=graph,
     verbose=True,
     allow_dangerous_requests=True,
-    cypher_parser=cypher_parser,
+    cypher_parser=CypherOutputParser(),
 )
 
 
