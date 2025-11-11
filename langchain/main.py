@@ -23,6 +23,7 @@ from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_community.graphs import Neo4jGraph
 from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain.output_parsers import RegexParser
 
 # Configuratie voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
@@ -333,11 +334,16 @@ def context(req: ContextRequest):
 
 
 graph = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="password")
+cypher_parser = RegexParser(
+    regex=r"(MATCH|CREATE|MERGE|CALL|OPTIONAL|UNWIND|WITH|RETURN).*",
+    output_keys=["cypher"],
+)
 chain = GraphCypherQAChain.from_llm(
     LLM,
     graph=graph,
     verbose=False,
     allow_dangerous_requests=True,
+    cypher_parser=cypher_parser,
 )
 
 
