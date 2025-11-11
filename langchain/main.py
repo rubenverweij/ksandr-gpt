@@ -336,7 +336,7 @@ graph = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="pass
 chain = GraphCypherQAChain.from_llm(
     LLM,
     graph=graph,
-    verbose=True,
+    verbose=False,
     allow_dangerous_requests=True,
 )
 
