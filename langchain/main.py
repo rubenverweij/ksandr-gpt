@@ -24,6 +24,12 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_community.graphs import Neo4jGraph
 from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import PromptTemplate
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Configuratie voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
@@ -366,9 +372,21 @@ class CypherOutputParser(BaseOutputParser):
                 if "RETURN" in stripped_line.upper():
                     break
         query = "\n".join(unique_lines)
-        print(query)
+        logger.info("Extracted Cypher query:\n%s", query)
         return query
 
+
+qa_prompt = PromptTemplate.from_template("""
+Je bent een Neo4j data expert. Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.
+
+Query resultaten:
+{result}
+
+Vraag:
+{question}
+
+Antwoord:
+""")
 
 chain = GraphCypherQAChain.from_llm(
     LLM,
@@ -376,6 +394,7 @@ chain = GraphCypherQAChain.from_llm(
     verbose=False,
     allow_dangerous_requests=True,
     cypher_parser=CypherOutputParser(),
+    qa_prompt=qa_prompt,
 )
 
 
