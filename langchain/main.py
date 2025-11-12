@@ -384,7 +384,6 @@ class CypherOutputParser(BaseOutputParser):
             query += ")" * (query.count("(") - query.count(")"))
         elif query.count(")") > query.count("("):
             query = "(" * (query.count(")") - query.count("(")) + query
-        logger.info("Extracted Cypher query:\n%s", query)
         return query
 
 
@@ -439,15 +438,15 @@ def neo(req: Neo4jRequest):
     schema = graph.schema  # Optional, or pass a string manually
     cypher_text = LLM.invoke(cypher_prompt.format(schema=schema, question=question))
     logger.info("✅ Cypher generated:\n%s", cypher_text)
-    clean_cypher = CypherOutputParser().parse(cypher_text)
-    logger.info("✅ Clean Cypher used:\n%s", clean_cypher)
+    # clean_cypher = CypherOutputParser().parse(cypher_text)
+    # logger.info("✅ Clean Cypher used:\n%s", clean_cypher)
     try:
-        result = graph.query(clean_cypher)
+        result = graph.query(cypher_text)
     except Exception as e:
         logger.error(f"Cypher execution failed: {e}")
-        return {"error": str(e), "cypher": clean_cypher}
+        return {"error": str(e), "cypher": cypher_text}
     answer = LLM.invoke(qa_prompt.format(result=result, question=question))
-    return {"cypher": clean_cypher, "result": result, "answer": answer}
+    return {"cypher": cypher_text, "result": result, "answer": answer}
 
 
 def evaluate_answer(expected: str, actual: str) -> str:
