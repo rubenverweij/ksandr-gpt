@@ -86,7 +86,7 @@ db_json = Chroma(
     persist_directory=CONFIG["CHROMA_PATH_JSON"], embedding_function=embedding_function
 )
 
-cypher_db = Chroma(
+db_cypher = Chroma(
     persist_directory=CONFIG["CHROMA_PATH_CYPHER"],
     embedding_function=embedding_function,
 )
@@ -348,7 +348,7 @@ def context(req: ContextRequest):
 @app.post("/neo")
 def neo(req: Neo4jRequest):
     question = req.prompt
-    results = db.similarity_search_with_score(question, k=1)
+    results = db_cypher.similarity_search_with_score(question, k=1)
     top_doc, score = results[0]
     cypher_to_run = top_doc.metadata["cypher"]
     print(f"Closest query (score={score:.3f}): {cypher_to_run}")
