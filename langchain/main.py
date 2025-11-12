@@ -2,6 +2,7 @@ import asyncio
 import time
 import uuid
 import os
+import re
 from datetime import datetime
 
 from graphdb.cypher_queries import query_neo4j
@@ -372,6 +373,16 @@ class CypherOutputParser(BaseOutputParser):
                 if "RETURN" in stripped_line.upper():
                     break
         query = "\n".join(unique_lines)
+        query = re.sub(r"\}\}+", "}", query)
+        query = re.sub(r"\)\)+", ")", query)
+        query = re.sub(r"\(\(+", "(", query)
+        query = re.sub(r"\"\"+", '"', query)
+
+        # Balance parentheses count if off by 1
+        if query.count("(") > query.count(")"):
+            query += ")" * (query.count("(") - query.count(")"))
+        elif query.count(")") > query.count("("):
+            query = "(" * (query.count(")") - query.count("(")) + query
         logger.info("Extracted Cypher query:\n%s", query)
         return query
 
