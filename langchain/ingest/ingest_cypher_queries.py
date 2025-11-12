@@ -30,7 +30,9 @@ ORDER BY aantalFaalvormen DESC
 """,
         "example_questions": [
             "Wat zijn de meest voorkomende oorzaken van faalvormen?",
+            "Geef een lijst van faalvormen per oorzaak",
             "Welke oorzaken komen voor bij faalvormen",
+            "Geef het aantal faalvormen per oorzaak voor de ",
         ],
     },
     {
@@ -71,6 +73,8 @@ ORDER BY aantalFaalvormen DESC
 """,
         "example_questions": [
             "Wat zijn de gevolgen met de meeste faalvormen?",
+            "Geef het aantal faalvormen per gevolg voor de ",
+            "Geef een lijst van faalvormen per gevolg",
             "Welke gevolgen komen het vaakst voor in faalvormen?",
         ],
     },
