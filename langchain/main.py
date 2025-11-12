@@ -434,7 +434,7 @@ def neo(req: Neo4jRequest):
     except Exception as e:
         logger.error(f"Cypher execution failed: {e}")
         return {"error": str(e), "cypher": clean_cypher}
-    answer = LLM.invoke(qa_prompt.format(result=result, question=question)).content
+    answer = LLM.invoke(qa_prompt.format(result=result, question=question))
     return {"cypher": clean_cypher, "result": result, "answer": answer}
 
 
