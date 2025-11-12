@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 from graphdb.cypher_queries import query_neo4j
-from templates import TEMPLATES, SYSTEM_PROMPT
+from templates import TEMPLATES, SYSTEM_PROMPT, CYPHER_PROMPT
 from helpers import (
     maak_metadata_filter,
     COMPONENTS,
@@ -56,6 +56,9 @@ CONFIG = {
     "INCLUDE_PERMISSION": int(os.getenv("INCLUDE_PERMISSION", 0)),
     "CHROMA_PATH": os.getenv("CHROMA_PATH", "/root/onprem_data/chroma"),
     "CHROMA_PATH_JSON": os.getenv("CHROMA_PATH_JSON", "/root/onprem_data/chroma_json"),
+    "CHROMA_PATH_CYPHER": os.getenv(
+        "CHROMA_PATH_CYPHER", "/root/onprem_data/chroma_cypher"
+    ),
     "INCLUDE_CHROMA_JSON": os.getenv("INCLUDE_CHROMA_JSON", 0),
 }
 
@@ -81,6 +84,11 @@ db = Chroma(
 )
 db_json = Chroma(
     persist_directory=CONFIG["CHROMA_PATH_JSON"], embedding_function=embedding_function
+)
+
+cypher_db = Chroma(
+    persist_directory=CONFIG["CHROMA_PATH_CYPHER"],
+    embedding_function=embedding_function,
 )
 
 print(f"Starting container with {CONFIG}")
@@ -337,25 +345,16 @@ def context(req: ContextRequest):
     }
 
 
-# def retrieve_query(user_question: str, vectorstore, embeddings) -> str:
-#     results = vectorstore.similarity_search(user_question, k=1)
-#     if results:
-#         return results[0].metadata["cypher"]
-#     return None
-
-# @app.post("/neo")
-# def neo(req: Neo4jRequest):
-#     question = req.prompt
-
-#     clean_cypher = clean_cypher(cypher_text)
-#     # logger.info("✅ Clean Cypher used:\n%s", clean_cypher)
-#     try:
-#         result = GRAPH.query(cypher_text)
-#     except Exception as e:
-#         logger.error(f"Cypher execution failed: {e}")
-#         return {"error": str(e), "cypher": cypher_text}
-#     answer = LLM.invoke(qa_prompt.format(result=result, question=question))
-#     return {"cypher": cypher_text, "result": result, "answer": answer}
+@app.post("/neo")
+def neo(req: Neo4jRequest):
+    question = req.prompt
+    results = db.similarity_search_with_score(question, k=1)
+    top_doc, score = results[0]
+    cypher_to_run = top_doc.metadata["cypher"]
+    print(f"Closest query (score={score:.3f}): {cypher_to_run}")
+    neo4j_results = result = GRAPH.query(cypher_to_run, params={})
+    answer = LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
+    return {"cypher": cypher_to_run, "result": neo4j_results, "answer": answer}
 
 
 def evaluate_answer(expected: str, actual: str) -> str:

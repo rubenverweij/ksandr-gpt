@@ -1,3 +1,5 @@
+from langchain_core.prompts import PromptTemplate
+
 TEMPLATES = {
     "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf": {
         "EVALUATIE_PROMPT": """
@@ -124,3 +126,15 @@ Belangrijke instructies:
 - Gebruik duidelijk, natuurlijk en professioneel Nederlands.
 - Antwoord beknopt maar volledig, en vermijd dubbelzinnigheid
 """
+
+CYPHER_PROMPT = PromptTemplate.from_template("""
+Je bent een Neo4j data expert. Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.
+
+Query resultaten:
+{result}
+
+Vraag:
+{question}
+
+Antwoord:
+""")
