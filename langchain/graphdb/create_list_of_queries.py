@@ -39,7 +39,7 @@ def get_sample_values(tx, label, prop, limit=3):
     """Get sample values for a specific property."""
     query = f"""
     MATCH (n:{label})
-    WHERE exists(n.{prop})
+    WHERE n.{prop} IS NOT NULL
     RETURN DISTINCT n.{prop} AS val
     LIMIT {limit}
     """
