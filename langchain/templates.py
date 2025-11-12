@@ -128,13 +128,14 @@ Belangrijke instructies:
 """
 
 CYPHER_PROMPT = PromptTemplate.from_template("""
-Je bent een Neo4j data expert. Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.
+<|system|>
+Je bent een Neo4j data expert. Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.</s>
+<|user|>
 
 Query resultaten:
 {result}
 
 Vraag:
-{question}
-
-Antwoord:
+{question}</s>
+<|assistant|>
 """)

@@ -61,6 +61,20 @@ ORDER BY f.Naam
             "Geef een lijst van faalvormen voor een bepaald component",
         ],
     },
+    {
+        "cypher": """
+MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALVORM]->(f:Faalvorm)
+{where_clause}
+RETURN f.MogelijkGevolg AS gevolg, COUNT(f) AS aantalFaalvormen
+ORDER BY aantalFaalvormen DESC
+""",
+        "example_questions": [
+            "Hoeveel faalvormen zijn er per mogelijk gevolg?",
+            "Wat zijn de gevolgen met de meeste faalvormen?",
+            "Top gevolgen op basis van aantal faalvormen",
+            "Welke gevolgen komen het vaakst voor in faalvormen?",
+        ],
+    },
 ]
 
 
