@@ -22,7 +22,8 @@ from typing import Dict, Optional, Union, List
 from langchain_chroma import Chroma
 from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
+from langchain_neo4j import Neo4jGraph
+from langchain_neo4j import GraphCypherQAChain
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
 
