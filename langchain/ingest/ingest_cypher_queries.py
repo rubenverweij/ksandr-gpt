@@ -30,7 +30,7 @@ ORDER BY aantalFaalvormen DESC
 """,
         "example_questions": [
             "Wat zijn de meest voorkomende oorzaken van faalvormen?",
-            "Top oorzaken van faalvormen",
+            "Welke oorzaken komen voor bij faalvormen",
         ],
     },
     {
@@ -43,7 +43,7 @@ ORDER BY f.GemiddeldAantalIncidenten DESC
         "example_questions": [
             "Welke faalvormen kennen de meeste incidenten?",
             "Wat zijn de faalvormen met hoge incidentaantallen?",
-            "Top faalvormen op basis van gemiddeld aantal incidenten",
+            "Welke faalvormen komen regelmatig voor",
             "Welke faalvormen veroorzaken vaak problemen?",
         ],
     },
@@ -55,10 +55,10 @@ RETURN f.Naam AS faalvorm, f.Beschrijving AS beschrijving
 ORDER BY f.Naam
 """,
         "example_questions": [
-            "Is er voor de COQ een faalvorm bekend over een probleem met de eindsluiting?",
-            "Welke faalvormen zijn bekend voor component COQ?",
-            "Welke faalvormen hebben een beschrijving die lijkt op 'eindsluiting'?",
-            "Geef een lijst van faalvormen voor een bepaald component",
+            "Is er voor de COQ een faalvorm bekend over een probleem met de ?",
+            "Welke faalvormen zijn bekend voor component",
+            "Welke faalvormen hebben een beschrijving die lijkt op ",
+            "Geef een lijst van faalvormen voor component",
         ],
     },
     {
@@ -69,9 +69,7 @@ RETURN f.MogelijkGevolg AS gevolg, COUNT(f) AS aantalFaalvormen
 ORDER BY aantalFaalvormen DESC
 """,
         "example_questions": [
-            "Hoeveel faalvormen zijn er per mogelijk gevolg?",
             "Wat zijn de gevolgen met de meeste faalvormen?",
-            "Top gevolgen op basis van aantal faalvormen",
             "Welke gevolgen komen het vaakst voor in faalvormen?",
         ],
     },
