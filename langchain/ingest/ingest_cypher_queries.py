@@ -51,7 +51,7 @@ ORDER BY f.GemiddeldAantalIncidenten DESC
         "cypher": """
 MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALVORM]->(f:Faalvorm)
 {where_clause}
-RETURN f.Naam AS faalvorm, f.Beschrijving AS beschrijving
+RETURN f.Naam AS faalvorm
 ORDER BY f.Naam
 """,
         "example_questions": [
@@ -59,6 +59,7 @@ ORDER BY f.Naam
             "Welke faalvormen zijn bekend voor component",
             "Welke faalvormen hebben een beschrijving die lijkt op ",
             "Geef een lijst van faalvormen voor component",
+            "Welke faalvormen kent de ",
         ],
     },
     {
