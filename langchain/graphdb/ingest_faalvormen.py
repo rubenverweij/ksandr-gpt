@@ -18,15 +18,15 @@ def extract_nummer_info(nummer_str):
     return nummer_str, None
 
 
-def create_component_faaltype(
-    session, aad_id, component_name, faaltype_data, file_path
+def create_component_faalvorm(
+    session, aad_id, component_name, faalvorm_data, file_path
 ):
-    nummer_str = faaltype_data.get("Nummer")
+    nummer_str = faalvorm_data.get("Nummer")
     prefix, nummer_int = extract_nummer_info(nummer_str)
     cypher = """
     MERGE (a:AAD {aad_id: $aad_id})
     MERGE (c:Component {naam: $component_name})
-    MERGE (f:Faaltype {Nummer: $nummer})
+    MERGE (f:Faalvorm {Nummer: $nummer})
       ON CREATE SET f.Naam = $naam,
                     f.NummerInt = $nummer_int,
                     f.Prefix = $prefix,
@@ -46,7 +46,7 @@ def create_component_faaltype(
                     f.GemiddeldAantalIncidenten = $gemiddeld_aantal_incidenten,
                     f.Bestandspad = $bestandspad
     MERGE (a)-[:HEEFT_COMPONENT]->(c)
-    MERGE (c)-[:HEEFT_FAALTYPE]->(f)
+    MERGE (c)-[:HEEFT_FAALVORM]->(f)
     """
     session.run(
         cypher,
@@ -56,21 +56,21 @@ def create_component_faaltype(
             "nummer": nummer_str,
             "nummer_int": nummer_int,
             "prefix": prefix,
-            "naam": faaltype_data.get("Naam"),
-            "beschrijving": faaltype_data.get("Beschrijving"),
-            "mogelijk_gevolg": faaltype_data.get("Mogelijk gevolg"),
-            "uitvoering": faaltype_data.get("Uitvoering"),
-            "effect_op_subsysteem": faaltype_data.get("Effect op subsysteem"),
-            "levensduur_bepalend": faaltype_data.get("Levensduur bepalend"),
-            "status_oorzaak": faaltype_data.get("Status(Oorzaak)"),
-            "status_gevolg": faaltype_data.get("Status(Gevolg)"),
-            "oorzaak_detail": faaltype_data.get("Oorzaak(detail)"),
-            "oorzaak_generiek": faaltype_data.get("Oorzaak(Generiek)"),
-            "afhankelijkheid": faaltype_data.get("Afhankelijkheid omgevingscondities"),
-            "faalindicatoren": faaltype_data.get("Faalindicator(en)"),
-            "faalcurve": faaltype_data.get("Faalcurve"),
-            "faaltempo": faaltype_data.get("Faaltempo"),
-            "gemiddeld_aantal_incidenten": faaltype_data.get(
+            "naam": faalvorm_data.get("Naam"),
+            "beschrijving": faalvorm_data.get("Beschrijving"),
+            "mogelijk_gevolg": faalvorm_data.get("Mogelijk gevolg"),
+            "uitvoering": faalvorm_data.get("Uitvoering"),
+            "effect_op_subsysteem": faalvorm_data.get("Effect op subsysteem"),
+            "levensduur_bepalend": faalvorm_data.get("Levensduur bepalend"),
+            "status_oorzaak": faalvorm_data.get("Status(Oorzaak)"),
+            "status_gevolg": faalvorm_data.get("Status(Gevolg)"),
+            "oorzaak_detail": faalvorm_data.get("Oorzaak(detail)"),
+            "oorzaak_generiek": faalvorm_data.get("Oorzaak(Generiek)"),
+            "afhankelijkheid": faalvorm_data.get("Afhankelijkheid omgevingscondities"),
+            "faalindicatoren": faalvorm_data.get("Faalindicator(en)"),
+            "faalcurve": faalvorm_data.get("Faalcurve"),
+            "faaltempo": faalvorm_data.get("Faaltempo"),
+            "gemiddeld_aantal_incidenten": faalvorm_data.get(
                 "Gemiddeld aantal incidenten"
             ),
             "bestandspad": file_path,
@@ -111,11 +111,11 @@ with driver.session() as session:
                     file_path = os.path.join(root, filename)
                     with open(file_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                        faaltype_data = data.get("Beschrijving")
-                    if faaltype_data:
+                        faalvorm_data = data.get("Beschrijving")
+                    if faalvorm_data:
                         print(f"Processing {file_path}... for component {component}")
-                        create_component_faaltype(
-                            session, component_id, component, faaltype_data, file_path
+                        create_component_faalvorm(
+                            session, component_id, component, faalvorm_data, file_path
                         )
 
 driver.close()
