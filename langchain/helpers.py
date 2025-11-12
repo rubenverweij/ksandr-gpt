@@ -145,6 +145,18 @@ def _bouw_permissie_filter(
     return {"permission_and_type": {"$in": permissions}}
 
 
+def haal_dossiers_op(vraag):
+    """ "Haal relevante dossiers op."""
+    vraag = vraag.prompt.lower()
+    gevonden_sleutels = []
+    for sleutel, waarde in COMPONENTS.items():
+        for component in LIJST_SPECIFIEKE_COMPONENTEN:
+            if component in waarde.lower() and component in vraag:
+                gevonden_sleutels.append(sleutel)
+                break
+    return gevonden_sleutels
+
+
 def maak_metadata_filter(request, componenten_dict, include_permission):
     """
     Maakt een filter op basis van de vraag in de request en beschikbare componenten.

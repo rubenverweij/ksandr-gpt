@@ -9,17 +9,28 @@ from langchain_chroma import Chroma
 
 predefined_queries = [
     {
-        "cypher": "MATCH (c:Component {naam: $naam})-[:HEEFT_FAALTYPE]->(f:Faaltype) RETURN COUNT(f) AS aantalFaalvormen",
+        "cypher": """
+MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
+{where_clause}
+RETURN c.naam AS component, COUNT(f) AS aantalFaalvormen
+ORDER BY aantalFaalvormen DESC
+""",
         "example_questions": [
-            "Hoeveel faalvormen zijn er van de LK ELA?",
-            "Aantal Faaltype van component BD10?",
+            "Hoeveel faalvormen zijn er per component?",
+            "Aantal faalvormen per component",
+            "Hoeveel faalvormen zijn er in totaal",
         ],
     },
     {
-        "cypher": "MATCH (f:Faaltype)-[:HEEFT_FAALTYPE]->(c:Component) RETURN f.OorzaakGeneriek AS oorzaak, COUNT(f) AS aantalFaalvormen ORDER BY aantalFaalvormen DESC",
+        "cypher": """
+MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
+{where_clause}
+RETURN f.OorzaakGeneriek AS oorzaak, COUNT(f) AS aantalFaalvormen
+ORDER BY aantalFaalvormen DESC
+""",
         "example_questions": [
             "Wat zijn de meest voorkomende oorzaken van faalvormen?",
-            "Top oorzaken van Faaltype",
+            "Top oorzaken van faalvormen",
         ],
     },
 ]
