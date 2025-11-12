@@ -26,5 +26,6 @@ RUN python3 -m pip install bs4 redis chromadb langchain_chroma sentence-transfor
 
 WORKDIR /ksandr-gpt
 COPY ./ /ksandr-gpt/api
+ENV PYTHONUNBUFFERED=1
 
 CMD ["fastapi", "run", "api/main.py", "--port", "8080"]
