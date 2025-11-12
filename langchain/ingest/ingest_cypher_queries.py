@@ -3,6 +3,7 @@ from embeddings import get_embedding_function
 from typing import List, Dict
 from pathlib import Path
 import json
+import shutil
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
 
@@ -52,6 +53,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     chroma_path = Path(args.chroma)
+
+    if chroma_path.exists():
+        shutil.rmtree(chroma_path)
+        print("🗑️ Database verwijderd.")
+
     if args.queries_file:
         source_file = Path(args.queries_file)
         if not source_file.exists():
