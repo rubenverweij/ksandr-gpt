@@ -425,7 +425,7 @@ Cypher:
 @app.post("/neo")
 def neo(req: Neo4jRequest):
     question = req.prompt
-    schema = graph.schema()  # Optional, or pass a string manually
+    schema = graph.schema  # Optional, or pass a string manually
     cypher_text = LLM.invoke(
         cypher_prompt.format(schema=schema, question=question)
     ).content
