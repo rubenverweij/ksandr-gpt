@@ -22,8 +22,7 @@ from typing import Dict, Optional, Union, List
 from langchain_chroma import Chroma
 from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain_community.graphs import Neo4jGraph
-from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
 
@@ -408,12 +407,37 @@ chain = GraphCypherQAChain.from_llm(
     qa_prompt=qa_prompt,
 )
 
+cypher_prompt = PromptTemplate.from_template("""
+You are a Neo4j Cypher expert.
+Generate ONLY a valid Cypher query that answers the user's question.
+
+Schema:
+{schema}
+
+Question:
+{question}
+
+Return only the Cypher query — do not explain or comment.
+Cypher:
+""")
+
 
 @app.post("/neo")
 def neo(req: Neo4jRequest):
-    return {
-        "answer": chain.invoke({"query": req.prompt}),
-    }
+    question = req.prompt
+    schema = graph.get_schema()  # Optional, or pass a string manually
+    cypher_text = LLM.invoke(
+        cypher_prompt.format(schema=schema, question=question)
+    ).content
+    clean_cypher = CypherOutputParser().parse(cypher_text)
+    logger.info("✅ Clean Cypher used:\n%s", clean_cypher)
+    try:
+        result = graph.query(clean_cypher)
+    except Exception as e:
+        logger.error(f"Cypher execution failed: {e}")
+        return {"error": str(e), "cypher": clean_cypher}
+    answer = LLM.invoke(qa_prompt.format(result=result, question=question)).content
+    return {"cypher": clean_cypher, "result": result, "answer": answer}
 
 
 def evaluate_answer(expected: str, actual: str) -> str:
