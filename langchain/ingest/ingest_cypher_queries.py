@@ -51,17 +51,17 @@ if __name__ == "__main__":
         "-chroma", type=str, required=True, help="Path to Chroma vectorstore"
     )
     args = parser.parse_args()
-    CHROMA_PATH = Path(args.chroma)
+    chroma_path = Path(args.chroma)
     if args.queries_file:
-        SOURCE_FILE = Path(args.queries_file)
-        if not SOURCE_FILE.exists():
-            raise FileNotFoundError(f"Queries JSON file not found: {SOURCE_FILE}")
+        source_file = Path(args.queries_file)
+        if not source_file.exists():
+            raise FileNotFoundError(f"Queries JSON file not found: {source_file}")
     else:
-        SOURCE_FILE = None
+        source_file = None
     queries_data = predefined_queries
-    if SOURCE_FILE:
-        with open(SOURCE_FILE, "r", encoding="utf-8") as f:
+    if source_file:
+        with open(source_file, "r", encoding="utf-8") as f:
             queries_data = json.load(f)
 
     print(f"Loaded {len(queries_data)} queries from JSON.")
-    ingest_cypher_queries(CHROMA_PATH=CHROMA_PATH, queries=queries_data)
+    ingest_cypher_queries(chroma_path=chroma_path, queries=queries_data)
