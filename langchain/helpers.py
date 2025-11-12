@@ -147,7 +147,7 @@ def _bouw_permissie_filter(
 
 def haal_dossiers_op(vraag):
     """ "Haal relevante dossiers op."""
-    vraag = vraag.prompt.lower()
+    vraag = vraag.lower()
     gevonden_sleutels = []
     for sleutel, waarde in COMPONENTS.items():
         for component in LIJST_SPECIFIEKE_COMPONENTEN:

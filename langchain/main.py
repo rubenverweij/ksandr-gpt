@@ -356,7 +356,7 @@ def neo(req: Neo4jRequest):
     if len(aads) > 0:
         where_clause = "WHERE a.aad_id IN $aad_ids"
     else:
-        where_clause = ""  # no filter, get all components
+        where_clause = ""
     cypher_to_run = cypher_to_run.format(where_clause=where_clause)
     parameters = {"aad_ids": aads}
     print(f"Closest query (score={score:.3f}): {cypher_to_run}")
