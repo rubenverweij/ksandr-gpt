@@ -376,6 +376,8 @@ class CypherOutputParser(BaseOutputParser):
         query = re.sub(r"\)\)+", ")", query)
         query = re.sub(r"\(\(+", "(", query)
         query = re.sub(r"\"\"+", '"', query)
+        query = re.sub(r"\[\s*\]", "", query)
+        query = re.sub(r"\]\s*\[", "]-[", query)
 
         # Balance parentheses count if off by 1
         if query.count("(") > query.count(")"):
@@ -436,6 +438,7 @@ def neo(req: Neo4jRequest):
     question = req.prompt
     schema = graph.schema  # Optional, or pass a string manually
     cypher_text = LLM.invoke(cypher_prompt.format(schema=schema, question=question))
+    logger.info("✅ Cypher generated:\n%s", cypher_text)
     clean_cypher = CypherOutputParser().parse(cypher_text)
     logger.info("✅ Clean Cypher used:\n%s", clean_cypher)
     try:
