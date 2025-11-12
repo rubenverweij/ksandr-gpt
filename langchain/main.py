@@ -350,6 +350,7 @@ def context(req: ContextRequest):
 def neo(req: Neo4jRequest):
     question = req.prompt
     aads = haal_dossiers_op(question)
+    logging.info(f"AADs are: {aads}")
     results = db_cypher.similarity_search_with_score(question, k=1)
     top_doc, score = results[0]
     cypher_to_run = top_doc.metadata["cypher"]
@@ -359,7 +360,7 @@ def neo(req: Neo4jRequest):
         where_clause = ""
     cypher_to_run = cypher_to_run.format(where_clause=where_clause)
     parameters = {"aad_ids": aads}
-    print(f"Closest query (score={score:.3f}): {cypher_to_run}")
+    logging.info(f"Closest query (score={score:.3f}): {cypher_to_run}")
     neo4j_results = result = GRAPH.query(cypher_to_run, params=parameters)
     answer = LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
     return {"cypher": cypher_to_run, "result": neo4j_results, "answer": answer}

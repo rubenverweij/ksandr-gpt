@@ -33,6 +33,34 @@ ORDER BY aantalFaalvormen DESC
             "Top oorzaken van faalvormen",
         ],
     },
+    {
+        "cypher": """
+MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
+{where_clause}
+RETURN f.Naam AS faalvorm, f.GemiddeldAantalIncidenten AS gemiddeldAantalIncidenten, COUNT(f) AS aantalFaalvormen
+ORDER BY f.GemiddeldAantalIncidenten DESC
+""",
+        "example_questions": [
+            "Welke faalvormen kennen de meeste incidenten?",
+            "Wat zijn de faalvormen met hoge incidentaantallen?",
+            "Top faalvormen op basis van gemiddeld aantal incidenten",
+            "Welke faalvormen veroorzaken vaak problemen?",
+        ],
+    },
+    {
+        "cypher": """
+MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALVORM]->(f:Faalvorm)
+{where_clause}
+RETURN f.Naam AS faalvorm, f.Beschrijving AS beschrijving
+ORDER BY f.Naam
+""",
+        "example_questions": [
+            "Is er voor de COQ een faalvorm bekend over een probleem met de eindsluiting?",
+            "Welke faalvormen zijn bekend voor component COQ?",
+            "Welke faalvormen hebben een beschrijving die lijkt op 'eindsluiting'?",
+            "Geef een lijst van faalvormen voor een bepaald component",
+        ],
+    },
 ]
 
 
