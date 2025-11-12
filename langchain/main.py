@@ -23,7 +23,6 @@ from langchain_chroma import Chroma
 from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_neo4j import Neo4jGraph
-from langchain_neo4j import GraphCypherQAChain
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
 
@@ -399,14 +398,14 @@ Vraag:
 Antwoord:
 """)
 
-chain = GraphCypherQAChain.from_llm(
-    LLM,
-    graph=graph,
-    verbose=True,
-    allow_dangerous_requests=True,
-    cypher_parser=CypherOutputParser(),
-    qa_prompt=qa_prompt,
-)
+# chain = GraphCypherQAChain.from_llm(
+#     LLM,
+#     graph=graph,
+#     verbose=True,
+#     allow_dangerous_requests=True,
+#     cypher_parser=CypherOutputParser(),
+#     qa_prompt=qa_prompt,
+# )
 
 cypher_prompt = PromptTemplate.from_template("""
 You are a Neo4j Cypher expert.
@@ -426,7 +425,7 @@ Cypher:
 @app.post("/neo")
 def neo(req: Neo4jRequest):
     question = req.prompt
-    schema = graph.get_schema()  # Optional, or pass a string manually
+    schema = graph.schema()  # Optional, or pass a string manually
     cypher_text = LLM.invoke(
         cypher_prompt.format(schema=schema, question=question)
     ).content
