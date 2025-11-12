@@ -408,8 +408,17 @@ Antwoord:
 # )
 
 cypher_prompt = PromptTemplate.from_template("""
-You are a Neo4j Cypher expert.
-Generate ONLY a valid Cypher query that answers the user's question.
+You are a Neo4j Cypher expert. You will receive a natural language question about the graph. 
+Your task is to produce a valid Cypher query that can be executed directly in Neo4j.
+
+RULES:
+1. Only output the Cypher query. Do NOT include explanations or steps.
+2. Ensure all variables in RETURN exist in the MATCH clause.
+3. Use only the node labels and relationship types provided in the schema.
+4. Use proper Cypher syntax: balanced parentheses, quotes, and brackets.
+5. Do not invent nodes or relationships that are not in the schema.
+6. Always include a RETURN statement.
+7. Use aliases in the MATCH clause if necessary to refer to nodes.
 
 Schema:
 {schema}
