@@ -2,7 +2,6 @@ import asyncio
 import time
 import uuid
 import os
-import re
 from datetime import datetime
 
 from graphdb.cypher_queries import query_neo4j
@@ -23,13 +22,12 @@ from langchain_chroma import Chroma
 from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_neo4j import Neo4jGraph
-from langchain_core.output_parsers import BaseOutputParser
-from langchain_core.prompts import PromptTemplate
 
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+GRAPH = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="password")
 
 # Configuratie voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
@@ -339,114 +337,25 @@ def context(req: ContextRequest):
     }
 
 
-graph = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="password")
+# def retrieve_query(user_question: str, vectorstore, embeddings) -> str:
+#     results = vectorstore.similarity_search(user_question, k=1)
+#     if results:
+#         return results[0].metadata["cypher"]
+#     return None
 
+# @app.post("/neo")
+# def neo(req: Neo4jRequest):
+#     question = req.prompt
 
-class CypherOutputParser(BaseOutputParser):
-    """Extracts only the Cypher query from LLM output, stopping after the first RETURN."""
-
-    def parse(self, text: str) -> str:
-        lines = text.splitlines()
-        keywords = [
-            "MATCH",
-            "CREATE",
-            "MERGE",
-            "CALL",
-            "OPTIONAL",
-            "UNWIND",
-            "WITH",
-            "RETURN",
-        ]
-
-        seen = set()
-        unique_lines = []
-
-        for line in lines:
-            stripped_line = line.strip()
-            if any(stripped_line.upper().startswith(k) for k in keywords):
-                if stripped_line not in seen:
-                    seen.add(stripped_line)
-                    unique_lines.append(stripped_line)
-
-                # Stop once we reach the first RETURN
-                if "RETURN" in stripped_line.upper():
-                    break
-        query = "\n".join(unique_lines)
-        query = re.sub(r"\}\}+", "}", query)
-        query = re.sub(r"\)\)+", ")", query)
-        query = re.sub(r"\(\(+", "(", query)
-        query = re.sub(r"\"\"+", '"', query)
-        query = re.sub(r"\[\s*\]", "", query)
-        query = re.sub(r"\]\s*\[", "]-[", query)
-
-        # Balance parentheses count if off by 1
-        if query.count("(") > query.count(")"):
-            query += ")" * (query.count("(") - query.count(")"))
-        elif query.count(")") > query.count("("):
-            query = "(" * (query.count(")") - query.count("(")) + query
-        return query
-
-
-qa_prompt = PromptTemplate.from_template("""
-Je bent een Neo4j data expert. Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.
-
-Query resultaten:
-{result}
-
-Vraag:
-{question}
-
-Antwoord:
-""")
-
-# chain = GraphCypherQAChain.from_llm(
-#     LLM,
-#     graph=graph,
-#     verbose=True,
-#     allow_dangerous_requests=True,
-#     cypher_parser=CypherOutputParser(),
-#     qa_prompt=qa_prompt,
-# )
-
-cypher_prompt = PromptTemplate.from_template("""
-You are a Neo4j Cypher expert. You will receive a natural language question about the graph. 
-Your task is to produce a valid Cypher query that can be executed directly in Neo4j.
-
-RULES:
-1. Only output the Cypher query. Do NOT include explanations or steps.
-2. Ensure all variables in RETURN exist in the MATCH clause.
-3. Use only the node labels and relationship types provided in the schema.
-4. Use proper Cypher syntax: balanced parentheses, quotes, and brackets.
-5. Do not invent nodes or relationships that are not in the schema.
-6. Always include a RETURN statement.
-7. Use aliases in the MATCH clause if necessary to refer to nodes.
-
-Schema:
-{schema}
-
-Question:
-{question}
-
-Return only the Cypher query — do not explain or comment.
-Cypher:
-""")
-
-
-@app.post("/neo")
-def neo(req: Neo4jRequest):
-    question = req.prompt
-    schema = graph.schema  # Optional, or pass a string manually
-    cypher_text = LLM.invoke(cypher_prompt.format(schema=schema, question=question))
-    logger.info("✅ Cypher generated:\n%s", cypher_text)
-    # clean_cypher = CypherOutputParser().parse(cypher_text)
-    # logger.info("✅ Clean Cypher used:\n%s", clean_cypher)
-    try:
-        result = graph.query(cypher_text)
-    except Exception as e:
-        logger.error(f"Cypher execution failed: {e}")
-        return {"error": str(e), "cypher": cypher_text}
-    answer = LLM.invoke(qa_prompt.format(result=result, question=question))
-    return {"cypher": cypher_text, "result": result, "answer": answer}
+#     clean_cypher = clean_cypher(cypher_text)
+#     # logger.info("✅ Clean Cypher used:\n%s", clean_cypher)
+#     try:
+#         result = GRAPH.query(cypher_text)
+#     except Exception as e:
+#         logger.error(f"Cypher execution failed: {e}")
+#         return {"error": str(e), "cypher": cypher_text}
+#     answer = LLM.invoke(qa_prompt.format(result=result, question=question))
+#     return {"cypher": cypher_text, "result": result, "answer": answer}
 
 
 def evaluate_answer(expected: str, actual: str) -> str:
