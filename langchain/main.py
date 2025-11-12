@@ -391,7 +391,7 @@ Antwoord:
 chain = GraphCypherQAChain.from_llm(
     LLM,
     graph=graph,
-    verbose=False,
+    verbose=True,
     allow_dangerous_requests=True,
     cypher_parser=CypherOutputParser(),
     qa_prompt=qa_prompt,
