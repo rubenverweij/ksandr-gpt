@@ -15,6 +15,8 @@ from helpers import (
     maak_chroma_filter,
     trim_context_to_fit,
     haal_dossiers_op,
+    detect_aad,
+    source_document_dummy,
 )
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -143,78 +145,89 @@ class Neo4jRequest(BaseModel):
 def ask_llm(
     prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp, rag: int
 ):
-    if rag:
-        time_start = time.time()
-        document_search = maak_chroma_filter(
-            question=prompt, include_nouns=CONFIG["INCLUDE_KEYWORDS"]
-        )
-        time_doc_search = time.time()
-        neo_context_text, results_new_schema = query_neo4j(prompt, chroma_filter)
-        time_stages = {}
-        summary = ""
-        if not neo_context_text:
-            context_text, results, summary, time_stages = vind_relevante_context(
-                prompt=prompt,
-                filter_chroma=chroma_filter,
-                db=db,
-                db_json=db_json,
-                include_db_json=CONFIG["INCLUDE_CHROMA_JSON"],
-                source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
-                source_max_dense=CONFIG["SOURCE_MAX"],
-                score_threshold=CONFIG["SCORE_THRESHOLD"],
-                score_threshold_json=CONFIG["SCORE_THRESHOLD_JSON"],
-                where_document=document_search,
-                include_summary=CONFIG["INCLUDE_SUMMARY"],
-            )
-            results_new_schema = []
-            for doc, score in results:
-                doc_dict = {
-                    "id": doc.id,
-                    "page_content": doc.page_content,
-                    "metadata": doc.metadata,
-                    "type": doc.type,
-                }
-                doc_dict["metadata"]["score"] = score
-                results_new_schema.append(doc_dict)
-        else:
-            context_text = neo_context_text
-        time_build_context = time.time()
-        available_tokens_for_context, trimmed_context_text = trim_context_to_fit(
-            model=model.client,
-            template=DEFAULT_QA_PROMPT,
-            context_text=context_text,
-            question=prompt,
-            n_ctx=CONFIG["MAX_CTX"],
-            max_tokens=CONFIG["MAX_TOKENS"],
-        )
-        time_reranker_trimming = time.time()
-        prompt_with_template = DEFAULT_QA_PROMPT.format(
-            system_prompt=SYSTEM_PROMPT, context=trimmed_context_text, question=prompt
-        )
-    else:
-        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
-            system_prompt=SYSTEM_PROMPT, question=prompt
-        )
-        results_new_schema = None
-        document_search = None
-    # Monitor time stages
-    time_stages.update(
-        {
-            "maak_chroma_filter": time_doc_search - time_start,
-            "vind_relevante_context": time_build_context - time_doc_search,
-            "trim_context_to_fit": time_reranker_trimming - time_build_context,
+    if detect_aad(prompt):
+        return {
+            "question": prompt,
+            "answer": retrieve_neo_answer(prompt),
+            "prompt": "",
+            "source_documents": source_document_dummy(),
+            "time_stages": {},
         }
-    )
-    return {
-        "question": prompt,
-        "answer": model.invoke(prompt_with_template),
-        "prompt": prompt_with_template,
-        "source_documents": results_new_schema,
-        "where_document": document_search,
-        "summary": summary,
-        "available_tokens_for_context": available_tokens_for_context,
-        "time_stages": time_stages,
-    }
+    else:
+        if rag:
+            time_start = time.time()
+            document_search = maak_chroma_filter(
+                question=prompt, include_nouns=CONFIG["INCLUDE_KEYWORDS"]
+            )
+            time_doc_search = time.time()
+            neo_context_text, results_new_schema = query_neo4j(prompt, chroma_filter)
+            time_stages = {}
+            summary = ""
+            if not neo_context_text:
+                context_text, results, summary, time_stages = vind_relevante_context(
+                    prompt=prompt,
+                    filter_chroma=chroma_filter,
+                    db=db,
+                    db_json=db_json,
+                    include_db_json=CONFIG["INCLUDE_CHROMA_JSON"],
+                    source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
+                    source_max_dense=CONFIG["SOURCE_MAX"],
+                    score_threshold=CONFIG["SCORE_THRESHOLD"],
+                    score_threshold_json=CONFIG["SCORE_THRESHOLD_JSON"],
+                    where_document=document_search,
+                    include_summary=CONFIG["INCLUDE_SUMMARY"],
+                )
+                results_new_schema = []
+                for doc, score in results:
+                    doc_dict = {
+                        "id": doc.id,
+                        "page_content": doc.page_content,
+                        "metadata": doc.metadata,
+                        "type": doc.type,
+                    }
+                    doc_dict["metadata"]["score"] = score
+                    results_new_schema.append(doc_dict)
+            else:
+                context_text = neo_context_text
+            time_build_context = time.time()
+            available_tokens_for_context, trimmed_context_text = trim_context_to_fit(
+                model=model.client,
+                template=DEFAULT_QA_PROMPT,
+                context_text=context_text,
+                question=prompt,
+                n_ctx=CONFIG["MAX_CTX"],
+                max_tokens=CONFIG["MAX_TOKENS"],
+            )
+            time_reranker_trimming = time.time()
+            prompt_with_template = DEFAULT_QA_PROMPT.format(
+                system_prompt=SYSTEM_PROMPT,
+                context=trimmed_context_text,
+                question=prompt,
+            )
+        else:
+            prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
+                system_prompt=SYSTEM_PROMPT, question=prompt
+            )
+            results_new_schema = None
+            document_search = None
+        # Monitor time stages
+        time_stages.update(
+            {
+                "maak_chroma_filter": time_doc_search - time_start,
+                "vind_relevante_context": time_build_context - time_doc_search,
+                "trim_context_to_fit": time_reranker_trimming - time_build_context,
+            }
+        )
+        return {
+            "question": prompt,
+            "answer": model.invoke(prompt_with_template),
+            "prompt": prompt_with_template,
+            "source_documents": results_new_schema,
+            "where_document": document_search,
+            "summary": summary,
+            "available_tokens_for_context": available_tokens_for_context,
+            "time_stages": time_stages,
+        }
 
 
 # Verwerkt het verzoek en haalt de reactie op
@@ -364,6 +377,23 @@ def neo(req: Neo4jRequest):
     answer = LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
     logging.info(f"Neo4j results: {neo4j_results}")
     return {"answer": answer}
+
+
+def retrieve_neo_answer(question):
+    """Verwerk NEO4J verzoeken."""
+    aads = haal_dossiers_op(question)
+    results = db_cypher.similarity_search_with_score(question, k=1)
+    top_doc, score = results[0]
+    cypher_to_run = top_doc.metadata["cypher"]
+    if len(aads) > 0:
+        where_clause = "WHERE a.aad_id IN $aad_ids"
+    else:
+        where_clause = ""
+    cypher_to_run = cypher_to_run.format(where_clause=where_clause)
+    parameters = {"aad_ids": aads}
+    result = GRAPH.query(cypher_to_run, params=parameters)
+    logging.info(f"Closest query (score={score:.3f}): {cypher_to_run}")
+    return LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
 
 
 def evaluate_answer(expected: str, actual: str) -> str:
