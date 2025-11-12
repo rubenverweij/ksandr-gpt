@@ -23,7 +23,7 @@ from langchain_chroma import Chroma
 from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_neo4j import Neo4jGraph
-from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
 
