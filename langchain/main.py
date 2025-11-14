@@ -86,9 +86,9 @@ LLM = LlamaCpp(
 
 LLM_CYPHER = LlamaCpp(
     model_path=CONFIG["CYPHER_MODEL_PATH"],
-    max_tokens=512,
+    max_tokens=1028,
     n_gpu_layers=40,
-    verbose=False,
+    verbose=True,
     temperature=0.2,
     top_p=0.9,
 )
