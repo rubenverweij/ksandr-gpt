@@ -56,6 +56,7 @@ CONFIG = {
             "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
         )
     ),
+    "CYPHER_MODEL_PATH": "/root/onprem_data/models/text2cypher-gemma2-9b-q4_K_M.gguf",
     "INCLUDE_PERMISSION": int(os.getenv("INCLUDE_PERMISSION", 0)),
     "CHROMA_PATH": os.getenv("CHROMA_PATH", "/root/onprem_data/chroma"),
     "CHROMA_PATH_JSON": os.getenv("CHROMA_PATH_JSON", "/root/onprem_data/chroma_json"),
@@ -81,6 +82,15 @@ LLM = LlamaCpp(
     temperature=CONFIG["TEMPERATURE"],
     top_p=0.9,
 )
+
+LLM_CYPHER = LlamaCpp(
+    model_path=CONFIG["CYPHER_MODEL_PATH"],
+    max_new_tokens=512,
+    n_gpu_layers=-1,
+    temperature=0.2,
+    top_p=0.9,
+)
+
 embedding_function = get_embedding_function()
 db = Chroma(
     persist_directory=CONFIG["CHROMA_PATH"], embedding_function=embedding_function
