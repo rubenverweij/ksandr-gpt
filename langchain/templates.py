@@ -127,15 +127,18 @@ Belangrijke instructies:
 - Antwoord beknopt maar volledig, en vermijd dubbelzinnigheid
 """
 
-CYPHER_PROMPT = PromptTemplate.from_template("""
-<|system|>
-Je bent een Neo4j data expert. Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.</s>
-<|user|>
+CYPHER_PROMPT = PromptTemplate.from_template("""                                  
+<|im_start|>system
+Je bent een Neo4j data expert. Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.
+<|im_end|>
+<|im_start|>user
 
 Query resultaten:
 {result}
 
 Vraag:
-{question}</s>
-<|assistant|>
+{question}
+
+<|im_end|>
+<|im_start|>assistant
 """)
