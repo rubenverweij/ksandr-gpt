@@ -88,6 +88,7 @@ LLM_CYPHER = LlamaCpp(
     model_path=CONFIG["CYPHER_MODEL_PATH"],
     max_tokens=512,
     n_gpu_layers=40,
+    verbose=False,
     temperature=0.2,
     top_p=0.9,
 )
@@ -412,6 +413,7 @@ def retrieve_neo_answer(question):
     cypher_query = LLM_CYPHER.invoke(
         CYPHER_GEN_PROMPT.format(schema=GRAPH.schema, question=question)
     )
+    logging.info(f"The raw query is: {cypher_query}")
     cleaned_query = _postprocess_output_cypher(cypher_query)
     logging.info(f"The query is: {cleaned_query}")
     result = GRAPH.query(cleaned_query, params={})
