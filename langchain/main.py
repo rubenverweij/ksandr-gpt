@@ -409,7 +409,7 @@ def retrieve_neo_answer_based_on_chroma(question):
 
 def retrieve_neo_answer(question):
     """Verwerk NEO4J verzoeken."""
-    cypher_query = LLM.invoke(
+    cypher_query = LLM_CYPHER.invoke(
         CYPHER_GEN_PROMPT.format(schema=GRAPH.schema, question=question)
     )
     cleaned_query = _postprocess_output_cypher(cypher_query)
