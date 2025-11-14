@@ -142,3 +142,19 @@ Vraag:
 <|im_end|>
 <|im_start|>assistant
 """)
+
+CYPHER_GEN_PROMPT = """
+Genereer een Cypher-query om een grafendatabase te doorzoeken. 
+Gebruik alleen de relatie-types en eigenschappen die in het schema staan vermeld.
+NOOIT exact filteren met =.
+Filter altijd node-eigenschappen met CONTAINS en gebruik toLower() om hoofdletterverschillen te negeren.
+Geef geen uitleg, enkel de Cypher-query.
+
+Schema:
+{schema}
+
+Vraag:
+{question}
+
+Cypher-query:
+"""

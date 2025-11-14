@@ -5,7 +5,8 @@ import os
 from datetime import datetime
 
 from graphdb.cypher_queries import query_neo4j
-from templates import TEMPLATES, SYSTEM_PROMPT, CYPHER_PROMPT
+from templates import TEMPLATES, SYSTEM_PROMPT, CYPHER_PROMPT, CYPHER_GEN_PROMPT
+from graph import _postprocess_output_cypher
 from helpers import (
     maak_metadata_filter,
     COMPONENTS,
@@ -389,7 +390,7 @@ def neo(req: Neo4jRequest):
     return {"answer": answer}
 
 
-def retrieve_neo_answer(question):
+def retrieve_neo_answer_based_on_chroma(question):
     """Verwerk NEO4J verzoeken."""
     aads = haal_dossiers_op(question)
     results = db_cypher.similarity_search_with_score(question, k=1)
@@ -403,6 +404,18 @@ def retrieve_neo_answer(question):
     parameters = {"aad_ids": aads}
     result = GRAPH.query(cypher_to_run, params=parameters)
     logging.info(f"Closest query (score={score:.3f}): {cypher_to_run}")
+    return LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
+
+
+def retrieve_neo_answer(question):
+    """Verwerk NEO4J verzoeken."""
+    cypher_query = LLM.invoke(
+        CYPHER_GEN_PROMPT.format(schema=GRAPH.schema, question=question)
+    )
+    cleaned_query = _postprocess_output_cypher(cypher_query)
+    logging.info(f"The query is: {cleaned_query}")
+    result = GRAPH.query(cleaned_query, params={})
+    logging.info(f"The query result is: {result}")
     return LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
 
 
