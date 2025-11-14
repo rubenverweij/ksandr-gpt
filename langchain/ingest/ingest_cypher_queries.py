@@ -66,6 +66,7 @@ ORDER BY f.Naam
             "Geef een lijst van faalvormen voor component",
             "Welke faalvormen kent de x",
             "Geef alle faalvormen van de x",
+            "Wat zijn de faalvormen van de x",
         ],
     },
     {
