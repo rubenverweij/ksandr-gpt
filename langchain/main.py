@@ -5,8 +5,8 @@ import os
 from datetime import datetime
 
 from graphdb.cypher_queries import query_neo4j
-from templates import TEMPLATES, SYSTEM_PROMPT, CYPHER_PROMPT, CYPHER_GEN_PROMPT
-from graph import _postprocess_output_cypher
+from templates import TEMPLATES, SYSTEM_PROMPT, CYPHER_PROMPT
+from graph import build_cypher_query
 from helpers import (
     maak_metadata_filter,
     COMPONENTS,
@@ -84,15 +84,16 @@ LLM = LlamaCpp(
     top_p=0.9,
 )
 
-LLM_CYPHER = LlamaCpp(
-    model_path=CONFIG["CYPHER_MODEL_PATH"],
-    max_tokens=512,
-    n_gpu_layers=40,
-    n_ctx=1028,
-    verbose=True,
-    temperature=0.2,
-    top_p=0.9,
-)
+# FIXME probably deprecated
+# LLM_CYPHER = LlamaCpp(
+#     model_path=CONFIG["CYPHER_MODEL_PATH"],
+#     max_tokens=512,
+#     n_gpu_layers=40,
+#     n_ctx=1028,
+#     verbose=True,
+#     temperature=0.2,
+#     top_p=0.9,
+# )
 
 embedding_function = get_embedding_function()
 db = Chroma(
@@ -376,28 +377,32 @@ def context(req: ContextRequest):
 def neo(req: Neo4jRequest):
     question = req.prompt
     aads = haal_dossiers_op(question)
-    results = db_cypher.similarity_search_with_score(question, k=1)
-    top_doc, score = results[0]
-    cypher_to_run = top_doc.metadata["cypher"]
+    # FIXME probably deprecated
+    # results = db_cypher.similarity_search_with_score(question, k=1)
+    # top_doc, score = results[0]
+    # cypher_to_run = top_doc.metadata["cypher"]
+    cypher_to_run = build_cypher_query(question)
     if len(aads) > 0:
         where_clause = "WHERE a.aad_id IN $aad_ids"
     else:
         where_clause = ""
     cypher_to_run = cypher_to_run.format(where_clause=where_clause)
     parameters = {"aad_ids": aads}
-    logging.info(f"Closest query (score={score:.3f}): {cypher_to_run}")
+    logging.info(f"Closest query: {cypher_to_run}")
     neo4j_results = result = GRAPH.query(cypher_to_run, params=parameters)
     answer = LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
     logging.info(f"Neo4j results: {neo4j_results}")
     return {"answer": answer}
 
 
-def retrieve_neo_answer_based_on_chroma(question):
+def retrieve_neo_answer(question):
     """Verwerk NEO4J verzoeken."""
     aads = haal_dossiers_op(question)
-    results = db_cypher.similarity_search_with_score(question, k=1)
-    top_doc, score = results[0]
-    cypher_to_run = top_doc.metadata["cypher"]
+    # FIXME probably deprecated
+    # results = db_cypher.similarity_search_with_score(question, k=1)
+    # top_doc, score = results[0]
+    # cypher_to_run = top_doc.metadata["cypher"]
+    cypher_to_run = build_cypher_query(question)
     if len(aads) > 0:
         where_clause = "WHERE a.aad_id IN $aad_ids"
     else:
@@ -405,21 +410,22 @@ def retrieve_neo_answer_based_on_chroma(question):
     cypher_to_run = cypher_to_run.format(where_clause=where_clause)
     parameters = {"aad_ids": aads}
     result = GRAPH.query(cypher_to_run, params=parameters)
-    logging.info(f"Closest query (score={score:.3f}): {cypher_to_run}")
+    logging.info(f"Closest query: {cypher_to_run}")
     return LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
 
 
-def retrieve_neo_answer(question):
-    """Verwerk NEO4J verzoeken."""
-    cypher_query = LLM_CYPHER.invoke(
-        CYPHER_GEN_PROMPT.format(schema=GRAPH.schema, question=question)
-    )
-    logging.info(f"The raw query is: {cypher_query}")
-    cleaned_query = _postprocess_output_cypher(cypher_query)
-    logging.info(f"The query is: {cleaned_query}")
-    result = GRAPH.query(cleaned_query, params={})
-    logging.info(f"The query result is: {result}")
-    return LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
+# FIXME probably deprecated
+# def retrieve_neo_answer_generate_query(question):
+#     """Verwerk NEO4J verzoeken."""
+#     cypher_query = LLM_CYPHER.invoke(
+#         CYPHER_GEN_PROMPT.format(schema=GRAPH.schema, question=question)
+#     )
+#     logging.info(f"The raw query is: {cypher_query}")
+#     cleaned_query = _postprocess_output_cypher(cypher_query)
+#     logging.info(f"The query is: {cleaned_query}")
+#     result = GRAPH.query(cleaned_query, params={})
+#     logging.info(f"The query result is: {result}")
+#     return LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
 
 
 def evaluate_answer(expected: str, actual: str) -> str:
