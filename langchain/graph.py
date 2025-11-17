@@ -13,11 +13,13 @@ def _postprocess_output_cypher(output_cypher: str) -> str:
 
 def build_cypher_query(question):
     """Build cypher query."""
-    quantity = ["hoeveelheid", "aantal", "totaal", "telling", "som"]
+    quantity = ["hoeveel", "hoeveelheid", "aantal", "totaal", "telling", "som"]
     columns = {
         "oorzaak": ["f.OorzaakGeneriek"],
         "lijst": ["f.NummerInt"],
         "nummer": ["f.NummerInt"],
+        "component": ["c.naam"],
+        "asset": ["c.naam"],
         "gevolg": ["f.MogelijkGevolg"],
         "faalindicator": ["f.Faalindicatoren"],
         "faaltempo": ["f.Faaltempo"],
@@ -56,17 +58,10 @@ def build_cypher_query(question):
 
     return_clause = "RETURN " + ", ".join(return_parts)
 
-    # 4. Build GROUP BY only on selected fields (not base fields)
-    group_by_clause = ""
-    if wants_quantity and selected_fields:
-        group_by_clause = "GROUP BY " + ", ".join(selected_fields)
-
     # 5. Final assembly
     query = base_query.replace(
         "RETURN c.naam AS component, f.Naam AS faalvorm", return_clause
     )
-    if group_by_clause:
-        query += "\n" + group_by_clause
     if wants_quantity:
         query += "\nORDER BY aantal DESC"
     return query.strip()
