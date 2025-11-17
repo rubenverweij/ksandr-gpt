@@ -416,7 +416,14 @@ def retrieve_neo_answer(question):
         llm_result = LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
     except ValueError as e:
         if "exceed context window" in str(e):
-            llm_result = "De hoeveelheid gegevens die nodig is om de vraag te beantwoorden is te groot. Maak de vraag bijvoorbeeld component specifiek."
+            llm_result = (
+                "De hoeveelheid gegevens die nodig is om de vraag te beantwoorden is te groot. "
+                "Maak de vraag bijvoorbeeld component specifiek.\n\n"
+                f"{result}"
+            )
+        else:
+            # Re-raise unexpected errors so you don't swallow real failures
+            raise
     return llm_result
 
 
