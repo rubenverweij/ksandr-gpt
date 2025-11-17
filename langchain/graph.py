@@ -54,7 +54,7 @@ def build_cypher_query(question):
 
     # Add count if required
     if wants_quantity:
-        return_parts.append("COUNT(f) AS aantal")
+        return_parts.append("COUNT(f) AS aantalFaalvorm")
 
     return_clause = "RETURN " + ", ".join(return_parts)
 
