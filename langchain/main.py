@@ -404,13 +404,11 @@ def retrieve_neo_answer(question):
     # results = db_cypher.similarity_search_with_score(question, k=1)
     # top_doc, score = results[0]
     # cypher_to_run = top_doc.metadata["cypher"]
-    cypher_to_run = build_cypher_query(question)
     if len(aads) > 0:
         where_clause = "WHERE a.aad_id IN $aad_ids"
-    if "AND" in cypher_to_run:
-        where_clause = "WHERE "
     else:
         where_clause = ""
+    cypher_to_run = build_cypher_query(question, clause=where_clause)
     cypher_to_run = cypher_to_run.format(where_clause=where_clause)
     logging.info(f"Closest query: {cypher_to_run}")
     parameters = {"aad_ids": aads}
