@@ -226,7 +226,7 @@ def ask_llm(
         if len(neo4j_result) > 0:
             return {
                 "question": prompt,
-                "answer": retrieve_neo_answer(prompt),
+                "answer": retrieve_neo_answer(prompt, neo4j_result),
                 "prompt": "",
                 "source_documents": source_document_dummy(),
                 "time_stages": {},
