@@ -384,6 +384,8 @@ def neo(req: Neo4jRequest):
     cypher_to_run = build_cypher_query(question)
     if len(aads) > 0:
         where_clause = "WHERE a.aad_id IN $aad_ids"
+    if "AND" in cypher_to_run:
+        where_clause = "WHERE "
     else:
         where_clause = ""
     cypher_to_run = cypher_to_run.format(where_clause=where_clause)

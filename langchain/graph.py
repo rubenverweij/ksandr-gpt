@@ -16,7 +16,15 @@ def _postprocess_output_cypher(output_cypher: str) -> str:
 
 def build_cypher_query(question):
     """Build cypher query with contains support."""
-    quantity = ["hoeveel", "hoeveelheid", "aantal", "totaal", "telling", "som"]
+    quantity = [
+        "hoeveel",
+        "populatie",
+        "hoeveelheid",
+        "aantal",
+        "totaal",
+        "telling",
+        "som",
+    ]
 
     columns = {
         "oorzaak": ["f.OorzaakGeneriek"],
@@ -29,8 +37,8 @@ def build_cypher_query(question):
         "faalindicator": ["f.Faalindicatoren"],
         "faaltempo": ["f.Faaltempo"],
         "effect": ["f.EffectOpSubsysteem"],
-        "beschrijving": ["f.beschrijving"],  # <-- nieuw
-        "omschrijving": ["f.beschrijving"],
+        "beschrijving": ["f.Beschrijving"],  # <-- nieuw
+        "omschrijving": ["f.Beschrijving"],
     }
 
     base_query = """
@@ -52,7 +60,7 @@ def build_cypher_query(question):
             selected_fields.extend(fields)
 
     # --- 3. Detect "contains" / "bevat" patterns
-    contains_patterns = ["bevat", "sprake is van", "m.b.t."]
+    contains_patterns = ["bevat de term", "sprake is van", "m.b.t."]
     contains_term = None
 
     for pat in contains_patterns:
