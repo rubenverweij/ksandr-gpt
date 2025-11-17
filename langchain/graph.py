@@ -16,15 +16,7 @@ def _postprocess_output_cypher(output_cypher: str) -> str:
 
 def build_cypher_query(question):
     """Build cypher query with contains support."""
-    quantity = [
-        "hoeveel",
-        "populatie",
-        "hoeveelheid",
-        "aantal",
-        "totaal",
-        "telling",
-        "som",
-    ]
+    quantity = ["hoeveel", "hoeveelheid", "aantal", "totaal", "telling", "som"]
 
     columns = {
         "oorzaak": ["f.OorzaakGeneriek"],
@@ -90,9 +82,7 @@ def build_cypher_query(question):
 
     # Assemble WHERE clause (AND conditions)
     if where_clauses:
-        where_clause = "WHERE " + " AND ".join(where_clauses)
-    else:
-        where_clause = ""
+        where_clause = " AND ".join(where_clauses)
 
     # --- 4. Build RETURN clause
     return_parts = []
