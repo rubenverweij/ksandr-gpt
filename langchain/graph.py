@@ -60,7 +60,7 @@ def build_cypher_query(question):
             selected_fields.extend(fields)
 
     # --- 3. Detect "contains" / "bevat" patterns
-    contains_patterns = ["bevat de term", "sprake is van", "m.b.t."]
+    contains_patterns = ["bevat de term", "sprake is van", "m.b.t.", "bevat:"]
     contains_term = None
 
     for pat in contains_patterns:
