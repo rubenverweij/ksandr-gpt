@@ -408,10 +408,16 @@ def retrieve_neo_answer(question):
     else:
         where_clause = ""
     cypher_to_run = cypher_to_run.format(where_clause=where_clause)
+    logging.info(f"Closest query: {cypher_to_run}")
     parameters = {"aad_ids": aads}
     result = GRAPH.query(cypher_to_run, params=parameters)
-    logging.info(f"Closest query: {cypher_to_run}")
-    return LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
+    logging.info(f"Rsultaat: {result}")
+    try:
+        llm_result = LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
+    except ValueError as e:
+        if "exceed context window" in str(e):
+            llm_result = "De hoeveelheid gegevens die nodig is om de vraag te beantwoorden is te groot. Maak de vraag bijvoorbeeld component specifiek."
+    return llm_result
 
 
 # FIXME probably deprecated

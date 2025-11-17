@@ -26,7 +26,7 @@ def build_cypher_query(question):
         "effect": ["f.EffectOpSubsysteem"],
     }
     base_query = """
-    MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALTYPE]->(f:Faaltype)
+    MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALVORM]->(f:Faalvorm)
     {where_clause}
     RETURN c.naam AS component, f.Naam AS faalvorm 
     """
