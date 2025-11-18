@@ -224,6 +224,7 @@ def ask_llm(
     if detect_aad(prompt):
         neo4j_result = validate_structured_query(prompt)
         if len(neo4j_result) > 0:
+            logging.info(f"Start LLM on neo4j: {neo4j_result}")
             return {
                 "question": prompt,
                 "answer": retrieve_neo_answer(prompt, neo4j_result),
@@ -247,13 +248,13 @@ def ask_llm(
             )
             results_new_schema = None
             time_stages = {}
-        return {
-            "question": prompt,
-            "answer": model.invoke(prompt_with_template),
-            "prompt": prompt_with_template,
-            "source_documents": results_new_schema,
-            "time_stages": time_stages,
-        }
+    return {
+        "question": prompt,
+        "answer": model.invoke(prompt_with_template),
+        "prompt": prompt_with_template,
+        "source_documents": results_new_schema,
+        "time_stages": time_stages,
+    }
 
 
 # Verwerkt het verzoek en haalt de reactie op
@@ -447,17 +448,14 @@ def retrieve_neo_answer(question, neo4j_result):
         llm_result = LLM.invoke(
             CYPHER_PROMPT.format(result=neo4j_result, question=question)
         )
-    except ValueError as e:
-        if "exceed context window" in str(e):
-            llm_result = (
-                "De hoeveelheid gegevens die nodig is om de vraag te beantwoorden is te groot. "
-                "Maak de vraag bijvoorbeeld component specifiek.\n\n"
-                "Dit is query resultaat: \n\n"
-                f"{neo4j_result}"
-            )
-        else:
-            # Re-raise unexpected errors so you don't swallow real failures
-            raise
+    except ValueError:
+        llm_result = (
+            "De hoeveelheid gegevens die nodig is om de vraag te beantwoorden is te groot. "
+            "Maak de vraag bijvoorbeeld component specifiek.\n\n"
+            "Dit is query resultaat: \n\n"
+            f"{neo4j_result}"
+        )
+    logging.info(f"The llm result: {llm_result}")
     return llm_result
 
 
