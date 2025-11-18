@@ -16,20 +16,13 @@ def _postprocess_output_cypher(output_cypher: str) -> str:
 
 def build_cypher_query(question, clause=""):
     """Build cypher query with contains support."""
-    quantity = [
-        "hoeveel",
-        "populatie",
-        "hoeveelheid",
-        "aantal",
-        "totaal",
-        "telling",
-        "som",
-    ]
+    quantity = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "telling"]
 
     columns = {
         "oorzaak": ["f.OorzaakGeneriek"],
         "oorzaken": ["f.OorzaakGeneriek"],
         "lijst": ["f.NummerInt"],
+        "opsomming": ["f.NummerInt"],
         "nummer": ["f.NummerInt"],
         "id": ["f.Prefix", "f.NummerInt"],
         "component": ["c.naam"],
