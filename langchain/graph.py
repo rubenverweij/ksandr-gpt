@@ -28,6 +28,7 @@ def build_cypher_query(question, clause=""):
 
     columns = {
         "oorzaak": ["f.OorzaakGeneriek"],
+        "oorzaken": ["f.OorzaakGeneriek"],
         "lijst": ["f.NummerInt"],
         "nummer": ["f.NummerInt"],
         "id": ["f.Prefix", "f.NummerInt"],
