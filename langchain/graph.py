@@ -32,6 +32,8 @@ def build_cypher_query(question, clause=""):
         "nummer": ["f.NummerInt"],
         "id": ["f.Prefix", "f.NummerInt"],
         "component": ["c.naam"],
+        "incidenten": ["f.GemiddeldAantalIncidenten"],
+        "meest voorkomende": ["f.GemiddeldAantalIncidenten"],
         "asset": ["c.naam"],
         "gevolg": ["f.MogelijkGevolg"],
         "faalindicator": ["f.Faalindicatoren"],

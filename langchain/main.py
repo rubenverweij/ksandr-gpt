@@ -156,7 +156,7 @@ class Neo4jRequest(BaseModel):
 
 
 def retrieve_answer_from_vector_store(
-    prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp, rag: int
+    prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp
 ):
     time_start = time.time()
     document_search = maak_chroma_filter(
