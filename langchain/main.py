@@ -166,7 +166,6 @@ def retrieve_answer_from_vector_store(
     # neo_context_text, results_new_schema = query_neo4j(prompt, chroma_filter)
     neo_context_text = None
     time_stages = {}
-    summary = ""
     if not neo_context_text:
         context_text, results, summary, time_stages = vind_relevante_context(
             prompt=prompt,
@@ -193,8 +192,9 @@ def retrieve_answer_from_vector_store(
             results_new_schema.append(doc_dict)
     else:
         context_text = neo_context_text
+    logging.info("Done building context")
     time_build_context = time.time()
-    available_tokens_for_context, trimmed_context_text = trim_context_to_fit(
+    _, trimmed_context_text = trim_context_to_fit(
         model=model.client,
         template=DEFAULT_QA_PROMPT,
         context_text=context_text,
@@ -232,6 +232,7 @@ def ask_llm(
                 "time_stages": {},
             }
         else:
+            logging.info(f"Closest query: {neo4j_result}")
             prompt_with_template, results_new_schema, time_stages = (
                 retrieve_answer_from_vector_store(prompt, chroma_filter, model)
             )
@@ -451,6 +452,7 @@ def retrieve_neo_answer(question, neo4j_result):
             llm_result = (
                 "De hoeveelheid gegevens die nodig is om de vraag te beantwoorden is te groot. "
                 "Maak de vraag bijvoorbeeld component specifiek.\n\n"
+                "Dit is query resultaat: \n\n"
                 f"{neo4j_result}"
             )
         else:
