@@ -53,7 +53,7 @@ CONFIG = {
     "DEFAULT_MODEL_PATH": str(
         os.getenv(
             "DEFAULT_MODEL_PATH",
-            "/root/.cache/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
+            "/root/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
         )
     ),
     "CYPHER_MODEL_PATH": "/root/onprem_data/models/text2cypher-gemma2-9b-q4_K_M.gguf",
