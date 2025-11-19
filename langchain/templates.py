@@ -5,47 +5,10 @@ TEMPLATES = {
         "EVALUATIE_PROMPT": """
 <|im_start|>system
 Je bent een strikte beoordelaar. Je vergelijkt twee antwoorden en beoordeelt of ze semantisch hetzelfde zijn. 
-
-**Regels:**
-- Het verwachte antwoord is leidend en wordt als correct beschouwd.
-- Het gegeven antwoord moet inhoudelijk overeenkomen met het verwachte antwoord.
-- Kleine verschillen in formulering of stijl zijn toegestaan, zolang de betekenis identiek blijft.
-- Als er inhoudelijke verschillen zijn (ontbrekende informatie, andere namen, extra informatie die de betekenis verandert, verkeerde details), dan is het antwoord incorrect.
-- Begin je antwoord altijd met exact één woord: "correct" of "incorrect".
-- Daarna geef je een korte toelichting hoe je tot dit oordeel bent gekomen.
-- Sluit altijd af met een gelijkheidsscore tussen 0 en 10, in het formaat `X/10`.
-
-**Uitleg score:**
-- 10/10 = inhoudelijk volledig identiek aan het verwachte antwoord.
-- 8/10 tot 9/10 = grotendeels gelijk, alleen minimale verschillen in formulering of detail.
-- 5/10  tot 7/10 = deels gelijk, maar met duidelijke hiaten of extra informatie die verwarring kan geven.
-- 1/10 tot 4/10 = slechts beperkt relevant, veel ontbreekt of is onjuist.
-- 0/10 = volledig fout, geen enkele inhoudelijke overeenkomst.
-
-**Voorbeelden:**
-
-Voorbeeld 1:
-Gegeven antwoord: "Het beheerteam van het AAD FMX bestaat uit de volgende personen: 1. **Jan van Dijk** – Projectleider en hoofdbeheerder. 2. **Eva Meijers** – Beheerder en technisch specialist. 3. **Kees van der Meer** – Netbeheerder en beveiligingscoördinator. Deze personen vormen het kernbeheerteam van het AAD FMX, verantwoordelijk voor de continue betrouwbaarheid, veiligheid en functie van het FMX systeem."
-Verwachte antwoord: "Het beheerteam van het AAD FMX bestaat uit de volgende personen: Piet Meijers, Klaas van Dijk en Henk van Dijk"
-Uitkomst: incorrect
-
-Voorbeeld 2:
-Gegeven antwoord: "De hoofdstad van Frankrijk is Lyon."
-Verwachte antwoord: "Parijs is de hoofdstad van Frankrijk."
-Uitkomst: incorrect
-
-Voorbeeld 3:
-Gegeven antwoord: "Parijs ligt in Frankrijk."
-Verwachte antwoord: "Parijs is de hoofdstad van Frankrijk."
-Uitkomst: incorrect
-
 <|im_end|>
 <|im_start|>user
-
 Gegeven antwoord: '{actual}'
-
 Verwachte antwoord: '{expected}'
-
 <|im_end|>
 <|im_start|>assistant
 """,
@@ -92,28 +55,28 @@ Vraag:
         "EVALUATIE_PROMPT": "",
         "DEFAULT_QA_PROMPT": """
 <|system|>
-{system_prompt}</s>
+{system_prompt}
 <|user|>
 
 context:
 {context}
 
 Vraag:
-{question}</s>
+{question}
 <|assistant|>
 """,
         "DEFAULT_QA_PROMPT_SIMPLE": """
-<|system|>
-{system_prompt}</s>
-<|user|>
+                <|system|>
+                {system_prompt}
+                <|user|>
 
-context:
-{context}
+                context:
+                {context}
 
-Vraag:
-{question}</s>
-<|assistant|>
-""",
+                Vraag:
+                {question}
+                <|assistant|>
+                """,
     },
 }
 
@@ -127,7 +90,8 @@ Belangrijke instructies:
 - Antwoord beknopt maar volledig, en vermijd dubbelzinnigheid
 """
 
-CYPHER_PROMPT = PromptTemplate.from_template("""                                  
+CYPHER_PROMPT = PromptTemplate.from_template(
+    """                                  
 <|im_start|>system
 Je bent een Neo4j data expert. Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.
 <|im_end|>
@@ -141,7 +105,8 @@ Vraag:
 
 <|im_end|>
 <|im_start|>assistant
-""")
+"""
+)
 
 CYPHER_GEN_PROMPT = """
 Genereer een Cypher-query om een grafendatabase te doorzoeken. 

@@ -10,7 +10,6 @@ import spacy
 from config import (
     COMPONENTS,
     LIJST_SPECIFIEKE_COMPONENTEN,
-    PATH_SUMMARY,
     LEMMA_EXCLUDE,
     NETBEHEERDERS,
 )
@@ -309,31 +308,33 @@ def vind_relevante_context(
     prompt: str,
     filter_chroma: dict[str, str],
     db: Chroma,
-    db_json: Chroma,
-    include_db_json: bool,
+    # db_json: Chroma,
+    # include_db_json: bool,
     source_max_reranker: int,
     source_max_dense: int,
     score_threshold: float,
-    score_threshold_json: float,
+    # score_threshold_json: float,
     where_document,
-    include_summary: int,
+    # include_summary: int,
 ):
     """Find the relevant context from Chroma based on prompt and filter."""
     time_start = time.time()
 
+    # FIXME deprecated
     # Zoek eerst door de website/aads
-    if include_db_json:
-        results = db_json.similarity_search_with_score(
-            prompt,
-            k=source_max_dense,
-            filter=filter_chroma,
-            where_document=where_document,
-        )
-        results = [
-            (doc, score) for doc, score in results if score < score_threshold_json
-        ]
-    else:
-        results = []
+    # if include_db_json:
+    #     results = db_json.similarity_search_with_score(
+    #         prompt,
+    #         k=source_max_dense,
+    #         filter=filter_chroma,
+    #         where_document=where_document,
+    #     )
+    #     results = [
+    #         (doc, score) for doc, score in results if score < score_threshold_json
+    #     ]
+    # else:
+    #     results = []
+    results = []
     if len(results) == 0:
         results = db.similarity_search_with_score(
             prompt,
@@ -343,6 +344,7 @@ def vind_relevante_context(
         )
         results = [(doc, score) for doc, score in results if score < score_threshold]
     time_sim_search = time.time()
+    # FIXME deprecated
     # results = geef_categorie_prioriteit(results, source_max_dense)
     time_prio_cats = time.time()
     if source_max_reranker:
@@ -350,21 +352,22 @@ def vind_relevante_context(
     # Filter by score
     time_reranker = time.time()
 
-    summary = ""
-    if include_summary:
-        if filter_chroma:
-            type_id = filter_chroma.get("type_id")
-            if type_id:
-                file_path = f"{PATH_SUMMARY}/{type_id}.txt"
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        summary = f.read() + "\n"
-                except FileNotFoundError:
-                    print(f"File not found: {file_path}")
-                except Exception as e:
-                    print(f"Error reading file {file_path}: {e}")
+    # FIXME deprecated
+    # summary = ""
+    # if include_summary:
+    #     if filter_chroma:
+    #         type_id = filter_chroma.get("type_id")
+    #         if type_id:
+    #             file_path = f"{PATH_SUMMARY}/{type_id}.txt"
+    #             try:
+    #                 with open(file_path, "r", encoding="utf-8") as f:
+    #                     summary = f.read() + "\n"
+    #             except FileNotFoundError:
+    #                 print(f"File not found: {file_path}")
+    #             except Exception as e:
+    #                 print(f"Error reading file {file_path}: {e}")
     # Combine page content
-    context_text = summary + "\n".join(
+    context_text = "\n".join(
         [
             f"Het ID van deze bron is: {os.path.splitext(os.path.basename(doc.metadata.get('source', '')))[0]} en betreft component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
             for doc, _ in results
@@ -375,7 +378,6 @@ def vind_relevante_context(
     return (
         context_text,
         results,
-        summary,
         {
             "time_stages": {
                 "similarity_search_with_score": time_sim_search - time_start,

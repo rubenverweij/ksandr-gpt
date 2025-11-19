@@ -43,7 +43,7 @@ CONFIG = {
     "TEMPERATURE": float(os.getenv("TEMPERATURE", 0.2)),
     "SOURCE_MAX": int(os.getenv("SOURCE_MAX", 10)),
     "SOURCE_MAX_RERANKER": int(os.getenv("SOURCE_MAX_RERANKER", 0)),
-    "SCORE_THRESHOLD_JSON": float(os.getenv("SCORE_THRESHOLD_JSON", 1.1)),
+    # "SCORE_THRESHOLD_JSON": float(os.getenv("SCORE_THRESHOLD_JSON", 1.1)),
     "SCORE_THRESHOLD": float(os.getenv("SCORE_THRESHOLD", 1.1)),
     "INCLUDE_FILTER": int(os.getenv("INCLUDE_FILTER", 1)),
     "MAX_TOKENS": int(os.getenv("MAX_TOKENS", 750)),
@@ -56,14 +56,14 @@ CONFIG = {
             "/root/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
         )
     ),
-    "CYPHER_MODEL_PATH": "/root/onprem_data/models/text2cypher-gemma2-9b-q4_K_M.gguf",
+    # "CYPHER_MODEL_PATH": "/root/onprem_data/models/text2cypher-gemma2-9b-q4_K_M.gguf",
     "INCLUDE_PERMISSION": int(os.getenv("INCLUDE_PERMISSION", 0)),
     "CHROMA_PATH": os.getenv("CHROMA_PATH", "/root/onprem_data/chroma"),
-    "CHROMA_PATH_JSON": os.getenv("CHROMA_PATH_JSON", "/root/onprem_data/chroma_json"),
-    "CHROMA_PATH_CYPHER": os.getenv(
-        "CHROMA_PATH_CYPHER", "/root/onprem_data/chroma_cypher"
-    ),
-    "INCLUDE_CHROMA_JSON": os.getenv("INCLUDE_CHROMA_JSON", 0),
+    # "CHROMA_PATH_JSON": os.getenv("CHROMA_PATH_JSON", "/root/onprem_data/chroma_json"),
+    # "CHROMA_PATH_CYPHER": os.getenv(
+    #     "CHROMA_PATH_CYPHER", "/root/onprem_data/chroma_cypher"
+    # ),
+    # "INCLUDE_CHROMA_JSON": os.getenv("INCLUDE_CHROMA_JSON", 0),
 }
 
 model = os.path.basename(CONFIG["DEFAULT_MODEL_PATH"])
@@ -83,7 +83,7 @@ LLM = LlamaCpp(
     top_p=0.9,
 )
 
-# FIXME probably deprecated
+# FIXME deprecated since CONFIG["CYPHER_MODEL_PATH"] does not provide reliable results
 # LLM_CYPHER = LlamaCpp(
 #     model_path=CONFIG["CYPHER_MODEL_PATH"],
 #     max_tokens=512,
@@ -98,15 +98,14 @@ embedding_function = get_embedding_function()
 db = Chroma(
     persist_directory=CONFIG["CHROMA_PATH"], embedding_function=embedding_function
 )
-db_json = Chroma(
-    persist_directory=CONFIG["CHROMA_PATH_JSON"], embedding_function=embedding_function
-)
-
-db_cypher = Chroma(
-    persist_directory=CONFIG["CHROMA_PATH_CYPHER"],
-    embedding_function=embedding_function,
-)
-
+# FIXME deprecated since CONFIG["CYPHER_MODEL_PATH"] does not provide reliable results
+# db_json = Chroma(
+#     persist_directory=CONFIG["CHROMA_PATH_JSON"], embedding_function=embedding_function
+# )
+# db_cypher = Chroma(
+#     persist_directory=CONFIG["CHROMA_PATH_CYPHER"],
+#     embedding_function=embedding_function,
+# )
 print(f"Starting container with {CONFIG}")
 
 
@@ -139,7 +138,7 @@ class AskRequest(BaseModel):
     rag: Optional[int] = 1
 
     class Config:
-        extra = "allow"  # Sta extra velden toe
+        extra = "allow"  # Allow extra fields
 
 
 class EvaluationRequest(BaseModel):
@@ -167,18 +166,19 @@ def retrieve_answer_from_vector_store(
     neo_context_text = None
     time_stages = {}
     if not neo_context_text:
-        context_text, results, summary, time_stages = vind_relevante_context(
+        context_text, results, time_stages = vind_relevante_context(
             prompt=prompt,
             filter_chroma=chroma_filter,
             db=db,
-            db_json=db_json,
-            include_db_json=CONFIG["INCLUDE_CHROMA_JSON"],
+            # FIXME deprecated
+            # db_json=db_json,
+            # include_db_json=CONFIG["INCLUDE_CHROMA_JSON"],
             source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
             source_max_dense=CONFIG["SOURCE_MAX"],
             score_threshold=CONFIG["SCORE_THRESHOLD"],
-            score_threshold_json=CONFIG["SCORE_THRESHOLD_JSON"],
+            # score_threshold_json=CONFIG["SCORE_THRESHOLD_JSON"],
             where_document=document_search,
-            include_summary=CONFIG["INCLUDE_SUMMARY"],
+            # include_summary=CONFIG["INCLUDE_SUMMARY"],
         )
         results_new_schema = []
         for doc, score in results:
