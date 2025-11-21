@@ -209,7 +209,7 @@ def ingest_dossier(data, aad_id, component_id):
             nb_id = f"netbeheerder_{nb_name}".lower()
             # netbeheerder node
             nb_props = {"id": nb_id, "naam": nb_name}
-            session.execute_write(merge_node, "netbeheerder", nb_props)
+            session.execute_write(merge_node, "netbeheerder", "id", nb_props)
             # populatie node
             pop_id = f"pop_{nb_name}_{p.get('Aantal velden')}".lower()
             pop_props = {"id": pop_id}
