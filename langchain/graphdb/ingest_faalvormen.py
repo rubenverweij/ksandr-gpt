@@ -18,15 +18,13 @@ def extract_nummer_info(nummer_str):
     return nummer_str, None
 
 
-def create_component_faalvorm(
-    session, aad_id, component_name, faalvorm_data, file_path
-):
+def create_component_faalvorm(session, aad_id, component_id, faalvorm_data, file_path):
     nummer_str = faalvorm_data.get("Nummer")
     prefix, nummer_int = extract_nummer_info(nummer_str)
     cypher = """
-    MERGE (a:AAD {aad_id: $aad_id})
-    MERGE (c:Component {naam: $component_name})
-    MERGE (f:Faalvorm {Nummer: $nummer})
+    MERGE (d:dossier {aad_id: $aad_id})
+    MERGE (c:component {component_id: $component_id})
+    MERGE (f:faalvorm {faalvorm_id: $faalvorm_id})
       ON CREATE SET f.Naam = $naam,
                     f.NummerInt = $nummer_int,
                     f.Prefix = $prefix,
@@ -45,18 +43,18 @@ def create_component_faalvorm(
                     f.Faaltempo = $faaltempo,
                     f.GemiddeldAantalIncidenten = $gemiddeld_aantal_incidenten,
                     f.Bestandspad = $bestandspad
-    MERGE (a)-[:HEEFT_COMPONENT]->(c)
+    MERGE (d)-[:HEEFT_COMPONENT]->(c)
     MERGE (c)-[:HEEFT_FAALVORM]->(f)
     """
     session.run(
         cypher,
         {
             "aad_id": aad_id,
-            "component_name": component_name,
-            "nummer": nummer_str,
+            "component_id": component_id,
+            "faalvorm_id": nummer_str,
+            "naam": faalvorm_data.get("Naam"),
             "nummer_int": nummer_int,
             "prefix": prefix,
-            "naam": faalvorm_data.get("Naam"),
             "beschrijving": faalvorm_data.get("Beschrijving"),
             "mogelijk_gevolg": faalvorm_data.get("Mogelijk gevolg"),
             "uitvoering": faalvorm_data.get("Uitvoering"),
@@ -76,6 +74,196 @@ def create_component_faalvorm(
             "bestandspad": file_path,
         },
     )
+
+
+def clean_key(key):
+    return key.lower().replace(" ", "_").replace("/", "_")
+
+
+def optional(obj, key, default=None):
+    """Veilig een key ophalen als deze bestaat."""
+    return obj.get(key, default) if isinstance(obj, dict) else default
+
+
+def merge_node(tx, label, key, props):
+    query = f"""
+    MERGE (n:{label} {{{key}: $keyval}})
+    SET n += $props
+    """
+    tx.run(query, keyval=props[key], props=props)
+
+
+def merge_relation(tx, a_label, a_key, a_val, rel, b_label, b_key, b_val):
+    query = f"""
+    MATCH (a:{a_label} {{{a_key}: $a_val}})
+    MATCH (b:{b_label} {{{b_key}: $b_val}})
+    MERGE (a)-[:{rel}]->(b)
+    """
+    tx.run(query, a_val=a_val, b_val=b_val)
+
+
+def ingest_dossier(data, aad_id, component_id):
+    with driver.session() as session:
+        dossier_json = data.get("Dossier", {}).get("Dossier", {})
+        dossier_props = {
+            "aad_id": aad_id,
+            "naam": optional(dossier_json, "Naam"),
+            "publicatiedatum": optional(dossier_json, "Publicatiedatum"),
+            "laatste_update": optional(dossier_json, "Laatste update"),
+            "leeswijzer": optional(dossier_json, "Leeswijzer"),
+        }
+        session.execute_write(merge_node, "dossier", "aad_id", dossier_props)
+        # ---------------------------------------------------------
+        # Beheerteam → person nodes
+        # ---------------------------------------------------------
+        deelnemers = data.get("Dossier", {}).get("Deelnemers", {})
+        beheerteam = deelnemers.get("Beheerteam", [])
+        for member in beheerteam:
+            person_id = member.get("link", "").replace("/profile/", "")
+            if not person_id:
+                continue
+            person_props = {
+                "id": person_id,
+                "link": optional(member, "link"),
+                "text": optional(member, "text"),
+            }
+            session.execute_write(merge_node, "persoon", "id", person_props)
+            session.execute_write(
+                merge_relation,
+                "dossier",
+                "aad_id",
+                aad_id,
+                "heeft_beheerteam_lid",
+                "persoon",
+                "id",
+                person_id,
+            )
+        # ---------------------------------------------------------
+        # Component → component node
+        # ---------------------------------------------------------
+        comp = data.get("Dossier", {}).get("Component", {})
+        comp_props = {"component_id": component_id}
+        for k, v in comp.items():
+            comp_props[clean_key(k)] = v
+        session.execute_write(merge_node, "component", "component_id", comp_props)
+        session.execute_write(
+            merge_relation,
+            "dossier",
+            "aad_id",
+            aad_id,
+            "heeft_component",
+            "component",
+            "component_id",
+            component_id,
+        )
+        # ---------------------------------------------------------
+        # Media → document nodes
+        # ---------------------------------------------------------
+        media_groups = data.get("Dossier", {}).get("Media", [])
+        for group in media_groups:
+            for item in group:
+                doc_id = f"media_{item.get('aadDocumentId')}"
+                props = {"id": doc_id}
+                for k, v in item.items():
+                    props[clean_key(k)] = v
+                session.execute_write(merge_node, "document", "id", props)
+                session.execute_write(
+                    merge_relation,
+                    "dossier",
+                    "aad_id",
+                    aad_id,
+                    "heeft_document",
+                    "document",
+                    "id",
+                    doc_id,
+                )
+        # ---------------------------------------------------------
+        # Overige bestanden → document nodes
+        # ---------------------------------------------------------
+        overige = data.get("Dossier", {}).get("Overige bestanden", [])
+        for group in overige:
+            for item in group:
+                doc_id = f"doc_{item.get('documentId')}"
+                props = {"id": doc_id}
+                for k, v in item.items():
+                    props[clean_key(k)] = v
+                session.execute_write(merge_node, "document", "id", props)
+                session.execute_write(
+                    merge_relation,
+                    "dossier",
+                    "aad_id",
+                    aad_id,
+                    "heeft_document",
+                    "document",
+                    "id",
+                    doc_id,
+                )
+        # ---------------------------------------------------------
+        # Populatiegegevens → populatie + netbeheerder nodes
+        # ---------------------------------------------------------
+        pop_entries = data.get("Populatiegegevens", {}).get(
+            "Populatie per netbeheerder", []
+        )
+        for p in pop_entries:
+            nb_name = p.get("Netbeheerder") or "onbekend"
+            nb_id = f"netbeheerder_{nb_name}".lower()
+            # netbeheerder node
+            nb_props = {"id": nb_id, "naam": nb_name}
+            session.execute_write(merge_node, "netbeheerder", nb_props)
+            # populatie node
+            pop_id = f"pop_{nb_name}_{p.get('Aantal velden')}".lower()
+            pop_props = {"id": pop_id}
+            for k, v in p.items():
+                pop_props[clean_key(k)] = v
+            session.execute_write(merge_node, "populatie", "id", pop_props)
+            # relaties
+            session.execute_write(
+                merge_relation,
+                "dossier",
+                "aad_id",
+                aad_id,
+                "heeft_populatie",
+                "populatie",
+                "id",
+                pop_id,
+            )
+            session.execute_write(
+                merge_relation,
+                "netbeheerder",
+                "id",
+                nb_id,
+                "heeft_populatie",
+                "populatie",
+                "id",
+                pop_id,
+            )
+        # ---------------------------------------------------------
+        # Onderhoudsbeleid → beleid nodes
+        # ---------------------------------------------------------
+        beleidgroups = data.get("Onderhoudsbeleid", {})
+        for group in beleidgroups.values():
+            for item in group:
+                if not item:
+                    continue
+                pol_id = f"pol_{abs(hash(str(item)))}"
+                props = {"id": pol_id}
+                if isinstance(item, dict):
+                    for k, v in item.items():
+                        props[clean_key(k)] = v
+                else:
+                    # als het item geen dict is, sla over of sla op als property
+                    pass
+                session.execute_write(merge_node, "beleid", "id", props)
+                session.execute_write(
+                    merge_relation,
+                    "dossier",
+                    "aad_id",
+                    aad_id,
+                    "heeft_beleid",
+                    "beleid",
+                    "id",
+                    pol_id,
+                )
 
 
 COMPONENTS = {
@@ -103,8 +291,9 @@ COMPONENTS = {
 }
 
 with driver.session() as session:
-    for component_id, component in COMPONENTS.items():
-        json_folder = f"/home/ubuntu/ksandr_files/aads/{component_id}/cat-1/fail-types/"
+    for aad_id, component_id in COMPONENTS.items():
+        json_folder = f"/home/ubuntu/ksandr_files/aads/{aad_id}/cat-1/fail-types/"
+        # process faalvormen
         for root, dirs, files in os.walk(json_folder):
             for filename in files:
                 if filename.endswith(".json"):
@@ -113,9 +302,15 @@ with driver.session() as session:
                         data = json.load(f)
                         faalvorm_data = data.get("Beschrijving")
                     if faalvorm_data:
-                        print(f"Processing {file_path}... for component {component}")
+                        print(f"Processing {file_path}... for component {component_id}")
                         create_component_faalvorm(
-                            session, component_id, component, faalvorm_data, file_path
+                            session, aad_id, component_id, faalvorm_data, file_path
                         )
+        # Process ageing asset dossier
+        json_file = f"/home/ubuntu/ksandr_files/aads/{aad_id}/cat-1/main.json"
+        print(f"Ingesting: {json_file}")
+        with open(json_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        ingest_dossier(data, aad_id, component_id)
 
 driver.close()
