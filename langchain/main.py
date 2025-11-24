@@ -457,7 +457,7 @@ def validate_structured_query_embedding(question):
     top_doc, score = results[0]
     cypher_to_run = top_doc.metadata["cypher"]
     logging.info(f"Closest query: {cypher_to_run} with score {score}")
-    if match_query_by_tags(query=top_doc, question=question):
+    if match_query_by_tags(query=top_doc.metadata, question=question):
         parameters = {"aad_ids": aads, "netbeheerders": nbs}
         logging.info(f"Parameters found: {parameters}")
         result = GRAPH.query(cypher_to_run, params=parameters)
