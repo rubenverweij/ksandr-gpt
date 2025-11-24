@@ -230,7 +230,7 @@ def ingest_dossier(data, aad_id, component_id):
             nb_props = {"id": nb_id, "naam": nb_name}
             session.execute_write(merge_node, "netbeheerder", "id", nb_props)
             # populatie node
-            pop_id = f"pop_{nb_name}_{p.get('Aantal velden')}".lower()
+            pop_id = f"pop_{nb_name}_{aad_id}_{p.get('Populatie')}".lower()
             pop_props = {"id": pop_id}
             for k, v in p.items():
                 pop_props[clean_key(k)] = v
