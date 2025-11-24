@@ -243,6 +243,7 @@ def ingest_dossier(data, aad_id, component_id):
         beleidgroups = data.get("Onderhoudsbeleid", {})
         for key, group in beleidgroups.items():
             for item in group:
+                print(item)
                 if not item:
                     continue
                 if isinstance(item, dict):
