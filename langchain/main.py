@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 from templates import TEMPLATES, SYSTEM_PROMPT, CYPHER_PROMPT
-from graph import build_cypher_query, check_for_nbs, match_query
+from graph import build_cypher_query, check_for_nbs, match_query, match_query_by_tags
 from helpers import (
     maak_metadata_filter,
     COMPONENTS,
@@ -457,7 +457,7 @@ def validate_structured_query_embedding(question):
     top_doc, score = results[0]
     cypher_to_run = top_doc.metadata["cypher"]
     logging.info(f"Closest query: {cypher_to_run} with score {score}")
-    if top_doc.metadata["tags"] in question:
+    if match_query_by_tags(query=top_doc, question=question):
         parameters = {"aad_ids": aads, "netbeheerders": nbs}
         logging.info(f"Parameters found: {parameters}")
         result = GRAPH.query(cypher_to_run, params=parameters)

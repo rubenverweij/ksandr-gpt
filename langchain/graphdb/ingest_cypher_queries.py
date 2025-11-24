@@ -16,7 +16,6 @@ predefined_queries = [
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (d)-[:heeft_component]->(c:component)
         RETURN DISTINCT 
-            d.aad_id AS dossier_id,
             c.component_id AS component_naam,
             d.publicatiedatum AS publicatiedatum
         ORDER BY publicatiedatum DESC
@@ -25,6 +24,22 @@ predefined_queries = [
             "Wat is de publicatiedatum van AAD",
         ],
         "tags": "publicatiedatum",
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        MATCH (d:dossier)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (d)-[:heeft_component]->(c:component)
+        RETURN DISTINCT 
+            c.component_id AS component_naam,
+            d.laatste_update AS laatste_update
+        ORDER BY laatste_update DESC
+        """,
+        "example_questions": [
+            "Wat is de laatste update datum van AAD",
+        ],
+        "tags": "laatste update;gewijzigd",
     },
     {
         "cypher": """
@@ -49,8 +64,36 @@ predefined_queries = [
         """,
         "example_questions": [
             "Van welke component heeft netbeheerder het meest?",
+            "Welke asset heeft netbeheerder het meeste",
+            "Hoeveel installaties heeft netbeheerder per component",
         ],
-        "tags": "populatiegegevens",
+        "tags": "populatiegegevens;meeste;populatie;aantal",
+    },
+    {
+        "cypher": """
+        MATCH (d:dossier)-[:heeft_component]->(c:component)
+        RETURN 
+            d.aad_id AS aad_id,
+            c.component_id AS component_id
+        ORDER BY aad_id, component_id;
+        """,
+        "example_questions": ["Geef een overzicht van alle aads"],
+        "tags": "overzicht;aad",
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids
+        MATCH (d:dossier)-[:heeft_beheerteam_lid]->(p:persoon)
+        MATCH (d:dossier)-[:heeft_component]->(c:component)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids   
+        RETURN 
+            c.component_id AS component_id,
+            p.naam AS naam,
+            p.link AS profiel_link
+        ORDER BY component_id, naam;
+        """,
+        "example_questions": ["Wie zitten in het beheerteam van aad"],
+        "tags": "beheerteam",
     },
 ]
 

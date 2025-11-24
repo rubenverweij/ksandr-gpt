@@ -67,6 +67,24 @@ example_db = [
 ]
 
 
+def match_query_by_tags(question: str, query: dict) -> bool:
+    """
+    Returns True if any tag from query["tags"] is found in the question text.
+    Tags must be separated by ';'.
+    """
+    if "tags" not in query or not query["tags"]:
+        return False
+
+    # Split tags on ';'
+    tags = [tag.strip().lower() for tag in query["tags"].split(";")]
+
+    # Normalize question
+    q = question.lower()
+
+    # Check if any tag is contained in the question
+    return any(tag in q for tag in tags)
+
+
 # FIXME deprecated
 # def _postprocess_output_cypher(output_cypher: str) -> str:
 #     # Remove any explanation. E.g.  MATCH...\n\n**Explanation:**\n\n -> MATCH...
