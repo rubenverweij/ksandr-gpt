@@ -60,9 +60,9 @@ CONFIG = {
     "INCLUDE_PERMISSION": int(os.getenv("INCLUDE_PERMISSION", 0)),
     "CHROMA_PATH": os.getenv("CHROMA_PATH", "/root/onprem_data/chroma"),
     # "CHROMA_PATH_JSON": os.getenv("CHROMA_PATH_JSON", "/root/onprem_data/chroma_json"),
-    # "CHROMA_PATH_CYPHER": os.getenv(
-    #     "CHROMA_PATH_CYPHER", "/root/onprem_data/chroma_cypher"
-    # ),
+    "CHROMA_PATH_CYPHER": os.getenv(
+        "CHROMA_PATH_CYPHER", "/root/onprem_data/chroma_cypher"
+    ),
     # "INCLUDE_CHROMA_JSON": os.getenv("INCLUDE_CHROMA_JSON", 0),
 }
 
@@ -102,10 +102,10 @@ db = Chroma(
 # db_json = Chroma(
 #     persist_directory=CONFIG["CHROMA_PATH_JSON"], embedding_function=embedding_function
 # )
-# db_cypher = Chroma(
-#     persist_directory=CONFIG["CHROMA_PATH_CYPHER"],
-#     embedding_function=embedding_function,
-# )
+db_cypher = Chroma(
+    persist_directory=CONFIG["CHROMA_PATH_CYPHER"],
+    embedding_function=embedding_function,
+)
 print(f"Starting container with {CONFIG}")
 
 
@@ -239,9 +239,20 @@ def ask_llm(
             )
     else:
         if rag:
-            prompt_with_template, results_new_schema, time_stages = (
-                retrieve_answer_from_vector_store(prompt, chroma_filter, model)
-            )
+            neo4j_result = validate_structured_query_embedding(prompt)
+            if len(neo4j_result) > 0:
+                logging.info(f"Start LLM on neo4j: {neo4j_result}")
+                return {
+                    "question": prompt,
+                    "answer": retrieve_neo_answer(prompt, neo4j_result),
+                    "prompt": "",
+                    "source_documents": source_document_dummy(),
+                    "time_stages": {},
+                }
+            else:
+                prompt_with_template, results_new_schema, time_stages = (
+                    retrieve_answer_from_vector_store(prompt, chroma_filter, model)
+                )
         else:
             prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
                 system_prompt=SYSTEM_PROMPT, question=prompt
@@ -437,6 +448,23 @@ def validate_structured_query(question):
     logging.info(f"Closest query: {cypher_to_run}")
     parameters = {"aad_ids": aads}
     return GRAPH.query(cypher_to_run, params=parameters)
+
+
+def validate_structured_query_embedding(question):
+    aads = haal_dossiers_op(question)
+    nbs = check_for_nbs(question)
+    results = db_cypher.similarity_search_with_score(question, k=1)
+    top_doc, score = results[0]
+    cypher_to_run = top_doc.metadata["cypher"]
+    logging.info(f"Closest query: {cypher_to_run} with score {score}")
+    if top_doc.metadata["tags"] in question:
+        parameters = {"aad_ids": aads, "netbeheerders": nbs}
+        logging.info(f"Parameters found: {parameters}")
+        result = GRAPH.query(cypher_to_run, params=parameters)
+        logging.info(f"Neo4j results: {result}")
+        return result
+    else:
+        return []
 
 
 def retrieve_neo_answer(question, neo4j_result):
