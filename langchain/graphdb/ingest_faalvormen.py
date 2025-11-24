@@ -243,16 +243,18 @@ def ingest_dossier(data, aad_id, component_id):
         beleidgroups = data.get("Onderhoudsbeleid", {})
         for key, group in beleidgroups.items():
             for item in group:
-                print(item)
+                # print(item)
                 if not item:
                     continue
+
                 if isinstance(item, dict):
+                    nb_name = item.get("Netbeheerder", None)  # of via pop_entries
                     for k, v in item.items():
                         props[clean_key(k)] = v
                 else:
                     # als het item geen dict is, sla over of sla op als property
-                    pass
-                nb_name = item.get("Netbeheerder")  # of via pop_entries
+                    continue
+
                 pol_id = f"pol_{abs(hash(str(item)))}"
                 props = {"id": pol_id, "soort": key}
                 session.execute_write(merge_node, "beleid", "id", props)
