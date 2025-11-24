@@ -246,7 +246,8 @@ def ingest_dossier(data, aad_id, component_id):
                 # print(item)
                 if not item:
                     continue
-
+                pol_id = f"pol_{abs(hash(str(item)))}"
+                props = {"id": pol_id, "soort": key}
                 if isinstance(item, dict):
                     nb_name = item.get("Netbeheerder", None)  # of via pop_entries
                     for k, v in item.items():
@@ -254,9 +255,6 @@ def ingest_dossier(data, aad_id, component_id):
                 else:
                     # als het item geen dict is, sla over of sla op als property
                     continue
-
-                pol_id = f"pol_{abs(hash(str(item)))}"
-                props = {"id": pol_id, "soort": key}
                 session.execute_write(merge_node, "beleid", "id", props)
                 session.execute_write(
                     merge_relation,
