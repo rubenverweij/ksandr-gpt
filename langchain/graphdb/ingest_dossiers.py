@@ -1,9 +1,28 @@
 from neo4j import GraphDatabase
 import json
 import os
+from bs4 import BeautifulSoup
 import re
 
 driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
+
+
+def clean_html(value):
+    """Maak HTML-schoon en verwijder tags/lege velden."""
+    if value in (None, "", [], {}):
+        return None
+    if isinstance(value, str):
+        # Verwijder HTML-tags
+        cleaned = BeautifulSoup(value, "html.parser").get_text(separator=" ")
+        # Verwijder overtollige witruimte
+        return re.sub(r"\s+", " ", cleaned).strip()
+    if isinstance(value, dict):
+        value.pop("tags", None)
+        return {k: clean_html(v) for k, v in value.items() if clean_html(v) is not None}
+    if isinstance(value, list):
+        lijst = [clean_html(v) for v in value if clean_html(v) is not None]
+        return lijst if lijst else None
+    return value
 
 
 def extract_nummer_info(nummer_str):
@@ -125,7 +144,7 @@ def ingest_dossier(data, aad_id, component_id):
             person_props = {
                 "id": person_id,
                 "link": optional(member, "link"),
-                "text": optional(member, "text"),
+                "naam": optional(member, "text"),
             }
             session.execute_write(merge_node, "persoon", "id", person_props)
             session.execute_write(
@@ -326,6 +345,7 @@ with driver.session() as session:
         print(f"Ingesting: {json_file}")
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
+            data = clean_html(data)
         ingest_dossier(data, aad_id, component_id)
 
 driver.close()
