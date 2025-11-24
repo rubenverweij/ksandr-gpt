@@ -38,9 +38,9 @@ def build_cypher_query(question, clause=""):
     }
 
     base_query = """
-    MATCH (a:AAD)-[:HEEFT_COMPONENT]->(c:Component)-[:HEEFT_FAALVORM]->(f:Faalvorm)
+    MATCH (d:dossier)-[:HEEFT_COMPONENT]->(c:component)-[:HEEFT_FAALVORM]->(f:faalvorm)
     {where_clause}
-    RETURN c.naam AS component, f.Naam AS faalvorm 
+    RETURN c.component_id AS component, f.Naam AS faalvorm 
     """
     q_lower = question.lower()
     # --------------------------------------------------------
@@ -109,7 +109,7 @@ def build_cypher_query(question, clause=""):
     # --------------------------------------------------------
     return_parts = []
     if not wants_quantity:
-        return_parts.extend(["c.naam AS component", "f.Naam AS faalvorm"])
+        return_parts.extend(["c.component_id AS component", "f.Naam AS faalvorm"])
     for f in selected_fields:
         alias = f.split(".")[-1]
         return_parts.append(f"{f} AS {alias}")
@@ -121,7 +121,7 @@ def build_cypher_query(question, clause=""):
     # 7. Assemble final cypher
     # --------------------------------------------------------
     query = base_query.format(where_clause=where_clause).replace(
-        "RETURN c.naam AS component, f.Naam AS faalvorm",
+        "RETURN c.component_id AS component, f.Naam AS faalvorm",
         return_clause,
     )
     if wants_quantity:
