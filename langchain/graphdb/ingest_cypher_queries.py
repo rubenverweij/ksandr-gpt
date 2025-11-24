@@ -15,7 +15,7 @@ predefined_queries = [
         MATCH (d:dossier)
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (d)-[:heeft_component]->(c:component)
-        RETURN 
+        RETURN DISTINCT 
             d.aad_id AS dossier_id,
             c.component_id AS component_naam,
             d.publicatiedatum AS publicatiedatum
@@ -39,7 +39,7 @@ predefined_queries = [
         MATCH (d)-[:heeft_populatie]->(p)
         MATCH (d)-[:heeft_component]->(c:component)
 
-        RETURN 
+        RETURN DISTINCT 
             nb.naam AS netbeheerder,
             d.aad_id AS dossier_id,
             c.component_id AS component_naam,
