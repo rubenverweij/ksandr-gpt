@@ -14,10 +14,10 @@ predefined_queries = [
         WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
         MATCH (d:dossier)
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
-        MATCH (nb:netbeheerder)
-        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        MATCH (d)-[:heeft_component]->(c:component)
         RETURN 
             d.aad_id AS dossier_id,
+            c.component_id AS component_naam,
             d.publicatiedatum AS publicatiedatum
         ORDER BY publicatiedatum DESC
         """,
