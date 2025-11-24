@@ -24,7 +24,7 @@ predefined_queries = [
         "example_questions": [
             "Wat is de publicatiedatum van AAD",
         ],
-        "tags": ["publicatiedatum"],
+        "tags": "publicatiedatum",
     },
     {
         "cypher": """
@@ -50,7 +50,7 @@ predefined_queries = [
         "example_questions": [
             "Van welke component heeft netbeheerder het meest?",
         ],
-        "tags": ["populatiegegevens"],
+        "tags": "populatiegegevens",
     },
 ]
 
