@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 from templates import TEMPLATES, SYSTEM_PROMPT, CYPHER_PROMPT
-from graph import build_cypher_query
+from graph import build_cypher_query, check_for_nbs, match_query
 from helpers import (
     maak_metadata_filter,
     COMPONENTS,
@@ -390,24 +390,36 @@ def context(req: ContextRequest):
 def neo(req: Neo4jRequest):
     question = req.prompt
     aads = haal_dossiers_op(question)
-    # FIXME probably deprecated
-    # results = db_cypher.similarity_search_with_score(question, k=1)
-    # top_doc, score = results[0]
-    # cypher_to_run = top_doc.metadata["cypher"]
-    cypher_to_run = build_cypher_query(question)
-    if len(aads) > 0:
-        where_clause = "WHERE a.aad_id IN $aad_ids"
-    if "AND" in cypher_to_run:
-        where_clause = "WHERE "
+    nbs = check_for_nbs(question)
+    if detect_aad(question):
+        # FIXME probably deprecated
+        # results = db_cypher.similarity_search_with_score(question, k=1)
+        # top_doc, score = results[0]
+        # cypher_to_run = top_doc.metadata["cypher"]
+        if len(aads) > 0:
+            where_clause = "WHERE a.aad_id IN $aad_ids"
+        else:
+            where_clause = ""
+        cypher_to_run = build_cypher_query(question, clause=where_clause)
+        cypher_to_run = cypher_to_run.format(where_clause=where_clause)
+        logging.info(f"Closest query: {cypher_to_run}")
+        parameters = {"aad_ids": aads}
+        neo4j_results = GRAPH.query(cypher_to_run, params=parameters)
+        answer = LLM.invoke(
+            CYPHER_PROMPT.format(result=neo4j_results, question=question)
+        )
+        logging.info(f"Neo4j results: {neo4j_results}")
+        return {"answer": answer}
     else:
-        where_clause = ""
-    cypher_to_run = cypher_to_run.format(where_clause=where_clause)
-    parameters = {"aad_ids": aads}
-    logging.info(f"Closest query: {cypher_to_run}")
-    neo4j_results = result = GRAPH.query(cypher_to_run, params=parameters)
-    answer = LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
-    logging.info(f"Neo4j results: {neo4j_results}")
-    return {"answer": answer}
+        cypher_to_run, _ = match_query(user_question=question)
+        parameters = {"aad_ids": aads, "netbeheerders": nbs}
+        logging.info(f"Closest query: {cypher_to_run}")
+        neo4j_results = GRAPH.query(cypher_to_run, params=parameters)
+        answer = LLM.invoke(
+            CYPHER_PROMPT.format(result=neo4j_results, question=question)
+        )
+        logging.info(f"Neo4j results: {neo4j_results}")
+        return {"answer": answer}
 
 
 def validate_structured_query(question):
