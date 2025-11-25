@@ -37,7 +37,8 @@ predefined_queries = [
         ORDER BY laatste_update DESC
         """,
         "example_questions": [
-            "Wat is de laatste update datum van AAD",
+            "Wat is de laatste update datum van AAD?",
+            "Wanneer is het AAD dossier voor het laatst gewijzigd?",
         ],
         "tags": "laatste update;gewijzigd",
     },
@@ -56,7 +57,6 @@ predefined_queries = [
 
         RETURN DISTINCT 
             nb.naam AS netbeheerder,
-            d.aad_id AS dossier_id,
             c.component_id AS component_naam,
             p.populatie AS populatie,
             p.aantal_velden AS aantal_velden
@@ -64,10 +64,10 @@ predefined_queries = [
         """,
         "example_questions": [
             "Van welke component heeft netbeheerder het meest?",
-            "Welke asset heeft netbeheerder het meeste",
-            "Hoeveel installaties heeft netbeheerder per component",
+            "Welke asset heeft netbeheerder het meeste?",
+            "Hoeveel installaties heeft netbeheerder per component?",
         ],
-        "tags": "populatiegegevens;meeste;populatie;aantal",
+        "tags": "populatiegegevens;meeste;populatie;aantal velden;hoeveel",
     },
     {
         "cypher": """
@@ -77,7 +77,7 @@ predefined_queries = [
             c.component_id AS component_id
         ORDER BY aad_id, component_id;
         """,
-        "example_questions": ["Geef een overzicht van alle aads"],
+        "example_questions": ["Geef een overzicht van alle componenten met een aads"],
         "tags": "overzicht;aad",
     },
     {
@@ -92,8 +92,108 @@ predefined_queries = [
             p.link AS profiel_link
         ORDER BY component_id, naam;
         """,
-        "example_questions": ["Wie zitten in het beheerteam van aad"],
+        "example_questions": ["Wie zitten in het beheerteam van aad?"],
         "tags": "beheerteam",
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
+        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        MATCH (d)-[:heeft_component]->(c:component)
+        WHERE toLower(b.soort) CONTAINS "onderhoudsbeleid"
+        RETURN DISTINCT
+            nb.naam AS netbeheerder,
+            c.component_id AS component_naam,  
+            b.soort as soort_beleid,
+            b AS beleid
+        """,
+        "example_questions": [
+            "Welk onderhoudsbeleid adviseert de fabrikant voor de installatie?",
+        ],
+        "tags": "onderhoudsbeleid",
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
+        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        MATCH (d)-[:heeft_component]->(c:component)
+        WHERE toLower(b.soort) CONTAINS "vervangingsbeleid"
+        RETURN DISTINCT
+            nb.naam AS netbeheerder,
+            c.component_id AS component_naam,  
+            b.soort as soort_beleid,
+            b AS beleid
+        """,
+        "example_questions": [
+            "Welk vervangingsbeleid adviseert de fabrikant voor de installatie?",
+        ],
+        "tags": "vervangingsbeleid",
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
+        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        MATCH (d)-[:heeft_component]->(c:component)
+        WHERE toLower(b.soort) CONTAINS "onderhoudsstrategie"
+        RETURN DISTINCT
+            nb.naam AS netbeheerder,
+            c.component_id AS component_naam,  
+            b.soort as soort_beleid,
+            b AS beleid
+        """,
+        "example_questions": [
+            "Welk onderhoudsstrategie adviseert de fabrikant voor de installatie?",
+        ],
+        "tags": "onderhoudsstrategie",
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
+        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        MATCH (d)-[:heeft_component]->(c:component)
+        WHERE toLower(b.soort) CONTAINS "vervangingscriteria"
+        RETURN DISTINCT
+            nb.naam AS netbeheerder,
+            c.component_id AS component_naam,  
+            b.soort as soort_beleid,
+            b AS beleid
+        """,
+        "example_questions": [
+            "Welk vervangingscriteria adviseert de fabrikant voor de installatie?",
+        ],
+        "tags": "vervangingscriteria",
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
+        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        MATCH (d)-[:heeft_component]->(c:component)
+        WHERE toLower(b.soort) CONTAINS "onderhoud"
+        RETURN DISTINCT
+            nb.naam AS netbeheerder,
+            c.component_id AS component_naam,  
+            b.soort as soort_beleid,
+            b AS beleid
+        """,
+        "example_questions": [
+            "Wat voor soort onderhoud gebruikt Rendo voor de SVS?",
+        ],
+        "tags": "onderhoud",
     },
 ]
 

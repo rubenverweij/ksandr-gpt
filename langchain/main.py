@@ -408,7 +408,7 @@ def neo(req: Neo4jRequest):
         # top_doc, score = results[0]
         # cypher_to_run = top_doc.metadata["cypher"]
         if len(aads) > 0:
-            where_clause = "WHERE a.aad_id IN $aad_ids"
+            where_clause = "WHERE d.aad_id IN $aad_ids"
         else:
             where_clause = ""
         cypher_to_run = build_cypher_query(question, clause=where_clause)
@@ -440,7 +440,7 @@ def validate_structured_query(question):
     # top_doc, score = results[0]
     # cypher_to_run = top_doc.metadata["cypher"]
     if len(aads) > 0:
-        where_clause = "WHERE a.aad_id IN $aad_ids"
+        where_clause = "WHERE d.aad_id IN $aad_ids"
     else:
         where_clause = ""
     cypher_to_run = build_cypher_query(question, clause=where_clause)
