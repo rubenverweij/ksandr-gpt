@@ -60,7 +60,7 @@ predefined_queries = [
             c.component_id AS component_naam,
             p.populatie AS populatie,
             p.aantal_velden AS aantal_velden
-        ORDER BY dossier_id, component_naam
+        ORDER BY component_naam
         """,
         "example_questions": [
             "Van welke component heeft netbeheerder het meest?",
