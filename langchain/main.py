@@ -459,7 +459,7 @@ def validate_structured_query_embedding(question):
         for doc in results
         if match_query_by_tags(question=question, query=doc.metadata)
     ]
-    if len(tag_filtered_results > 0):
+    if len(tag_filtered_results) > 0:
         top_doc, score = tag_filtered_results[0]
         cypher_to_run = top_doc.metadata["cypher"]
         logging.info(f"Closest query: {cypher_to_run} with score {score}")
