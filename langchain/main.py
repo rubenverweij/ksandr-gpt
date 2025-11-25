@@ -453,11 +453,16 @@ def validate_structured_query(question):
 def validate_structured_query_embedding(question):
     aads = haal_dossiers_op(question)
     nbs = check_for_nbs(question)
-    results = db_cypher.similarity_search_with_score(question, k=1)
-    top_doc, score = results[0]
-    cypher_to_run = top_doc.metadata["cypher"]
-    logging.info(f"Closest query: {cypher_to_run} with score {score}")
-    if match_query_by_tags(query=top_doc.metadata, question=question):
+    results = db_cypher.similarity_search(question, k=20)
+    tag_filtered_results = [
+        doc
+        for doc in results
+        if match_query_by_tags(question=question, query=doc.metadata)
+    ]
+    if len(tag_filtered_results > 0):
+        top_doc, score = tag_filtered_results[0]
+        cypher_to_run = top_doc.metadata["cypher"]
+        logging.info(f"Closest query: {cypher_to_run} with score {score}")
         parameters = {"aad_ids": aads, "netbeheerders": nbs}
         logging.info(f"Parameters found: {parameters}")
         result = GRAPH.query(cypher_to_run, params=parameters)
