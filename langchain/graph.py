@@ -1,4 +1,5 @@
 import re
+import Levenshtein
 
 STOPWORDS = {"de", "het", "een", "en", "van", "voor", "op"}
 
@@ -69,7 +70,8 @@ example_db = [
 
 def match_query_by_tags(question: str, query: dict) -> bool:
     """
-    Returns True if any tag from query["tags"] is found in the question text.
+    Returns True if any tag from query["tags"] is found in the question text,
+    allowing for up to 1 character typo (Levenshtein distance <= 1).
     Tags must be separated by ';'.
     """
     if "tags" not in query or not query["tags"]:
@@ -79,10 +81,14 @@ def match_query_by_tags(question: str, query: dict) -> bool:
     tags = [tag.strip().lower() for tag in query["tags"].split(";")]
 
     # Normalize question
-    q = question.lower()
+    q_words = question.lower().split()
 
-    # Check if any tag is contained in the question
-    return any(tag in q for tag in tags)
+    # Check each tag against each word in the question
+    for tag in tags:
+        for word in q_words:
+            if Levenshtein.distance(tag, word) <= 1:
+                return True
+    return False
 
 
 # FIXME deprecated
