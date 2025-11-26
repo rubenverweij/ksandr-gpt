@@ -77,7 +77,7 @@ predefined_queries = [
             c.component_id AS component_id
         ORDER BY aad_id, component_id;
         """,
-        "example_questions": ["Geef een overzicht van alle componenten met een aads"],
+        "example_questions": ["Geef een overzicht van alle componenten met een AAD"],
         "tags": "overzicht;aad",
     },
     {
