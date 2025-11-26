@@ -453,7 +453,7 @@ def validate_structured_query(question):
 def validate_structured_query_embedding(question):
     aads = haal_dossiers_op(question)
     nbs = check_for_nbs(question)
-    results = db_cypher.similarity_search_with_relevance_scores(question, k=20)
+    results = db_cypher.similarity_search_with_score(question, k=20)
     tag_filtered_results = [
         doc
         for doc in results
