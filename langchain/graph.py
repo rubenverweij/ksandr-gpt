@@ -88,6 +88,8 @@ def match_query_by_tags(question: str, query: dict) -> bool:
         for word in q_words:
             if Levenshtein.distance(tag, word) <= 1:
                 return True
+        for tag in question:
+            return True
     return False
 
 
@@ -116,10 +118,10 @@ def build_cypher_query(question, clause=""):
         "opsomming": ["f.NummerInt"],
         "nummer": ["f.NummerInt"],
         "id": ["f.Prefix", "f.NummerInt"],
-        "component": ["c.naam"],
+        "component": ["c.component_id"],
         "incidenten": ["f.GemiddeldAantalIncidenten"],
         "meest voorkomende": ["f.GemiddeldAantalIncidenten"],
-        "asset": ["c.naam"],
+        "asset": ["c.component_id"],
         "gevolg": ["f.MogelijkGevolg"],
         "faalindicator": ["f.Faalindicatoren"],
         "faaltempo": ["f.Faaltempo"],

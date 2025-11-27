@@ -221,8 +221,6 @@ def retrieve_answer_from_vector_store(
 def ask_llm(
     prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp, rag: int
 ):
-    if prompt.startswith("!"):
-        rag = 0
     if rag:
         if detect_aad(prompt):
             neo4j_result = validate_structured_query(prompt)
@@ -283,7 +281,9 @@ async def process_request(request: AskRequest):
     else:
         active_filter = None
     time_vind_component = time.time()
-
+    if request.prompt.startswith("!"):
+        logging.info("Prompt starts with ! no_rag mode on")
+        request.rag = 0
     try:
         # Pass request_id for tracking the streaming response
         response = await asyncio.get_event_loop().run_in_executor(
