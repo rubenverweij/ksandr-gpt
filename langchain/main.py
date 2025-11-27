@@ -221,24 +221,26 @@ def retrieve_answer_from_vector_store(
 def ask_llm(
     prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp, rag: int
 ):
-    if detect_aad(prompt):
-        neo4j_result = validate_structured_query(prompt)
-        if len(neo4j_result) > 0:
-            logging.info(f"Start LLM on neo4j: {neo4j_result}")
-            return {
-                "question": prompt,
-                "answer": retrieve_neo_answer(prompt, neo4j_result),
-                "prompt": "",
-                "source_documents": source_document_dummy(),
-                "time_stages": {},
-            }
+    if prompt.startswith("!"):
+        rag = 0
+    if rag:
+        if detect_aad(prompt):
+            neo4j_result = validate_structured_query(prompt)
+            if len(neo4j_result) > 0:
+                logging.info(f"Start LLM on neo4j: {neo4j_result}")
+                return {
+                    "question": prompt,
+                    "answer": retrieve_neo_answer(prompt, neo4j_result),
+                    "prompt": "",
+                    "source_documents": source_document_dummy(),
+                    "time_stages": {},
+                }
+            else:
+                logging.info(f"Closest query: {neo4j_result}")
+                prompt_with_template, results_new_schema, time_stages = (
+                    retrieve_answer_from_vector_store(prompt, chroma_filter, model)
+                )
         else:
-            logging.info(f"Closest query: {neo4j_result}")
-            prompt_with_template, results_new_schema, time_stages = (
-                retrieve_answer_from_vector_store(prompt, chroma_filter, model)
-            )
-    else:
-        if rag:
             neo4j_result = validate_structured_query_embedding(prompt)
             if len(neo4j_result) > 0:
                 logging.info(f"Start LLM on neo4j: {neo4j_result}")
@@ -253,12 +255,12 @@ def ask_llm(
                 prompt_with_template, results_new_schema, time_stages = (
                     retrieve_answer_from_vector_store(prompt, chroma_filter, model)
                 )
-        else:
-            prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
-                system_prompt=SYSTEM_PROMPT, question=prompt
-            )
-            results_new_schema = None
-            time_stages = {}
+    else:
+        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
+            system_prompt=SYSTEM_PROMPT, question=prompt
+        )
+        results_new_schema = None
+        time_stages = {}
     return {
         "question": prompt,
         "answer": model.invoke(prompt_with_template),
@@ -453,7 +455,7 @@ def validate_structured_query(question):
 def validate_structured_query_embedding(question):
     aads = haal_dossiers_op(question)
     nbs = check_for_nbs(question)
-    results = db_cypher.similarity_search_with_score(question, k=20)
+    results = db_cypher.similarity_search_with_relevance_scores(question, k=20)
     tag_filtered_results = [
         doc
         for doc in results
