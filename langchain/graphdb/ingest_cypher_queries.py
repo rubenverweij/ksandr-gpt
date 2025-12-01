@@ -167,7 +167,7 @@ predefined_queries = [
         MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
         MATCH (d)-[:heeft_component]->(c:component)
-        WHERE toLower(b.soort) CONTAINS "onderhoud"
+        WHERE toLower(b.soort) CONTAINS "onderhoudsstrategie"
         RETURN DISTINCT
             nb.naam AS netbeheerder,
             c.component_id AS component_naam,  
@@ -175,10 +175,28 @@ predefined_queries = [
         """,
         "example_questions": [
             "Welk onderhoudsstrategie hanteert X voor de installatie?",
-            "Wat is het onderhoud van X voor de magnefix?",
-            "Hoe ziet het onderhoudsbeleid van X voor de Siemens 8DJH eruit?",
+            "Wat is het onderhoudsstrategie van X voor de magnefix?",
+            "Hoe ziet het onderhoudsstrategie van X voor de Siemens 8DJH eruit?",
         ],
-        "tags": "onderhoudsstrategie;onderhoud",
+        "tags": "onderhoudsstrategie;onderhoudsbeleid",
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids
+        MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (nb:netbeheerder)-[:heeft_beleid]->(b)
+        WHERE toLower(b.soort) = toLower("onderhoud_en_inspectie")
+        MATCH (d)-[:heeft_component]->(c:component)
+        RETURN DISTINCT
+            b AS beleid
+        """,
+        "example_questions": [
+            "Geef een lijst van 5 maatregelen die onderdeel uitmaken van een inspectieronde voor de FMX?",
+            "Wordt de werking van de veerspanmotor gecontroleerd bij het inspecteren of onderhouden van de FMX?",
+            "Wat zijn de goedkeuringseisen bij het inspecteren van olielekkage bij een COQ installatie?",
+        ],
+        "tags": "inspectie;inspectieronde;inspecteren;goedkeuringseisen",
     },
     {
         "cypher": """

@@ -260,9 +260,7 @@ def ingest_dossier(data, aad_id, component_id):
         # Onderhoudsbeleid → beleid nodes
         # ---------------------------------------------------------
         beleidgroups = data.get("Onderhoudsbeleid", {})
-        onderhoud_inspectie = data.get("Onderhoud & inspectie", {})
-        combined = {**beleidgroups, **onderhoud_inspectie}
-        for key, group in combined.items():
+        for key, group in beleidgroups.items():
             for item in group:
                 if not item:
                     continue
@@ -275,9 +273,6 @@ def ingest_dossier(data, aad_id, component_id):
                 else:
                     if key == "Instandhoudingsbeleid fabrikant":
                         props["Instandhoudingsbeleid fabrikant"] = item
-                        nb_name = None
-                    if key == "Toelichting":
-                        props["Toelichting inspectie en onderhoud"] = item
                         nb_name = None
                     else:
                         # als het item geen dict is, sla over of sla op als property
@@ -306,6 +301,41 @@ def ingest_dossier(data, aad_id, component_id):
                         "id",
                         pol_id,
                     )
+        # ---------------------------------------------------------
+        # Onderhoudsbeleid → onderhoud en inspectie nodes
+        # ---------------------------------------------------------
+        onderhoud_inspectie = data.get("Onderhoud & inspectie", {})
+        for key, group in onderhoud_inspectie.items():
+            for item in group:
+                if not item:
+                    continue
+                pol_id = f"pol_{abs(hash(str(item)))}"
+                props = {
+                    "id": pol_id,
+                    "soort": "onderhoud_en_inspectie",
+                    "toelichting": key,
+                }
+                if isinstance(item, dict):
+                    for k, v in item.items():
+                        props[clean_key(k)] = v
+                else:
+                    if key == "Toelichting":
+                        props["Toelichting inspectie en onderhoud"] = item
+                        nb_name = None
+                    else:
+                        # als het item geen dict is, sla over of sla op als property
+                        continue
+                session.execute_write(merge_node, "beleid", "id", props)
+                session.execute_write(
+                    merge_relation,
+                    "dossier",
+                    "aad_id",
+                    aad_id,
+                    "heeft_beleid",
+                    "beleid",
+                    "id",
+                    pol_id,
+                )
 
 
 COMPONENTS = {
