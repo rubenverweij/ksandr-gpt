@@ -7,14 +7,17 @@ import shutil
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
 
+BASE_DOSSIER_QUERY = """
+WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+MATCH (d:dossier)
+WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+MATCH (d)-[:heeft_component]->(c:component)
+"""
 
 predefined_queries = [
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
-        MATCH (d:dossier)
-        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
-        MATCH (d)-[:heeft_component]->(c:component)
+        {base_query}
         RETURN DISTINCT 
             c.component_id AS component_naam,
             d.publicatiedatum AS publicatiedatum
@@ -28,10 +31,47 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
-        MATCH (d:dossier)
-        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
-        MATCH (d)-[:heeft_component]->(c:component)
+        {base_query}
+        RETURN DISTINCT 
+            c.component_id AS component_naam,
+            c.algemene_productbeschrijving AS productbeschrijving
+        """,
+        "example_questions": ["Geef productbeschrijving van component A"],
+        "tags": "productbeschrijving",
+    },
+    {
+        "cypher": """
+        {base_query}
+        RETURN DISTINCT 
+            c.component_id AS component_naam,
+            c.primaire_functie_in_het_net AS primaire_functie_in_netwerk
+        """,
+        "example_questions": ["Beschrijf de primaire functie van component A"],
+        "tags": "primaire functie",
+    },
+    {
+        "cypher": """
+        {base_query}
+        RETURN DISTINCT 
+            c.component_id AS component_naam,
+            c.secundaire_functie_in_het_net AS secundaire_functie_in_netwerk
+        """,
+        "example_questions": ["Beschrijf de secundaire functie van component A"],
+        "tags": "secundaire functie",
+    },
+    {
+        "cypher": """
+        {base_query}
+        RETURN DISTINCT 
+            c.component_id AS component_naam,
+            c.materiaal_omschrijving AS materiaal_omschrijving
+        """,
+        "example_questions": ["Geef de materiaal omschrijving van de X"],
+        "tags": "materiaal omschrijving",
+    },
+    {
+        "cypher": """
+        {base_query}
         RETURN DISTINCT 
             c.component_id AS component_naam,
             d.laatste_update AS laatste_update
@@ -106,11 +146,11 @@ predefined_queries = [
         RETURN DISTINCT
             nb.naam AS netbeheerder,
             c.component_id AS component_naam,  
-            b.soort as soort_beleid,
             b AS beleid
         """,
         "example_questions": [
             "Welk vervangingsbeleid adviseert de fabrikant voor de installatie?",
+            "Wat is het vervangingsbeleid van X voor de magnefix?",
         ],
         "tags": "vervangingsbeleid",
     },
@@ -126,11 +166,11 @@ predefined_queries = [
         RETURN DISTINCT
             nb.naam AS netbeheerder,
             c.component_id AS component_naam,  
-            b.soort as soort_beleid,
             b AS beleid
         """,
         "example_questions": [
-            "Welk onderhoudsstrategie adviseert de fabrikant voor de installatie?",
+            "Welk onderhoudsstrategie hanteert X voor de installatie?",
+            "Wat is het onderhoud van X voor de magnefix?",
             "Hoe ziet het onderhoudsbeleid van X voor de Siemens 8DJH eruit?",
         ],
         "tags": "onderhoudsstrategie;onderhoud",
@@ -147,11 +187,11 @@ predefined_queries = [
         RETURN DISTINCT
             nb.naam AS netbeheerder,
             c.component_id AS component_naam,  
-            b.soort as soort_beleid,
             b AS beleid
         """,
         "example_questions": [
             "Welk vervangingscriteria gebruikt X voor de SVS?",
+            "Wat zijn de vervangingscriteria van X voor de magnefix?",
         ],
         "tags": "vervangingscriteria",
     },
@@ -165,9 +205,7 @@ predefined_queries = [
         MATCH (d)-[:heeft_component]->(c:component)
         WHERE toLower(b.soort) CONTAINS "fabrikant"
         RETURN DISTINCT
-            nb.naam AS netbeheerder,
             c.component_id AS component_naam,  
-            b.soort as soort_beleid,
             b AS beleid
         """,
         "example_questions": [
@@ -187,7 +225,6 @@ predefined_queries = [
         RETURN DISTINCT
             nb.naam AS netbeheerder,
             c.component_id AS component_naam,  
-            b.soort as soort_beleid,
             b AS beleid
         """,
         "example_questions": [
@@ -205,6 +242,8 @@ def ingest_cypher_queries(chroma_path, queries: List[Dict]):
         embedding_function=get_embedding_function(),
     )
     for query in queries:
+        if "{base_query}" in query["cypher"]:
+            query["cypher"] = query["cypher"].format(base_query=BASE_DOSSIER_QUERY)
         for question in query["example_questions"]:
             documenten.append(
                 Document(
