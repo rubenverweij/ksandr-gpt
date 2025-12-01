@@ -459,10 +459,12 @@ def validate_structured_query_embedding(question):
     aads = haal_dossiers_op(question)
     nbs = check_for_nbs(question)
     results = db_cypher.similarity_search_with_relevance_scores(question, k=20)
+    # doc[0] = actual query info and doc[1] = sim score
     tag_filtered_results = [
         doc
         for doc in results
-        if match_query_by_tags(question=question, query=doc[0].metadata) and doc[1] > 0
+        if match_query_by_tags(question=question, query=doc[0].metadata)
+        and doc[1] > doc[0].metadata["threshold"]
     ]
     if len(tag_filtered_results) > 0:
         top_doc, score = tag_filtered_results[0]
@@ -499,13 +501,14 @@ def retrieve_neo_answer(question, neo4j_result):
             CYPHER_PROMPT.format(result=neo4j_result, question=question)
         )
     except ValueError:
-        return False
         llm_result = (
             "De hoeveelheid gegevens die nodig is om de vraag te beantwoorden is te groot. "
             "Maak de vraag bijvoorbeeld component specifiek.\n\n"
             "Dit is query resultaat: \n\n"
             f"{neo4j_result}"
         )
+        logging.info(f"The llm result: {llm_result}")
+        return False
     logging.info(f"The llm result: {llm_result}")
     return llm_result
 

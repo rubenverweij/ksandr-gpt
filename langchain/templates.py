@@ -94,6 +94,12 @@ CYPHER_PROMPT = PromptTemplate.from_template(
     """                                  
 <|im_start|>system
 Je bent een Neo4j data expert. Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.
+Wanneer je moet optellen:
+- schrijf eerst elke waarde uit de data op
+- tel ze stap-voor-stap op
+- controleer de som
+- geef daarna een kort en bondig antwoord
+Fouten zijn niet toegestaan.
 <|im_end|>
 <|im_start|>user
 

@@ -118,6 +118,7 @@ predefined_queries = [
         """,
         "example_questions": ["Geef een overzicht van alle componenten met een AAD"],
         "tags": "overzicht;aad",
+        "threshold": 0.85,
     },
     {
         "cypher": """
@@ -248,7 +249,11 @@ def ingest_cypher_queries(chroma_path, queries: List[Dict]):
             documenten.append(
                 Document(
                     page_content=question,
-                    metadata={"cypher": query["cypher"], "tags": query["tags"]},
+                    metadata={
+                        "cypher": query["cypher"],
+                        "tags": query["tags"],
+                        "threshold": query["threshold"],
+                    },
                 )
             )
     db.add_documents(documenten)
