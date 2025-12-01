@@ -240,6 +240,7 @@ def ask_llm(
                 )
         else:
             neo4j_result = validate_structured_query_embedding(prompt)
+            neo_answer = False
             if len(neo4j_result) > 0:
                 logging.info(f"Start LLM on neo4j: {neo4j_result}")
                 neo_answer = retrieve_neo_answer(prompt, neo4j_result)
