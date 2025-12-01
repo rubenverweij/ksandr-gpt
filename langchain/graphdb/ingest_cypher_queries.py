@@ -132,8 +132,12 @@ predefined_queries = [
             p.link AS profiel_link
         ORDER BY component_id, naam;
         """,
-        "example_questions": ["Wie zitten in het beheerteam van aad?"],
+        "example_questions": [
+            "Wie zitten in het beheerteam van aad?",
+            "Welke personen zitten in het beheerteam van de fmx",
+        ],
         "tags": "beheerteam",
+        "threshold": 0.3,
     },
     {
         "cypher": """
