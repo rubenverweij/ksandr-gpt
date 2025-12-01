@@ -260,7 +260,9 @@ def ingest_dossier(data, aad_id, component_id):
         # Onderhoudsbeleid → beleid nodes
         # ---------------------------------------------------------
         beleidgroups = data.get("Onderhoudsbeleid", {})
-        for key, group in beleidgroups.items():
+        onderhoud_inspectie = data.get("Onderhoud & inspectie", {})
+        combined = {**beleidgroups, **onderhoud_inspectie}
+        for key, group in combined.items():
             for item in group:
                 if not item:
                     continue
@@ -273,6 +275,10 @@ def ingest_dossier(data, aad_id, component_id):
                 else:
                     if key == "Instandhoudingsbeleid fabrikant":
                         props["Instandhoudingsbeleid fabrikant"] = item
+                        nb_name = None
+                    if key == "Toelichting":
+                        props["Toelichting inspectie en onderhoud"] = item
+                        nb_name = None
                     else:
                         # als het item geen dict is, sla over of sla op als property
                         continue
