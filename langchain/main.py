@@ -242,9 +242,12 @@ def ask_llm(
             neo4j_result = validate_structured_query_embedding(prompt)
             if len(neo4j_result) > 0:
                 logging.info(f"Start LLM on neo4j: {neo4j_result}")
+                neo_answer = retrieve_neo_answer(prompt, neo4j_result)
+
+            if neo_answer:
                 return {
                     "question": prompt,
-                    "answer": retrieve_neo_answer(prompt, neo4j_result),
+                    "answer": neo_answer,
                     "prompt": "",
                     "source_documents": source_document_dummy(),
                     "time_stages": {},
@@ -496,6 +499,7 @@ def retrieve_neo_answer(question, neo4j_result):
             CYPHER_PROMPT.format(result=neo4j_result, question=question)
         )
     except ValueError:
+        return False
         llm_result = (
             "De hoeveelheid gegevens die nodig is om de vraag te beantwoorden is te groot. "
             "Maak de vraag bijvoorbeeld component specifiek.\n\n"
