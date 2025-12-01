@@ -184,8 +184,8 @@ predefined_queries = [
         "cypher": """
         WITH $aad_ids AS dossier_ids
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
-        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
-        WHERE toLower(b.soort) = toLower("onderhoud_en_inspectie")
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids AND
+        toLower(b.soort) = toLower("onderhoud_en_inspectie")
         MATCH (d)-[:heeft_component]->(c:component)
         RETURN DISTINCT
             b AS beleid
