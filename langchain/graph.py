@@ -88,7 +88,7 @@ def match_query_by_tags(question: str, query: dict) -> bool:
         for word in q_words:
             if Levenshtein.distance(tag, word) <= 1:
                 return True
-        for tag in question:
+        if tag in question:
             return True
     return False
 
