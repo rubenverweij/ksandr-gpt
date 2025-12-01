@@ -262,7 +262,6 @@ def ingest_dossier(data, aad_id, component_id):
         beleidgroups = data.get("Onderhoudsbeleid", {})
         for key, group in beleidgroups.items():
             for item in group:
-                # print(item)
                 if not item:
                     continue
                 pol_id = f"pol_{abs(hash(str(item)))}"
@@ -272,8 +271,11 @@ def ingest_dossier(data, aad_id, component_id):
                     for k, v in item.items():
                         props[clean_key(k)] = v
                 else:
-                    # als het item geen dict is, sla over of sla op als property
-                    continue
+                    if key == "Instandhoudingsbeleid fabrikant":
+                        props["Instandhoudingsbeleid fabrikant"] = item
+                    else:
+                        # als het item geen dict is, sla over of sla op als property
+                        continue
                 session.execute_write(merge_node, "beleid", "id", props)
                 session.execute_write(
                     merge_relation,
