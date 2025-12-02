@@ -269,15 +269,17 @@ def ingest_dossier(data, aad_id, component_id):
                 bouwjaren = populatie.get("Bouwjaren")
                 for bouwjaar in bouwjaren:
                     # populatie node
-                    pop_id = f"pop_{nb_name}_{aad_id}_{type}_{bouwjaar.get('Bouwjaar')}".lower()
-                    pop_props = {"id": pop_id, "type": type}
+                    try:
+                        year = int(bouwjaar.get("Bouwjaar"))
+                    except (ValueError, TypeError):
+                        year = None
+                    pop_id = f"pop_{nb_name}_{aad_id}_{type}_{year}".lower()
+                    pop_props = {"id": pop_id, "type": type, "bouwjaar": year}
                     for k, v in bouwjaar.items():
                         if isinstance(v, int):
                             if v > 0:
                                 print(f"Ingesting {pop_props} value: {k}={v}")
                                 pop_props[clean_key(k)] = v
-                        else:
-                            pop_props[clean_key(k)] = v
                         session.execute_write(merge_node, "populatie", "id", pop_props)
                         # relaties
                         session.execute_write(
