@@ -20,6 +20,32 @@ from embeddings import get_embedding_function
 VALID_PERMISSIONS = {"cat-1", "cat-2"}
 
 
+def load_terms(terms, file_path):
+    terms_list = []
+    for idx, question in enumerate(terms):
+        if len(question["instruction"]) < 15:
+            question["instruction"] = f"Wat is {question['instruction']}"
+        tekst = f"Vraag: {question['instruction']} \nAntwoord: {question['output']}"
+        metadata = {
+            "file_path": file_path.as_posix(),
+            "chunk": idx,
+            "char_length": len(str(tekst)),
+            "useful": 1,
+            "source": file_path.as_posix(),
+            "source_search": file_path.as_posix(),
+            "key": "terms",
+            "extension": "json",
+        }
+        metadata.update(extract_file_data(file_path.as_posix()))
+        terms_list.append(
+            Document(
+                page_content=tekst,
+                metadata=metadata,
+            )
+        )
+    return terms_list
+
+
 def load_documents(directory: Path) -> List[Document]:
     """Laad alle JSON-documenten uit een map, splits ze op en verrijk met metadata."""
     documenten: List[Document] = []
@@ -28,40 +54,46 @@ def load_documents(directory: Path) -> List[Document]:
             with file_path.open("r", encoding="utf-8") as f:
                 content = json.load(f)
                 content = clean_html(content)
-                splitter = RecursiveJsonSplitter(min_chunk_size=MIN_CHUNK_SIZE_JSON)
-                chunks = splitter.split_text(json_data=content, convert_lists=True)
-                for idx, chunk in enumerate(chunks):
-                    if not looks_like_clean_text(chunk):
-                        continue
-                    try:
-                        parsed = json.loads(chunk)  # parse back into dict
-                        main_key = (
-                            list(parsed.keys())[0] if isinstance(parsed, dict) else None
+                if file_path.name == "terms.json":
+                    print("Ingesting terms")
+                    documenten = documenten + load_terms(content, file_path)
+                else:
+                    splitter = RecursiveJsonSplitter(min_chunk_size=MIN_CHUNK_SIZE_JSON)
+                    chunks = splitter.split_text(json_data=content, convert_lists=True)
+                    for idx, chunk in enumerate(chunks):
+                        if not looks_like_clean_text(chunk):
+                            continue
+                        try:
+                            parsed = json.loads(chunk)  # parse back into dict
+                            main_key = (
+                                list(parsed.keys())[0]
+                                if isinstance(parsed, dict)
+                                else None
+                            )
+                        except Exception:
+                            main_key = None
+                        chunk_cleaned = str(chunk)
+                        chunk_cleaned = chunk_cleaned.replace("'", '"')
+                        chunk_cleaned = chunk_cleaned.replace("\\'", "'")
+                        chunk_cleaned = chunk_cleaned.replace('"', "")
+                        chunk_cleaned = re.sub(r'[{}"\[\]]', "", chunk_cleaned)
+                        metadata = {
+                            "file_path": file_path.as_posix(),
+                            "chunk": idx,
+                            "char_length": len(str(chunk_cleaned)),
+                            "useful": 0 if len(chunk_cleaned) < 150 else 1,
+                            "source": file_path.as_posix(),
+                            "source_search": file_path.as_posix(),
+                            "key": main_key,
+                            "extension": "json",
+                        }
+                        metadata.update(extract_file_data(file_path.as_posix()))
+                        documenten.append(
+                            Document(
+                                page_content=chunk_cleaned,
+                                metadata=metadata,
+                            )
                         )
-                    except Exception:
-                        main_key = None
-                    chunk_cleaned = str(chunk)
-                    chunk_cleaned = chunk_cleaned.replace("'", '"')
-                    chunk_cleaned = chunk_cleaned.replace("\\'", "'")
-                    chunk_cleaned = chunk_cleaned.replace('"', "")
-                    chunk_cleaned = re.sub(r'[{}"\[\]]', "", chunk_cleaned)
-                    metadata = {
-                        "file_path": file_path.as_posix(),
-                        "chunk": idx,
-                        "char_length": len(str(chunk_cleaned)),
-                        "useful": 0 if len(chunk_cleaned) < 150 else 1,
-                        "source": file_path.as_posix(),
-                        "source_search": file_path.as_posix(),
-                        "key": main_key,
-                        "extension": "json",
-                    }
-                    metadata.update(extract_file_data(file_path.as_posix()))
-                    documenten.append(
-                        Document(
-                            page_content=chunk_cleaned,
-                            metadata=metadata,
-                        )
-                    )
         except json.JSONDecodeError:
             print(f"❌ Ongeldig JSON-bestand: {file_path}")
         except Exception as e:
