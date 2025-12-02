@@ -93,14 +93,19 @@ predefined_queries = [
         MATCH (nb)-[:heeft_populatie]->(p:populatie)
         MATCH (d)-[:heeft_populatie]->(p)
         MATCH (d)-[:heeft_component]->(c:component)
-        RETURN DISTINCT 
+        WITH 
             nb.naam AS netbeheerder,
-            c.component_id AS component_naam,
-            p.populatie AS populatie,
-            p.type,
-            p.bouwjaar,
-            p.aantal_velden AS aantal_velden
-        ORDER BY component_naam
+            c.component_id AS component_id,
+            p.type AS type,
+            SUM(p.populatie) AS total_populatie,
+            SUM(p.aantal_velden) AS total_velden
+        RETURN
+            netbeheerder,
+            component_id,
+            type,
+            total_populatie,
+            total_velden
+        ORDER BY component_id, type;
         """,
         "example_questions": [
             "Van welke component heeft netbeheerder het meest?",
@@ -222,11 +227,10 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        WITH $aad_ids AS dossier_ids
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
-        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
-        MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
-        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids AND
+        size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
         MATCH (d)-[:heeft_component]->(c:component)
         WHERE toLower(b.soort) CONTAINS "fabrikant"
         RETURN DISTINCT
