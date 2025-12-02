@@ -273,8 +273,8 @@ def ingest_dossier(data, aad_id, component_id):
                     pop_props = {"id": pop_id, "type": type}
                     for k, v in bouwjaar.items():
                         if isinstance(v, int):
-                            print(f"Ingesting {pop_props} value: {k}={v}")
                             if v > 0:
+                                print(f"Ingesting {pop_props} value: {k}={v}")
                                 pop_props[clean_key(k)] = v
                         else:
                             pop_props[clean_key(k)] = v
