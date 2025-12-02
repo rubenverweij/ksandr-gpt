@@ -97,6 +97,8 @@ predefined_queries = [
             nb.naam AS netbeheerder,
             c.component_id AS component_naam,
             p.populatie AS populatie,
+            p.type,
+            p.bouwjaar,
             p.aantal_velden AS aantal_velden
         ORDER BY component_naam
         """,
@@ -188,7 +190,8 @@ predefined_queries = [
         toLower(b.soort) = toLower("onderhoud_en_inspectie")
         MATCH (d)-[:heeft_component]->(c:component)
         RETURN DISTINCT
-            b AS beleid
+            b.soort as soort_inspectie_onderhoud,
+            b.goedkeuringseisen_toelichting as goedkeuringseisen
         """,
         "example_questions": [
             "Geef een lijst van 5 maatregelen die onderdeel uitmaken van een inspectieronde voor de FMX?",
