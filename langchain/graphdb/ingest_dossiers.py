@@ -257,6 +257,45 @@ def ingest_dossier(data, aad_id, component_id):
                 pop_id,
             )
         # ---------------------------------------------------------
+        # Populatiegegevens per type → populatie + netbeheerder nodes
+        # ---------------------------------------------------------
+        pop_entries = data.get("Populatiegegevens", {}).get("Populatie per type", [])
+        for p in pop_entries:
+            type = p.get("Type") or "onbekend"
+            populatie_gegevens = p.get("Populatiegegevens")
+            for populatie in populatie_gegevens:
+                nb_name = populatie.get("Netbeheerder") or "onbekend"
+                nb_id = f"netbeheerder_{nb_name}".lower()
+                bouwjaren = populatie.get("Bouwjaren")
+                for bouwjaar in bouwjaren:
+                    # populatie node
+                    pop_id = f"pop_{nb_name}_{aad_id}_{type}_{bouwjaar.get('Bouwjaar')}".lower()
+                    pop_props = {"id": pop_id, "type": type}
+                    for k, v in bouwjaar.items():
+                        pop_props[clean_key(k)] = v
+                        session.execute_write(merge_node, "populatie", "id", pop_props)
+                        # relaties
+                        session.execute_write(
+                            merge_relation,
+                            "dossier",
+                            "aad_id",
+                            aad_id,
+                            "heeft_populatie",
+                            "populatie",
+                            "id",
+                            pop_id,
+                        )
+                        session.execute_write(
+                            merge_relation,
+                            "netbeheerder",
+                            "id",
+                            nb_id,
+                            "heeft_populatie",
+                            "populatie",
+                            "id",
+                            pop_id,
+                        )
+        # ---------------------------------------------------------
         # Onderhoudsbeleid → beleid nodes
         # ---------------------------------------------------------
         beleidgroups = data.get("Onderhoudsbeleid", {})
@@ -307,6 +346,7 @@ def ingest_dossier(data, aad_id, component_id):
         onderhoud_inspectie = data.get("Onderhoud & inspectie", {})
         for key, group in onderhoud_inspectie.items():
             for item in group:
+                print(f"Processing {key}, {item}")
                 if not item:
                     continue
                 pol_id = f"pol_{abs(hash(str(item)))}"
@@ -317,7 +357,8 @@ def ingest_dossier(data, aad_id, component_id):
                 }
                 if isinstance(item, dict):
                     for k, v in item.items():
-                        props[clean_key(k)] = v
+                        if v:
+                            props[clean_key(k)] = v
                 else:
                     if key == "Toelichting":
                         props["Toelichting inspectie en onderhoud"] = item
