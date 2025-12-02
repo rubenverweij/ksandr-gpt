@@ -272,7 +272,11 @@ def ingest_dossier(data, aad_id, component_id):
                     pop_id = f"pop_{nb_name}_{aad_id}_{type}_{bouwjaar.get('Bouwjaar')}".lower()
                     pop_props = {"id": pop_id, "type": type}
                     for k, v in bouwjaar.items():
-                        pop_props[clean_key(k)] = v
+                        if isinstance(v, int):
+                            if v > 0:
+                                pop_props[clean_key(k)] = v
+                        else:
+                            pop_props[clean_key(k)] = v
                         session.execute_write(merge_node, "populatie", "id", pop_props)
                         # relaties
                         session.execute_write(
