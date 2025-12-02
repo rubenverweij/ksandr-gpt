@@ -229,8 +229,7 @@ predefined_queries = [
         "cypher": """
         WITH $aad_ids AS dossier_ids
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
-        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids AND
-        size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids 
         MATCH (d)-[:heeft_component]->(c:component)
         WHERE toLower(b.soort) CONTAINS "fabrikant"
         RETURN DISTINCT
