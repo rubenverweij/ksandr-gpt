@@ -273,6 +273,7 @@ def ingest_dossier(data, aad_id, component_id):
                     pop_props = {"id": pop_id, "type": type}
                     for k, v in bouwjaar.items():
                         if isinstance(v, int):
+                            print(f"Ingesting {pop_props} value: {k}={v}")
                             if v > 0:
                                 pop_props[clean_key(k)] = v
                         else:
@@ -350,7 +351,7 @@ def ingest_dossier(data, aad_id, component_id):
         onderhoud_inspectie = data.get("Onderhoud & inspectie", {})
         for key, group in onderhoud_inspectie.items():
             for item in group:
-                print(f"Processing {key}, {item}")
+                # print(f"Processing {key}, {item}")
                 if not item:
                     continue
                 pol_id = f"pol_{abs(hash(str(item)))}"
