@@ -299,7 +299,7 @@ async def process_request(request: AskRequest):
     prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
         system_prompt=SYSTEM_PROMPT, question=request.prompt
     )
-    stream = LLM.client(prompt_with_template, stream=True)
+    stream = LLM.client(prompt_with_template, stream=True, max_tokens=1500)
     full_answer = ""
     async for chunk in async_stream_generator(stream):
         token = chunk["choices"][0]["text"]
