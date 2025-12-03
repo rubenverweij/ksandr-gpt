@@ -494,7 +494,7 @@ def retrieve_neo_answer(question, neo4j_result):
     _, trimmed_neo4j_result = trim_context_to_fit(
         model=LLM.client,
         template=DEFAULT_QA_PROMPT,
-        context_text=neo4j_result,
+        context_text=str(neo4j_result),
         question=question,
         n_ctx=CONFIG["MAX_CTX"],
         max_tokens=CONFIG["MAX_TOKENS"],
