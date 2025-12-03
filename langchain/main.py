@@ -255,7 +255,8 @@ def ask_llm(
     stream = LLM.client(prompt_with_template, stream=True)
     return {
         "question": prompt,
-        "answer": stream,
+        "answer": "",
+        "stream": stream,
         "prompt": prompt_with_template,
         "source_documents": results_new_schema,
         "time_stages": time_stages,
@@ -292,10 +293,11 @@ async def process_request(request: AskRequest):
         )
 
         full_answer = ""
-        for chunk in response["answer"]:
+        for chunk in response["stream"]:
             token = chunk["choices"][0]["text"]
             callback.on_llm_new_token(token)
             full_answer += token
+            logging.info(f"Partial response: {callback.partial_response}")
 
         time_ask_llm = time.time()
         response["active_filter"] = str(active_filter)
