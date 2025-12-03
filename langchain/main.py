@@ -510,7 +510,6 @@ def retrieve_neo_answer(question, neo4j_result):
         )
         logging.info(f"The llm result: {llm_result}")
         return False
-    logging.info(f"The llm result: {llm_result}")
     return llm_result
 
 
