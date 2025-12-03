@@ -500,7 +500,7 @@ def retrieve_neo_answer(question, neo4j_result):
         max_tokens=CONFIG["MAX_TOKENS"],
     )
     logging.info(
-        f"trimmed neo4j result: {len(neo4j_result)} to {len(trimmed_neo4j_result)}"
+        f"trimmed neo4j result: {len(str(neo4j_result))} to {len(trimmed_neo4j_result)}"
     )
 
     try:
