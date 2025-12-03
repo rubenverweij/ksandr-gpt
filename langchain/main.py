@@ -492,7 +492,7 @@ def retrieve_neo_answer(question, neo4j_result):
     # result = GRAPH.query(cypher_to_run, params=parameters)
     # logging.info(f"Rsultaat: {result}")
     _, trimmed_neo4j_result = trim_context_to_fit(
-        model=model.client,
+        model=LLM.client,
         template=CYPHER_PROMPT,
         context_text=neo4j_result,
         question=question,
