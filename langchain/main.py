@@ -292,7 +292,7 @@ async def process_request(request: AskRequest):
         )
 
         full_answer = ""
-        for chunk in response["stream"]:
+        for chunk in response["answer"]:
             token = chunk["choices"][0]["text"]
             callback.on_llm_new_token(token)
             full_answer += token
