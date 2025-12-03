@@ -19,6 +19,7 @@ from helpers import (
     source_document_dummy,
 )
 from fastapi import FastAPI
+import threading
 from pydantic import BaseModel
 from typing import Dict, Optional, Union, List
 from langchain_chroma import Chroma
@@ -263,8 +264,67 @@ def ask_llm(
     }
 
 
-# Verwerkt het verzoek en haalt de reactie op
+# Async wrapper voor een sync generator
+async def async_stream_generator(sync_gen):
+    loop = asyncio.get_event_loop()
+    queue = asyncio.Queue()
+
+    def run_sync():
+        for item in sync_gen:
+            asyncio.run_coroutine_threadsafe(queue.put(item), loop)
+        asyncio.run_coroutine_threadsafe(queue.put(None), loop)
+
+    threading.Thread(target=run_sync, daemon=True).start()
+
+    while True:
+        item = await queue.get()
+        if item is None:
+            break
+        yield item
+
+
 async def process_request(request: AskRequest):
+    """Verwerkt een verzoek en streamt partial responses."""
+    active_filter = (
+        maak_metadata_filter(request, COMPONENTS, CONFIG["INCLUDE_PERMISSION"])
+        if CONFIG["INCLUDE_FILTER"]
+        else None
+    )
+
+    callback = StreamingResponseCallback(request.id)
+    if request.prompt.startswith("!"):
+        request.rag = 0
+
+    # Haal de sync generator op
+    prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
+        system_prompt=SYSTEM_PROMPT, question=request.prompt
+    )
+    stream = LLM.client(prompt_with_template, stream=True)
+    full_answer = ""
+    async for chunk in async_stream_generator(stream):
+        token = chunk["choices"][0]["text"]
+        full_answer += token
+        callback.on_llm_new_token(token)
+
+        # Update partial_response in je request_responses
+        if request.id in request_responses:
+            request_responses[request.id]["partial_response"] = full_answer
+
+    # Generator klaar, final answer
+    final_answer = uniek_antwoord(full_answer)
+
+    return {
+        "question": request.prompt,
+        "answer": final_answer,
+        "prompt": prompt_with_template,
+        "active_filter": str(active_filter),
+        "source_documents": None,
+        "time_stages": {},
+    }
+
+
+# Verwerkt het verzoek en haalt de reactie op
+async def process_request_old(request: AskRequest):
     """Process a request asynchronously and stream the result."""
     time_start = time.time()
     if CONFIG["INCLUDE_FILTER"]:
