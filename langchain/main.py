@@ -493,11 +493,14 @@ def retrieve_neo_answer(question, neo4j_result):
     # logging.info(f"Rsultaat: {result}")
     _, trimmed_neo4j_result = trim_context_to_fit(
         model=LLM.client,
-        template=CYPHER_PROMPT,
+        template=DEFAULT_QA_PROMPT,
         context_text=neo4j_result,
         question=question,
         n_ctx=CONFIG["MAX_CTX"],
         max_tokens=CONFIG["MAX_TOKENS"],
+    )
+    logging.info(
+        f"trimmed neo4j result: {len(neo4j_result)} to {len(trimmed_neo4j_result)}"
     )
 
     try:
