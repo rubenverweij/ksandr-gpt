@@ -207,11 +207,7 @@ def retrieve_answer_from_vector_store(
 
 
 def ask_llm(
-    prompt: str,
-    chroma_filter: Optional[Dict | None],
-    model: LlamaCpp,
-    rag: int,
-    callbacks: list = None,
+    prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp, rag: int
 ):
     if rag:
         if detect_aad(prompt):
@@ -256,7 +252,7 @@ def ask_llm(
         results_new_schema = None
         time_stages = {}
 
-    stream = model.stream(prompt_with_template, callbacks=callbacks)
+    stream = LLM(prompt_with_template, stream=True)
     return {
         "question": prompt,
         "answer": stream,
@@ -292,13 +288,14 @@ async def process_request(request: AskRequest):
                 model=LLM,
                 chroma_filter=active_filter,
                 rag=request.rag,
-                callbacks=[callback],
             ),
         )
 
         full_answer = ""
-        for chunk in response["answer"]:  # <-- token generator
-            full_answer += chunk
+        for chunk in response["stream"]:
+            token = chunk["choices"][0]["text"]
+            callback.on_llm_new_token(token)
+            full_answer += token
 
         time_ask_llm = time.time()
         response["active_filter"] = str(active_filter)
