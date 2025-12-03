@@ -252,7 +252,7 @@ def ask_llm(
         results_new_schema = None
         time_stages = {}
 
-    stream = LLM(prompt_with_template, stream=True)
+    stream = LLM.client(prompt_with_template, stream=True)
     return {
         "question": prompt,
         "answer": stream,
