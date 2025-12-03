@@ -87,7 +87,7 @@ def verwijder_onafgeronde_zinnen(text: str) -> str:
 
 
 def uniek_antwoord(tekst):
-    return schoon_antwoord(verwijder_onafgeronde_zinnen(verwijder_herhalingen(tekst)))
+    return schoon_antwoord(verwijder_onafgeronde_zinnen(tekst))
 
 
 def get_embedding_function():
