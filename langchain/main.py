@@ -162,7 +162,6 @@ def retrieve_answer_from_vector_store(
         question=prompt, include_nouns=CONFIG["INCLUDE_KEYWORDS"]
     )
     time_doc_search = time.time()
-    # neo_context_text, results_new_schema = query_neo4j(prompt, chroma_filter)
     neo_context_text = None
     time_stages = {}
     if not neo_context_text:
@@ -170,15 +169,10 @@ def retrieve_answer_from_vector_store(
             prompt=prompt,
             filter_chroma=chroma_filter,
             db=db,
-            # FIXME deprecated
-            # db_json=db_json,
-            # include_db_json=CONFIG["INCLUDE_CHROMA_JSON"],
             source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
             source_max_dense=CONFIG["SOURCE_MAX"],
             score_threshold=CONFIG["SCORE_THRESHOLD"],
-            # score_threshold_json=CONFIG["SCORE_THRESHOLD_JSON"],
             where_document=document_search,
-            # include_summary=CONFIG["INCLUDE_SUMMARY"],
         )
         results_new_schema = []
         for doc, score in results:
@@ -497,9 +491,18 @@ def retrieve_neo_answer(question, neo4j_result):
     # parameters = {"aad_ids": aads}
     # result = GRAPH.query(cypher_to_run, params=parameters)
     # logging.info(f"Rsultaat: {result}")
+    _, trimmed_neo4j_result = trim_context_to_fit(
+        model=model.client,
+        template=CYPHER_PROMPT,
+        context_text=neo4j_result,
+        question=question,
+        n_ctx=CONFIG["MAX_CTX"],
+        max_tokens=CONFIG["MAX_TOKENS"],
+    )
+
     try:
         llm_result = LLM.invoke(
-            CYPHER_PROMPT.format(result=neo4j_result, question=question)
+            CYPHER_PROMPT.format(result=trimmed_neo4j_result, question=question)
         )
     except ValueError:
         llm_result = (
@@ -509,7 +512,7 @@ def retrieve_neo_answer(question, neo4j_result):
             f"{neo4j_result}"
         )
         logging.info(f"The llm result: {llm_result}")
-        return False
+        return llm_result
     return llm_result
 
 
