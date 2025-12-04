@@ -123,7 +123,7 @@ class ContextRequest(BaseModel):
 
 
 def retrieve_answer_from_vector_store(
-    prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp
+    prompt: str, chroma_filter: Optional[Dict | None]
 ):
     time_start = time.time()
     document_search = maak_chroma_filter(
@@ -157,7 +157,7 @@ def retrieve_answer_from_vector_store(
     logging.info("Done building context")
     time_build_context = time.time()
     _, trimmed_context_text = trim_context_to_fit(
-        model=model.client,
+        model=LLM.client,
         template=DEFAULT_QA_PROMPT,
         context_text=context_text,
         question=prompt,
@@ -180,9 +180,7 @@ def retrieve_answer_from_vector_store(
     return prompt_with_template, results_new_schema, time_stages
 
 
-def ask_llm(
-    prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp, rag: int
-):
+def ask_llm(prompt: str, chroma_filter: Optional[Dict | None], rag: int):
     if rag:
         if detect_aad(prompt):
             neo4j_result = validate_structured_query(prompt)
@@ -237,6 +235,44 @@ def ask_llm(
     }
 
 
+def build_prompt_template(prompt: str, chroma_filter: Optional[Dict | None], rag: int):
+    reference_documents = None
+    time_stages = {}
+    if rag:
+        if detect_aad(prompt):
+            neo4j_result = validate_structured_query(prompt)
+            if len(neo4j_result) > 0:
+                logging.info(f"Start LLM on neo4j: {neo4j_result}")
+                return (
+                    retrieve_neo_answer(prompt, neo4j_result),
+                    source_document_dummy(),
+                    {},
+                )
+            else:
+                logging.info(f"Closest query: {neo4j_result}")
+                prompt_with_template, reference_documents, time_stages = (
+                    retrieve_answer_from_vector_store(prompt, chroma_filter)
+                )
+        else:
+            neo4j_result = validate_structured_query_embedding(prompt)
+            if len(neo4j_result) > 0:
+                logging.info(f"Start LLM on neo4j: {neo4j_result}")
+                return (
+                    retrieve_neo_answer(prompt, neo4j_result),
+                    source_document_dummy(),
+                    {},
+                )
+            else:
+                prompt_with_template, reference_documents, time_stages = (
+                    retrieve_answer_from_vector_store(prompt, chroma_filter)
+                )
+    else:
+        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
+            system_prompt=SYSTEM_PROMPT, question=prompt
+        )
+    return prompt_with_template, reference_documents, time_stages
+
+
 # Async wrapper voor een sync generator
 async def async_stream_generator(sync_gen):
     loop = asyncio.get_event_loop()
@@ -257,7 +293,8 @@ async def async_stream_generator(sync_gen):
 
 async def process_request(request: AskRequest):
     """Verwerkt een verzoek en streamt partial responses."""
-    active_filter = (
+
+    database_filter = (
         maak_metadata_filter(request, COMPONENTS, CONFIG["INCLUDE_PERMISSION"])
         if CONFIG["INCLUDE_FILTER"]
         else None
@@ -266,9 +303,9 @@ async def process_request(request: AskRequest):
     if request.prompt.startswith("!"):
         request.rag = 0
 
-    # Haal de sync generator op
-    prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
-        system_prompt=SYSTEM_PROMPT, question=request.prompt
+    # Retrieve the correct template and reference docs
+    prompt_with_template, reference_docs, time_stages = build_prompt_template(
+        chroma_filter=database_filter, prompt=request.prompt, rag=request.rag
     )
 
     stream = LLM.client(prompt_with_template, stream=True, max_tokens=1500)
@@ -301,9 +338,9 @@ async def process_request(request: AskRequest):
                 "question": request.prompt,
                 "answer": final_answer,
                 "prompt": prompt_with_template,
-                "active_filter": str(active_filter),
-                "source_documents": None,
-                "time_stages": {},
+                "active_filter": str(database_filter),
+                "source_documents": reference_docs,
+                "time_stages": time_stages,
             }
         seen_sentences.add(last_sentence)
 
@@ -314,9 +351,9 @@ async def process_request(request: AskRequest):
         "question": request.prompt,
         "answer": final_answer,
         "prompt": prompt_with_template,
-        "active_filter": str(active_filter),
-        "source_documents": None,
-        "time_stages": {},
+        "active_filter": str(database_filter),
+        "source_documents": reference_docs,
+        "time_stages": time_stages,
     }
 
 
@@ -495,7 +532,7 @@ def validate_structured_query_embedding(question):
         return []
 
 
-def retrieve_neo_answer(question, neo4j_result):
+def deprecated_retrieve_neo_answer(question, neo4j_result):
     """Verwerk NEO4J verzoeken."""
     _, trimmed_neo4j_result = trim_context_to_fit(
         model=LLM.client,
@@ -523,6 +560,22 @@ def retrieve_neo_answer(question, neo4j_result):
         logging.info(f"The llm result: {llm_result}")
         return llm_result
     return llm_result
+
+
+def retrieve_neo_answer(question, neo4j_result):
+    """Verwerk NEO4J verzoeken."""
+    _, trimmed_neo4j_result = trim_context_to_fit(
+        model=LLM.client,
+        template=DEFAULT_QA_PROMPT,
+        context_text=str(neo4j_result),
+        question=question,
+        n_ctx=CONFIG["MAX_CTX"],
+        max_tokens=CONFIG["MAX_TOKENS"],
+    )
+    logging.info(
+        f"Trimmed neo4j result: {len(str(neo4j_result))} to {len(trimmed_neo4j_result)}"
+    )
+    return CYPHER_PROMPT.format(result=trimmed_neo4j_result, question=question)
 
 
 def get_image_name() -> str:
