@@ -407,6 +407,27 @@ def herschik(query, candidates, top_m: int):
     return scored[:top_m]
 
 
+def detect_aad(question):
+    if "faalvorm" in question:
+        return 1
+    return 0
+
+
+def source_document_dummy():
+    return [
+        {
+            "id": 12345678910,
+            "metadata": {
+                "source": "/root/ksandr_files/aads/10546/cat-1/main.json",
+                "source_search": "/root/ksandr_files/aads/10546/cat-1/main.json",
+                "file_path": "/root/ksandr_files/aads/10546/cat-1/main.json",
+                "score": 0.50,
+            },
+            "type": "Document",
+        }
+    ]
+
+
 if __name__ == "__main__":
     # Voorbeeld van gebruik:
     vragen = [
@@ -434,24 +455,3 @@ if __name__ == "__main__":
             )
         )
     )
-
-
-def detect_aad(question):
-    if "faalvorm" in question:
-        return 1
-    return 0
-
-
-def source_document_dummy():
-    return [
-        {
-            "id": 12345678910,
-            "metadata": {
-                "source": "/root/ksandr_files/aads/10546/cat-1/main.json",
-                "source_search": "/root/ksandr_files/aads/10546/cat-1/main.json",
-                "file_path": "/root/ksandr_files/aads/10546/cat-1/main.json",
-                "score": 0.50,
-            },
-            "type": "Document",
-        }
-    ]

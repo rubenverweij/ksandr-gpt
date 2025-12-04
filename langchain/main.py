@@ -45,7 +45,6 @@ CONFIG = {
     "TEMPERATURE": float(os.getenv("TEMPERATURE", 0.2)),
     "SOURCE_MAX": int(os.getenv("SOURCE_MAX", 10)),
     "SOURCE_MAX_RERANKER": int(os.getenv("SOURCE_MAX_RERANKER", 0)),
-    # "SCORE_THRESHOLD_JSON": float(os.getenv("SCORE_THRESHOLD_JSON", 1.1)),
     "SCORE_THRESHOLD": float(os.getenv("SCORE_THRESHOLD", 1.1)),
     "INCLUDE_FILTER": int(os.getenv("INCLUDE_FILTER", 1)),
     "MAX_TOKENS": int(os.getenv("MAX_TOKENS", 750)),
@@ -94,7 +93,7 @@ db_cypher = Chroma(
 print(f"Starting container with {CONFIG}")
 
 
-# Streaming handler
+# Streaming handler voor het streamen van antwoorden
 class StreamingResponseCallback(BaseCallbackHandler):
     def __init__(self, request_id: str):
         self.request_id = request_id
@@ -109,7 +108,6 @@ class StreamingResponseCallback(BaseCallbackHandler):
             )
 
 
-# Vraagmodel
 class AskRequest(BaseModel):
     prompt: str
     permission: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]] = None
@@ -462,10 +460,6 @@ def context(req: ContextRequest):
 
 def validate_structured_query(question):
     aads = haal_dossiers_op(question)
-    # FIXME probably deprecated
-    # results = db_cypher.similarity_search_with_score(question, k=1)
-    # top_doc, score = results[0]
-    # cypher_to_run = top_doc.metadata["cypher"]
     if len(aads) > 0:
         where_clause = "WHERE d.aad_id IN $aad_ids"
     else:

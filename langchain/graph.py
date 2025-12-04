@@ -12,62 +12,6 @@ def tokenize(text):
     return set(tokens)
 
 
-# Voorbeeld database
-example_db = [
-    {
-        "questions": [
-            "Geef het beheerteam van een dossier",
-            "Wie zitten in het beheerteam van aad",
-            "Haal het beheerteam op",
-        ],
-        "must_have": ["beheerteam"],  # verplichte woorden
-        "cypher": """ 
-        MATCH (d:dossier)-[:heeft_beheerteam_lid]->(p:persoon)
-        {where_clause}
-        RETURN 
-            d.aad_id AS dossier_id,
-            p.naam AS persoon_naam,
-            p.id AS persoon_id,
-            p.link AS profiel_link
-        ORDER BY dossier_id, persoon_naam
-        """,
-    },
-    {
-        "questions": ["Geef een lijst van documenten voor dossier"],
-        "must_have": ["documenten"],
-        "cypher": """ 
-        MATCH (d:dossier)-[:heeft_component]->(c:component)
-        MATCH (d)-[:heeft_document]->(doc)
-        RETURN doc
-        """,
-    },
-    {
-        "questions": ["Geef de populatiegegevens van component"],
-        "must_have": ["populatiegegevens"],
-        "cypher": """ 
-        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
-        MATCH (d:dossier)
-        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
-
-        MATCH (nb:netbeheerder)
-        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
-
-        MATCH (nb)-[:heeft_populatie]->(p:populatie)
-        MATCH (d)-[:heeft_populatie]->(p)
-        MATCH (d)-[:heeft_component]->(c:component)
-
-        RETURN 
-            nb.naam AS netbeheerder,
-            d.aad_id AS dossier_id,
-            c.component_id AS component_naam,
-            p.populatie AS populatie,
-            p.aantal_velden AS aantal_velden
-        ORDER BY dossier_id, component_naam
-        """,
-    },
-]
-
-
 def match_query_by_tags(question: str, query: dict) -> bool:
     """
     Returns True if any tag from query["tags"] is found in the question text,
@@ -91,20 +35,6 @@ def match_query_by_tags(question: str, query: dict) -> bool:
         if tag in question:
             return True
     return False
-
-
-# FIXME deprecated
-# def _postprocess_output_cypher(output_cypher: str) -> str:
-#     # Remove any explanation. E.g.  MATCH...\n\n**Explanation:**\n\n -> MATCH...
-#     # Remove cypher indicator. E.g.```cypher\nMATCH...```` --> MATCH...
-#     # Note: Possible to have both:
-#     #   E.g. ```cypher\nMATCH...````\n\n**Explanation:**\n\n --> MATCH...
-#     partition_by = "**Explanation:**"
-#     output_cypher, _, _ = output_cypher.partition(partition_by)
-#     output_cypher = output_cypher.strip("`\n")
-#     output_cypher = output_cypher.lstrip("cypher\n")
-#     output_cypher = output_cypher.strip("`\n ")
-#     return output_cypher
 
 
 def build_cypher_query(question, clause=""):
@@ -220,27 +150,6 @@ def build_cypher_query(question, clause=""):
     if wants_quantity:
         query += "\nORDER BY aantalFaalvorm DESC"
     return query.strip()
-
-
-def match_query(user_question):
-    user_tokens = tokenize(user_question)
-    best_match = None
-    max_overlap = 0
-
-    for entry in example_db:
-        # Check verplichte woorden
-        if not all(term in user_tokens for term in entry.get("must_have", [])):
-            continue  # sla deze query over
-
-        # Bereken overlap met alle voorbeeldvragen
-        for q in entry["questions"]:
-            db_tokens = tokenize(q)
-            overlap = len(user_tokens & db_tokens)
-            if overlap > max_overlap:
-                max_overlap = overlap
-                best_match = entry
-
-    return best_match["cypher"], max_overlap
 
 
 def check_for_nbs(question):
