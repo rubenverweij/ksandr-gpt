@@ -120,7 +120,9 @@ class StreamingResponseCallback(BaseCallbackHandler):
         self.partial_response += token
         # Store partial result live
         if self.request_id in request_responses:
-            request_responses[self.request_id]["answer"] = self.partial_response
+            request_responses[self.request_id]["response"]["answer"] = (
+                self.partial_response
+            )
 
 
 # Vraagmodel
@@ -304,7 +306,7 @@ async def process_request(request: AskRequest):
         callback.on_llm_new_token(token)
         # Update partial_response in je request_responses
         if request.id in request_responses:
-            request_responses[request.id]["answer"] = full_answer
+            request_responses[request.id]["response"]["answer"] = full_answer
 
     # Generator klaar, final answer
     final_answer = uniek_antwoord(full_answer)
