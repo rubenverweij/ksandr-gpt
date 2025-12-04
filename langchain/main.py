@@ -6,7 +6,7 @@ import re
 from datetime import datetime
 
 from templates import TEMPLATES, SYSTEM_PROMPT, CYPHER_PROMPT
-from graph import build_cypher_query, check_for_nbs, match_query, match_query_by_tags
+from graph import build_cypher_query, check_for_nbs, match_query_by_tags
 from helpers import (
     maak_metadata_filter,
     COMPONENTS,
@@ -58,14 +58,11 @@ CONFIG = {
             "/root/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
         )
     ),
-    # "CYPHER_MODEL_PATH": "/root/onprem_data/models/text2cypher-gemma2-9b-q4_K_M.gguf",
     "INCLUDE_PERMISSION": int(os.getenv("INCLUDE_PERMISSION", 0)),
     "CHROMA_PATH": os.getenv("CHROMA_PATH", "/root/onprem_data/chroma"),
-    # "CHROMA_PATH_JSON": os.getenv("CHROMA_PATH_JSON", "/root/onprem_data/chroma_json"),
     "CHROMA_PATH_CYPHER": os.getenv(
         "CHROMA_PATH_CYPHER", "/root/onprem_data/chroma_cypher"
     ),
-    # "INCLUDE_CHROMA_JSON": os.getenv("INCLUDE_CHROMA_JSON", 0),
 }
 
 model = os.path.basename(CONFIG["DEFAULT_MODEL_PATH"])
@@ -85,25 +82,11 @@ LLM = LlamaCpp(
     top_p=0.9,
 )
 
-# FIXME deprecated since CONFIG["CYPHER_MODEL_PATH"] does not provide reliable results
-# LLM_CYPHER = LlamaCpp(
-#     model_path=CONFIG["CYPHER_MODEL_PATH"],
-#     max_tokens=512,
-#     n_gpu_layers=40,
-#     n_ctx=1028,
-#     verbose=True,
-#     temperature=0.2,
-#     top_p=0.9,
-# )
 
 embedding_function = get_embedding_function()
 db = Chroma(
     persist_directory=CONFIG["CHROMA_PATH"], embedding_function=embedding_function
 )
-# FIXME deprecated since CONFIG["CYPHER_MODEL_PATH"] does not provide reliable results
-# db_json = Chroma(
-#     persist_directory=CONFIG["CHROMA_PATH_JSON"], embedding_function=embedding_function
-# )
 db_cypher = Chroma(
     persist_directory=CONFIG["CHROMA_PATH_CYPHER"],
     embedding_function=embedding_function,
@@ -479,53 +462,11 @@ async def get_status(request_id: str):
     return {"message": "Request not found", "status": "not_found"}
 
 
-@app.post("/evaluate")
-def evaluate(req: EvaluationRequest):
-    result = evaluate_answer(req.expected, req.actual)
-    return {"evaluation": result}
-
-
 @app.post("/context")
 def context(req: ContextRequest):
     return {
         "answer": LLM.invoke(req.prompt),
     }
-
-
-@app.post("/neo")
-def neo(req: Neo4jRequest):
-    question = req.prompt
-    aads = haal_dossiers_op(question)
-    nbs = check_for_nbs(question)
-    if detect_aad(question):
-        # FIXME probably deprecated
-        # results = db_cypher.similarity_search_with_score(question, k=1)
-        # top_doc, score = results[0]
-        # cypher_to_run = top_doc.metadata["cypher"]
-        if len(aads) > 0:
-            where_clause = "WHERE d.aad_id IN $aad_ids"
-        else:
-            where_clause = ""
-        cypher_to_run = build_cypher_query(question, clause=where_clause)
-        cypher_to_run = cypher_to_run.format(where_clause=where_clause)
-        logging.info(f"Closest query: {cypher_to_run}")
-        parameters = {"aad_ids": aads}
-        neo4j_results = GRAPH.query(cypher_to_run, params=parameters)
-        answer = LLM.invoke(
-            CYPHER_PROMPT.format(result=neo4j_results, question=question)
-        )
-        logging.info(f"Neo4j results: {neo4j_results}")
-        return {"answer": answer}
-    else:
-        cypher_to_run, _ = match_query(user_question=question)
-        parameters = {"aad_ids": aads, "netbeheerders": nbs}
-        logging.info(f"Closest query: {cypher_to_run}")
-        neo4j_results = GRAPH.query(cypher_to_run, params=parameters)
-        answer = LLM.invoke(
-            CYPHER_PROMPT.format(result=neo4j_results, question=question)
-        )
-        logging.info(f"Neo4j results: {neo4j_results}")
-        return {"answer": answer}
 
 
 def validate_structured_query(question):
@@ -571,21 +512,6 @@ def validate_structured_query_embedding(question):
 
 def retrieve_neo_answer(question, neo4j_result):
     """Verwerk NEO4J verzoeken."""
-    # FIXME probably deprecated
-    # aads = haal_dossiers_op(question)
-    # results = db_cypher.similarity_search_with_score(question, k=1)
-    # top_doc, score = results[0]
-    # cypher_to_run = top_doc.metadata["cypher"]
-    # if len(aads) > 0:
-    #     where_clause = "WHERE a.aad_id IN $aad_ids"
-    # else:
-    #     where_clause = ""
-    # cypher_to_run = build_cypher_query(question, clause=where_clause)
-    # cypher_to_run = cypher_to_run.format(where_clause=where_clause)
-    # logging.info(f"Closest query: {cypher_to_run}")
-    # parameters = {"aad_ids": aads}
-    # result = GRAPH.query(cypher_to_run, params=parameters)
-    # logging.info(f"Rsultaat: {result}")
     _, trimmed_neo4j_result = trim_context_to_fit(
         model=LLM.client,
         template=DEFAULT_QA_PROMPT,
@@ -612,27 +538,6 @@ def retrieve_neo_answer(question, neo4j_result):
         logging.info(f"The llm result: {llm_result}")
         return llm_result
     return llm_result
-
-
-# FIXME probably deprecated
-# def retrieve_neo_answer_generate_query(question):
-#     """Verwerk NEO4J verzoeken."""
-#     cypher_query = LLM_CYPHER.invoke(
-#         CYPHER_GEN_PROMPT.format(schema=GRAPH.schema, question=question)
-#     )
-#     logging.info(f"The raw query is: {cypher_query}")
-#     cleaned_query = _postprocess_output_cypher(cypher_query)
-#     logging.info(f"The query is: {cleaned_query}")
-#     result = GRAPH.query(cleaned_query, params={})
-#     logging.info(f"The query result is: {result}")
-#     return LLM.invoke(CYPHER_PROMPT.format(result=result, question=question))
-
-
-def evaluate_answer(expected: str, actual: str) -> str:
-    """Laat het LLM de antwoorden vergelijken en bepalen of het correct is."""
-    comparison_prompt = EVALUATIE_PROMPT.format(actual=actual, expected=expected)
-    result = LLM(comparison_prompt)
-    return result.strip()
 
 
 def get_image_name() -> str:
