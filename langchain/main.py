@@ -2,6 +2,7 @@ import asyncio
 import time
 import uuid
 import os
+import re
 from datetime import datetime
 
 from templates import TEMPLATES, SYSTEM_PROMPT, CYPHER_PROMPT
@@ -300,13 +301,39 @@ async def process_request(request: AskRequest):
 
     stream = LLM.client(prompt_with_template, stream=True, max_tokens=1500)
     full_answer = ""
+    sentence_end_re = re.compile(r"[.!?]")
+    seen_sentences = set()
     async for chunk in async_stream_generator(stream):
         token = chunk["choices"][0]["text"]
         full_answer += token
         callback.on_llm_new_token(token)
+
+        if not sentence_end_re.search(token):
+            continue
+
+        sentences = re.split(r"(?<=[.!?])\s*", full_answer)
+        completed = sentences[:-1]
+        full_answer = sentences[-1]
+        for sentence in completed:
+            sentence_clean = sentence.strip()
+            if not sentence_clean:
+                continue
+            if sentence_clean in seen_sentences:
+                logging.info(f"Detected duplicate sentence: {sentence_clean}")
+                final_answer = uniek_antwoord(full_answer)
+                return {
+                    "question": request.prompt,
+                    "answer": final_answer,
+                    "prompt": prompt_with_template,
+                    "active_filter": str(active_filter),
+                    "source_documents": None,
+                    "time_stages": {},
+                }
+            seen_sentences.add(sentence_clean)
+
         # Update partial_response in je request_responses
-        if request.id in request_responses:
-            request_responses[request.id]["partial_response"] = full_answer
+        # if request.id in request_responses:
+        #     request_responses[request.id]["partial_response"] = full_answer
 
     # Generator klaar, final answer
     final_answer = uniek_antwoord(full_answer)
