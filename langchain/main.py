@@ -120,7 +120,7 @@ class StreamingResponseCallback(BaseCallbackHandler):
         self.partial_response += token
         # Store partial result live
         if self.request_id in request_responses:
-            request_responses[self.request_id]["response"]["answer"] = (
+            request_responses[self.request_id]["partial_response"] = (
                 self.partial_response
             )
 
@@ -306,7 +306,7 @@ async def process_request(request: AskRequest):
         callback.on_llm_new_token(token)
         # Update partial_response in je request_responses
         if request.id in request_responses:
-            request_responses[request.id]["response"]["answer"] = full_answer
+            request_responses[request.id]["partial_response"] = full_answer
 
     # Generator klaar, final answer
     final_answer = uniek_antwoord(full_answer)
@@ -427,20 +427,19 @@ async def get_status(request_id: str):
         response_data = request_responses[request_id]
         if response_data["status"] == "completed":
             return response_data
-        # elif "partial_response" in response_data:
-        #     return {
-        #         "status": "processing",
-        #         "start_time_formatted": response_data["start_time_formatted"],
-        #         "in_queue_start": response_data["in_queue_start"],
-        #         "partial_response": response_data["partial_response"],
-        #         "in_queue_current": await get_request_position_in_queue(
-        #             request_id=request_id
-        #         ),
-        #     }
+        elif "partial_response" in response_data:
+            return {
+                "status": "processing",
+                "start_time_formatted": response_data["start_time_formatted"],
+                "in_queue_start": response_data["in_queue_start"],
+                "response": {"answer": response_data["partial_response"]},
+                "in_queue_current": await get_request_position_in_queue(
+                    request_id=request_id
+                ),
+            }
         return {
             "status": "processing",
             "start_time_formatted": response_data["start_time_formatted"],
-            "response": response_data["response"],
             "in_queue_start": response_data["in_queue_start"],
             "in_queue_current": await get_request_position_in_queue(
                 request_id=request_id
