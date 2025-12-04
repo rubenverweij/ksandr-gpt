@@ -120,16 +120,7 @@ class AskRequest(BaseModel):
         extra = "allow"  # Allow extra fields
 
 
-class EvaluationRequest(BaseModel):
-    expected: str
-    actual: str
-
-
 class ContextRequest(BaseModel):
-    prompt: str
-
-
-class Neo4jRequest(BaseModel):
     prompt: str
 
 
