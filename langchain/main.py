@@ -120,9 +120,7 @@ class StreamingResponseCallback(BaseCallbackHandler):
         self.partial_response += token
         # Store partial result live
         if self.request_id in request_responses:
-            request_responses[self.request_id]["partial_response"] = (
-                self.partial_response
-            )
+            request_responses[self.request_id]["answer"] = self.partial_response
 
 
 # Vraagmodel
@@ -275,7 +273,6 @@ async def async_stream_generator(sync_gen):
         asyncio.run_coroutine_threadsafe(queue.put(None), loop)
 
     threading.Thread(target=run_sync, daemon=True).start()
-
     while True:
         item = await queue.get()
         if item is None:
@@ -290,7 +287,6 @@ async def process_request(request: AskRequest):
         if CONFIG["INCLUDE_FILTER"]
         else None
     )
-
     callback = StreamingResponseCallback(request.id)
     if request.prompt.startswith("!"):
         request.rag = 0
@@ -299,16 +295,16 @@ async def process_request(request: AskRequest):
     prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
         system_prompt=SYSTEM_PROMPT, question=request.prompt
     )
+
     stream = LLM.client(prompt_with_template, stream=True, max_tokens=1500)
     full_answer = ""
     async for chunk in async_stream_generator(stream):
         token = chunk["choices"][0]["text"]
         full_answer += token
         callback.on_llm_new_token(token)
-
         # Update partial_response in je request_responses
         if request.id in request_responses:
-            request_responses[request.id]["partial_response"] = full_answer
+            request_responses[request.id]["answer"] = full_answer
 
     # Generator klaar, final answer
     final_answer = uniek_antwoord(full_answer)
