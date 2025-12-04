@@ -459,7 +459,10 @@ async def get_status(request_id: str):
                 "status": "processing",
                 "start_time_formatted": response_data["start_time_formatted"],
                 "in_queue_start": response_data["in_queue_start"],
-                "response": {"answer": response_data["partial_response"]},
+                "response": {
+                    "answer": response_data["partial_response"],
+                    "source_documents": None,
+                },
                 "in_queue_current": await get_request_position_in_queue(
                     request_id=request_id
                 ),
