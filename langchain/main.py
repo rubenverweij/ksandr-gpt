@@ -301,37 +301,41 @@ async def process_request(request: AskRequest):
 
     stream = LLM.client(prompt_with_template, stream=True, max_tokens=1500)
     full_answer = ""
+    buffer = ""
     sentence_end_re = re.compile(r"[.!?]")
     seen_sentences = set()
     async for chunk in async_stream_generator(stream):
         token = chunk["choices"][0]["text"]
         full_answer += token
+        buffer += token
         callback.on_llm_new_token(token)
-        if request.id in request_responses:
-            request_responses[request.id]["partial_response"] = full_answer
+        # if request.id in request_responses:
+        #     request_responses[request.id]["partial_response"] = full_answer
 
         if not sentence_end_re.search(token):
             continue
 
-        sentences = re.split(r"(?<=[.!?])\s*", full_answer)
+        # Only check the last sentence is a replication
+        sentences = re.split(r"(?<=[.!?])\s*", buffer)
         completed = sentences[:-1]
-        full_answer = sentences[-1]
-        for sentence in completed:
-            sentence_clean = sentence.strip()
-            if not sentence_clean:
-                continue
-            if sentence_clean in seen_sentences:
-                logging.info(f"Detected duplicate sentence: {sentence_clean}")
-                final_answer = uniek_antwoord(full_answer)
-                return {
-                    "question": request.prompt,
-                    "answer": final_answer,
-                    "prompt": prompt_with_template,
-                    "active_filter": str(active_filter),
-                    "source_documents": None,
-                    "time_stages": {},
-                }
-            seen_sentences.add(sentence_clean)
+        buffer = sentences[-1]
+        if not completed:
+            continue
+
+        # We only check the LAST completed sentence
+        last_sentence = completed[-1].strip()
+        if last_sentence and last_sentence in seen_sentences:
+            logging.info(f"Detected duplicate sentence: {last_sentence}")
+            final_answer = uniek_antwoord(full_answer)
+            return {
+                "question": request.prompt,
+                "answer": final_answer,
+                "prompt": prompt_with_template,
+                "active_filter": str(active_filter),
+                "source_documents": None,
+                "time_stages": {},
+            }
+        seen_sentences.add(last_sentence)
 
     # Generator klaar, final answer
     final_answer = uniek_antwoord(full_answer)
