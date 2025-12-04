@@ -307,6 +307,8 @@ async def process_request(request: AskRequest):
         token = chunk["choices"][0]["text"]
         full_answer += token
         callback.on_llm_new_token(token)
+        if request.id in request_responses:
+            request_responses[request.id]["partial_response"] = full_answer
 
         if not sentence_end_re.search(token):
             continue
@@ -330,10 +332,6 @@ async def process_request(request: AskRequest):
                     "time_stages": {},
                 }
             seen_sentences.add(sentence_clean)
-
-        # Update partial_response in je request_responses
-        # if request.id in request_responses:
-        #     request_responses[request.id]["partial_response"] = full_answer
 
     # Generator klaar, final answer
     final_answer = uniek_antwoord(full_answer)
