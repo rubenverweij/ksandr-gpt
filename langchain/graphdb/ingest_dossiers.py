@@ -411,6 +411,11 @@ COMPONENTS = {
 }
 
 with driver.session() as session:
+    session.run("MATCH (n) DETACH DELETE n")
+
+print("Database deleted.")
+
+with driver.session() as session:
     for aad_id, component_id in COMPONENTS.items():
         json_folder = f"/home/ubuntu/ksandr_files/aads/{aad_id}/cat-1/fail-types/"
         # process faalvormen
