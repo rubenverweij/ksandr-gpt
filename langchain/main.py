@@ -309,8 +309,6 @@ async def process_request(request: AskRequest):
         full_answer += token
         buffer += token
         callback.on_llm_new_token(token)
-        # if request.id in request_responses:
-        #     request_responses[request.id]["partial_response"] = full_answer
 
         if not sentence_end_re.search(token):
             continue
@@ -455,6 +453,7 @@ async def get_status(request_id: str):
     if request_id in request_responses:
         response_data = request_responses[request_id]
         if response_data["status"] == "completed":
+            response_data.pop("partial_response")
             return response_data
         elif "partial_response" in response_data:
             return {
