@@ -18,6 +18,7 @@ from helpers import (
     haal_dossiers_op,
     detect_aad,
     source_document_dummy,
+    is_valid_sentence,
 )
 from fastapi import FastAPI
 import threading
@@ -101,7 +102,7 @@ class StreamingResponseCallback(BaseCallbackHandler):
 
     def on_llm_new_token(self, token: str, **kwargs):
         self.partial_response += token
-        # Store partial result live
+        # Store partial result
         if self.request_id in request_responses:
             request_responses[self.request_id]["partial_response"] = (
                 self.partial_response
@@ -336,7 +337,11 @@ async def process_request(request: AskRequest):
 
         # We only check the LAST completed sentence
         last_sentence = completed[-1].strip()
-        if last_sentence and last_sentence in seen_sentences:
+        if (
+            last_sentence
+            and is_valid_sentence(last_sentence)
+            and last_sentence in seen_sentences
+        ):
             logging.info(f"Detected duplicate sentence: {last_sentence}")
             final_answer = uniek_antwoord(full_answer)
             return {

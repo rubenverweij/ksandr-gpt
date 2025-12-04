@@ -28,6 +28,7 @@ NLP = spacy.load("nl_core_news_sm")
 # Variables to make use of keywords that are relevant
 FREQUENCY_THRESHOLD = 5  # Only include nouns used at least this many times
 FREQUENCY_THRESHOLD_MAX = 5e5
+MIN_WORDS = 3  # <--- minimale aantal woorden voor een zin
 
 # Load saved data
 with open("/root/onprem_data/keywords/lemma_counter.pkl", "rb") as f:
@@ -426,6 +427,12 @@ def source_document_dummy():
             "type": "Document",
         }
     ]
+
+
+def is_valid_sentence(sentence: str, min_words: int = MIN_WORDS) -> bool:
+    # verwijder dubbele spaties en splits
+    words = [w for w in sentence.strip().split() if w]
+    return len(words) >= min_words
 
 
 if __name__ == "__main__":
