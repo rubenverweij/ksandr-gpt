@@ -5,7 +5,7 @@ import os
 import re
 from datetime import datetime
 
-from templates import TEMPLATES, SYSTEM_PROMPT, CYPHER_PROMPT
+from templates import TEMPLATES, SYSTEM_PROMPT
 from graph import build_cypher_query, check_for_nbs, match_query_by_tags
 from helpers import (
     maak_metadata_filter,
@@ -67,6 +67,7 @@ CONFIG = {
 model = os.path.basename(CONFIG["DEFAULT_MODEL_PATH"])
 DEFAULT_QA_PROMPT = TEMPLATES[model]["DEFAULT_QA_PROMPT"]
 EVALUATIE_PROMPT = TEMPLATES[model]["EVALUATIE_PROMPT"]
+CYPHER_PROMPT = TEMPLATES[model]["CYPHER_PROMPT"]
 DEFAULT_QA_PROMPT_SIMPLE = TEMPLATES[model]["DEFAULT_QA_PROMPT_SIMPLE"]
 
 # Initialisatie van het taalmodel
@@ -164,6 +165,9 @@ def retrieve_answer_from_vector_store(
         n_ctx=CONFIG["MAX_CTX"],
         max_tokens=CONFIG["MAX_TOKENS"],
     )
+    if len(trimmed_context_text) < 10:
+        trimmed_context_text = "Er is geen informatie gevonden die gebruikt kan worden bij de beantwoording."
+
     time_reranker_trimming = time.time()
     prompt_with_template = DEFAULT_QA_PROMPT.format(
         system_prompt=SYSTEM_PROMPT,
@@ -180,7 +184,9 @@ def retrieve_answer_from_vector_store(
     return prompt_with_template, results_new_schema, time_stages
 
 
-def ask_llm(prompt: str, chroma_filter: Optional[Dict | None], rag: int):
+def ask_llm(
+    prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp, rag: int
+):
     if rag:
         if detect_aad(prompt):
             neo4j_result = validate_structured_query(prompt)
@@ -512,7 +518,7 @@ def validate_structured_query_embedding(question):
     aads = haal_dossiers_op(question)
     nbs = check_for_nbs(question)
     results = db_cypher.similarity_search_with_relevance_scores(question, k=20)
-    # doc[0] = actual query info and doc[1] = sim score
+    # NOTE: doc[0] = actual query info and doc[1] = sim score
     tag_filtered_results = [
         doc
         for doc in results
