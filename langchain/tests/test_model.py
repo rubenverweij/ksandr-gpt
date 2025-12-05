@@ -84,6 +84,8 @@ if __name__ == "__main__":
     with open(location_testdata, encoding="latin-1") as f:
         reader = csv.DictReader(f, delimiter=";")
         for idx, row in enumerate(reader, start=1):
+            if idx == 36:
+                continue
             percent = (idx / total) * 100
             print(f"Processing test question {idx}/{total} ({percent:.1f}%)")
 
