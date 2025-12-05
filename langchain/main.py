@@ -280,7 +280,7 @@ def build_prompt_template(prompt: str, chroma_filter: Optional[Dict | None], rag
 
 
 # Async wrapper voor een sync generator
-async def async_stream_generator(sync_gen):
+async def async_stream_generator_old(sync_gen):
     loop = asyncio.get_event_loop()
     queue = asyncio.Queue()
 
@@ -294,6 +294,16 @@ async def async_stream_generator(sync_gen):
         item = await queue.get()
         if item is None:
             break
+        yield item
+
+
+async def async_stream_generator(sync_gen):
+    """
+    Fully async wrapper for a synchronous generator.
+    Yields items without using threads.
+    """
+    for item in sync_gen:
+        await asyncio.sleep(0.001)  # yield control to event loop
         yield item
 
 
