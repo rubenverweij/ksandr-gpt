@@ -42,22 +42,23 @@ def build_cypher_query(question, clause=""):
     quantity = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "telling"]
 
     columns = {
-        "oorzaak": ["f.OorzaakGeneriek"],
-        "oorzaken": ["f.OorzaakGeneriek"],
-        "lijst": ["f.NummerInt"],
-        "opsomming": ["f.NummerInt"],
-        "nummer": ["f.NummerInt"],
-        "id": ["f.Prefix", "f.NummerInt"],
-        "component": ["c.component_id"],
-        "incidenten": ["f.GemiddeldAantalIncidenten"],
-        "meest voorkomende": ["f.GemiddeldAantalIncidenten"],
-        "asset": ["c.component_id"],
-        "gevolg": ["f.MogelijkGevolg"],
-        "faalindicator": ["f.Faalindicatoren"],
-        "faaltempo": ["f.Faaltempo"],
-        "effect": ["f.EffectOpSubsysteem"],
-        "beschrijving": ["f.Beschrijving"],
-        "omschrijving": ["f.Beschrijving"],
+        "oorzaak": ["f.OorzaakGeneriek:oorzaak_generiek"],
+        "oorzaken": ["f.OorzaakGeneriek:oorzaak_generiek"],
+        "lijst": ["f.faalvorm_id:nummer_faalvorm"],
+        "opsomming": ["f.faalvorm_id:nummer_faalvorm"],
+        "nummer": ["f.faalvorm_id:nummer_faalvorm"],
+        "id": ["f.faalvorm_id:nummer_faalvorm"],
+        "component": ["c.component_id:naam_component"],
+        "repareer": ["c.niet_repareerbaar:niet_repareerbaar"],
+        "incidenten": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
+        "meest voorkomende": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
+        "asset": ["c.component_id:naam_component"],
+        "gevolg": ["f.MogelijkGevolg:mogelijk_gevolg"],
+        "faalindicator": ["f.Faalindicatoren:faalindicator"],
+        "faaltempo": ["f.Faaltempo:faaltempo"],
+        "effect": ["f.EffectOpSubsysteem:effect_op_systeem"],
+        "beschrijving": ["f.Beschrijving:beschrijving"],
+        "omschrijving": ["f.Beschrijving:beschrijving"],
     }
 
     base_query = """
@@ -134,8 +135,8 @@ def build_cypher_query(question, clause=""):
     if not wants_quantity:
         return_parts.extend(["c.component_id AS component", "f.Naam AS faalvorm"])
     for f in selected_fields:
-        alias = f.split(".")[-1]
-        return_parts.append(f"{f} AS {alias}")
+        column = f.split(":")
+        return_parts.append(f"{column[0]} AS {column[1]}")
     if wants_quantity:
         return_parts.append("COUNT(f) AS aantalFaalvorm")
     return_clause = "RETURN " + ", ".join(return_parts)
