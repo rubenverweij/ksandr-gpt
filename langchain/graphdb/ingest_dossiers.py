@@ -365,9 +365,7 @@ def ingest_dossier(data, aad_id, component_id):
                     if not inspectie_punt:
                         continue
                     inspectie_id = f"inspectie_{abs(hash(str(inspectie_punt)))}"
-                    props = {
-                        "id": inspectie_id,
-                    }
+                    props = {"id": inspectie_id, "soort": "onderhoud_en_inspectie"}
                     if isinstance(inspectie_punt, dict):
                         for k, v in inspectie_punt.items():
                             if v:

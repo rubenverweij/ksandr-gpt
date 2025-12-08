@@ -194,14 +194,16 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids AND
         toLower(b.soort) = toLower("onderhoud_en_inspectie")
         MATCH (d)-[:heeft_component]->(c:component)
+        MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
+        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
         RETURN DISTINCT
-            b.soort as soort_inspectie_onderhoud,
-            b.goedkeuringseisen_toelichting as goedkeuringseisen
+            b.onderwerp as soort_inspectie,
+            b.goedkeuringseisen_toelichting as goedkeuringseis_inspectie
         """,
         "example_questions": [
             "Geef een lijst van 5 maatregelen die onderdeel uitmaken van een inspectieronde voor de FMX?",
