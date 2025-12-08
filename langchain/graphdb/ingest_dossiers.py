@@ -355,10 +355,10 @@ def ingest_dossier(data, aad_id, component_id):
         )
         for inspectie_punten_groep in onderhoud_inspectie:
             for key, group in inspectie_punten_groep.items():
-                onderhoud_inspectie = data.get("Inspectiepunten per netbeheerder", [])
+                onderhoud_inspectie = group.get("Inspectiepunten per netbeheerder", [])
                 for nb in onderhoud_inspectie:
-                    netbeheerder = data.get("Netbeheerder", "Onbekend")
-                    inspectie_punten = data.get("Inspectiepunten", [])
+                    netbeheerder = nb.get("Netbeheerder", "Onbekend")
+                    inspectie_punten = nb.get("Inspectiepunten", [])
                     for inspectie_punt in inspectie_punten:
                         print(f"Netbeheerder {netbeheerder}, beleid {inspectie_punt}")
                         if not inspectie_punt:
