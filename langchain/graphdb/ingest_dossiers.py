@@ -383,13 +383,14 @@ def ingest_dossier(data, aad_id, component_id):
                         "id",
                         inspectie_id,
                     )
+                    nb_id = f"netbeheerder_{netbeheerder}".lower()
                     session.execute_write(
                         merge_relation,
                         "netbeheerder",
                         "id",
-                        netbeheerder,
-                        "heeft_populatie",
-                        "populatie",
+                        nb_id,
+                        "heeft_beleid",
+                        "beleid",
                         "id",
                         inspectie_id,
                     )
