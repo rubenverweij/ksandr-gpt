@@ -51,7 +51,7 @@ def create_component_faalvorm(session, aad_id, component_id, faalvorm_data, file
                     f.MogelijkGevolg = $mogelijk_gevolg,
                     f.Uitvoering = $uitvoering,
                     f.EffectOpSubsysteem = $effect_op_subsysteem,
-                    f.LevensduurBepalend = $levensduur_bepalend,
+                    f.LevensduurBepalend = $niet_repareerbaar,
                     f.StatusOorzaak = $status_oorzaak,
                     f.StatusGevolg = $status_gevolg,
                     f.OorzaakDetail = $oorzaak_detail,
@@ -350,40 +350,50 @@ def ingest_dossier(data, aad_id, component_id):
         # ---------------------------------------------------------
         # Onderhoudsbeleid → onderhoud en inspectie nodes
         # ---------------------------------------------------------
-        onderhoud_inspectie = data.get("Onderhoud & inspectie", {})
-        for key, group in onderhoud_inspectie.items():
-            for item in group:
-                # print(f"Processing {key}, {item}")
-                if not item:
-                    continue
-                pol_id = f"pol_{abs(hash(str(item)))}"
-                props = {
-                    "id": pol_id,
-                    "soort": "onderhoud_en_inspectie",
-                    "toelichting": key,
-                }
-                if isinstance(item, dict):
-                    for k, v in item.items():
-                        if v:
-                            props[clean_key(k)] = v
-                else:
-                    if key == "Toelichting":
-                        props["Toelichting inspectie en onderhoud"] = item
-                        nb_name = None
-                    else:
-                        # als het item geen dict is, sla over of sla op als property
-                        continue
-                session.execute_write(merge_node, "beleid", "id", props)
-                session.execute_write(
-                    merge_relation,
-                    "dossier",
-                    "aad_id",
-                    aad_id,
-                    "heeft_beleid",
-                    "beleid",
-                    "id",
-                    pol_id,
-                )
+        onderhoud_inspectie = data.get("Onderhoud & inspectie", {}).get(
+            "Onderhoudstypes", {}
+        )
+        for inspectie_punten_groep in onderhoud_inspectie:
+            for key, group in inspectie_punten_groep.items():
+                onderhoud_inspectie = data.get("Inspectiepunten per netbeheerder", [])
+                for nb in onderhoud_inspectie:
+                    netbeheerder = data.get("Netbeheerder", "Onbekend")
+                    inspectie_punten = data.get("Inspectiepunten", [])
+                    for inspectie_punt in inspectie_punten:
+                        print(f"Netbeheerder {netbeheerder}, beleid {inspectie_punt}")
+                        if not inspectie_punt:
+                            continue
+                        inspectie_id = f"inspectie_{abs(hash(str(inspectie_punt)))}"
+                        props = {
+                            "id": inspectie_id,
+                        }
+                        if isinstance(inspectie_punt, dict):
+                            for k, v in inspectie_punt.items():
+                                if v:
+                                    props[clean_key(k)] = v
+                        else:
+                            continue
+                        session.execute_write(merge_node, "beleid", "id", props)
+                        session.execute_write(
+                            merge_relation,
+                            "dossier",
+                            "aad_id",
+                            aad_id,
+                            "heeft_beleid",
+                            "beleid",
+                            "id",
+                            inspectie_id,
+                        )
+                        session.execute_write(
+                            merge_relation,
+                            "netbeheerder",
+                            "id",
+                            netbeheerder,
+                            "heeft_populatie",
+                            "populatie",
+                            "id",
+                            inspectie_id,
+                        )
 
 
 COMPONENTS = {
