@@ -354,49 +354,47 @@ def ingest_dossier(data, aad_id, component_id):
             "Onderhoudstypes", []
         )
         for inspectie_punten_groep in onderhoud_inspectie:
-            for key, group in inspectie_punten_groep.items():
-                if not isinstance(group, dict):
-                    continue
-                print(f"Groep {group}")
-                onderhoud_inspectie = group.get("Inspectiepunten per netbeheerder", [])
-                for nb in onderhoud_inspectie:
-                    netbeheerder = nb.get("Netbeheerder", "Onbekend")
-                    inspectie_punten = nb.get("Inspectiepunten", [])
-                    for inspectie_punt in inspectie_punten:
-                        print(f"Netbeheerder {netbeheerder}, beleid {inspectie_punt}")
-                        if not inspectie_punt:
-                            continue
-                        inspectie_id = f"inspectie_{abs(hash(str(inspectie_punt)))}"
-                        props = {
-                            "id": inspectie_id,
-                        }
-                        if isinstance(inspectie_punt, dict):
-                            for k, v in inspectie_punt.items():
-                                if v:
-                                    props[clean_key(k)] = v
-                        else:
-                            continue
-                        session.execute_write(merge_node, "beleid", "id", props)
-                        session.execute_write(
-                            merge_relation,
-                            "dossier",
-                            "aad_id",
-                            aad_id,
-                            "heeft_beleid",
-                            "beleid",
-                            "id",
-                            inspectie_id,
-                        )
-                        session.execute_write(
-                            merge_relation,
-                            "netbeheerder",
-                            "id",
-                            netbeheerder,
-                            "heeft_populatie",
-                            "populatie",
-                            "id",
-                            inspectie_id,
-                        )
+            onderhoud_inspectie = inspectie_punten_groep.get(
+                "Inspectiepunten per netbeheerder", []
+            )
+            for nb in onderhoud_inspectie:
+                netbeheerder = nb.get("Netbeheerder", "Onbekend")
+                inspectie_punten = nb.get("Inspectiepunten", [])
+                for inspectie_punt in inspectie_punten:
+                    print(f"Netbeheerder {netbeheerder}, beleid {inspectie_punt}")
+                    if not inspectie_punt:
+                        continue
+                    inspectie_id = f"inspectie_{abs(hash(str(inspectie_punt)))}"
+                    props = {
+                        "id": inspectie_id,
+                    }
+                    if isinstance(inspectie_punt, dict):
+                        for k, v in inspectie_punt.items():
+                            if v:
+                                props[clean_key(k)] = v
+                    else:
+                        continue
+                    session.execute_write(merge_node, "beleid", "id", props)
+                    session.execute_write(
+                        merge_relation,
+                        "dossier",
+                        "aad_id",
+                        aad_id,
+                        "heeft_beleid",
+                        "beleid",
+                        "id",
+                        inspectie_id,
+                    )
+                    session.execute_write(
+                        merge_relation,
+                        "netbeheerder",
+                        "id",
+                        netbeheerder,
+                        "heeft_populatie",
+                        "populatie",
+                        "id",
+                        inspectie_id,
+                    )
 
 
 COMPONENTS = {
