@@ -19,6 +19,7 @@ predefined_queries = [
         "cypher": """
         {base_query}
         RETURN DISTINCT 
+            d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
             d.publicatiedatum AS publicatiedatum
         ORDER BY publicatiedatum DESC
@@ -33,6 +34,7 @@ predefined_queries = [
         "cypher": """
         {base_query}
         RETURN DISTINCT 
+            d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
             c.algemene_productbeschrijving AS productbeschrijving
         """,
@@ -43,6 +45,7 @@ predefined_queries = [
         "cypher": """
         {base_query}
         RETURN DISTINCT 
+            d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
             c.primaire_functie_in_het_net AS primaire_functie_in_netwerk
         """,
@@ -53,6 +56,7 @@ predefined_queries = [
         "cypher": """
         {base_query}
         RETURN DISTINCT 
+            d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
             c.secundaire_functie_in_het_net AS secundaire_functie_in_netwerk
         """,
@@ -63,6 +67,7 @@ predefined_queries = [
         "cypher": """
         {base_query}
         RETURN DISTINCT 
+            d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
             c.materiaal_omschrijving AS materiaal_omschrijving
         """,
@@ -73,6 +78,7 @@ predefined_queries = [
         "cypher": """
         {base_query}
         RETURN DISTINCT 
+            d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
             d.laatste_update AS laatste_update
         ORDER BY laatste_update DESC
@@ -94,18 +100,16 @@ predefined_queries = [
         MATCH (d)-[:heeft_populatie]->(p)
         MATCH (d)-[:heeft_component]->(c:component)
         WITH 
-            nb.naam AS netbeheerder,
-            c.component_id AS component_id,
-            p.type AS type,
-            SUM(p.populatie) AS total_populatie,
-            SUM(p.aantal_velden) AS total_velden
+            nb.naam AS naam_netbeheerder,
+            c.component_id AS naam_component,
+            SUM(p.populatie) AS totale_populatie_component,
+            SUM(p.aantal_velden) AS totaal_aantal_velden
         RETURN
-            netbeheerder,
-            component_id,
-            type,
-            total_populatie,
-            total_velden
-        ORDER BY component_id, type;
+            naam_netbeheerder,
+            naam_component,
+            totale_populatie_component,
+            totaal_aantal_velden
+        ORDER BY totale_populatie_component;
         """,
         "example_questions": [
             "Van welke component heeft netbeheerder het meest?",
@@ -119,9 +123,9 @@ predefined_queries = [
         "cypher": """
         MATCH (d:dossier)-[:heeft_component]->(c:component)
         RETURN 
-            d.aad_id AS aad_id,
-            c.component_id AS component_id
-        ORDER BY aad_id, component_id;
+            d.aad_id AS aad_dossier_id,
+            c.component_id AS component_naam
+        ORDER BY aad_dossier_id, component_naam;
         """,
         "example_questions": ["Geef een overzicht van alle componenten met een AAD"],
         "tags": "overzicht;aad",
@@ -134,10 +138,11 @@ predefined_queries = [
         MATCH (d:dossier)-[:heeft_component]->(c:component)
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids   
         RETURN 
-            c.component_id AS component_id,
+            d.aad_id AS aad_dossier_id,
+            c.component_id AS component_naam,
             p.naam AS naam,
             p.link AS profiel_link
-        ORDER BY component_id, naam;
+        ORDER BY component_naam, naam;
         """,
         "example_questions": [
             "Wie zitten in het beheerteam van aad?",
