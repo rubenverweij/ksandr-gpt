@@ -354,8 +354,10 @@ def ingest_dossier(data, aad_id, component_id):
             "Onderhoudstypes", []
         )
         for inspectie_punten_groep in onderhoud_inspectie:
-            print(f"Groep {inspectie_punten_groep}")
             for key, group in inspectie_punten_groep.items():
+                if not isinstance(group, dict):
+                    continue
+                print(f"Groep {group}")
                 onderhoud_inspectie = group.get("Inspectiepunten per netbeheerder", [])
                 for nb in onderhoud_inspectie:
                     netbeheerder = nb.get("Netbeheerder", "Onbekend")
