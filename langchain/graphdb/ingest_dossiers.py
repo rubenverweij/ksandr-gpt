@@ -78,7 +78,7 @@ def create_component_faalvorm(session, aad_id, component_id, faalvorm_data, file
             "mogelijk_gevolg": faalvorm_data.get("Mogelijk gevolg"),
             "uitvoering": faalvorm_data.get("Uitvoering"),
             "effect_op_subsysteem": faalvorm_data.get("Effect op subsysteem"),
-            "levensduur_bepalend": faalvorm_data.get("Levensduur bepalend"),
+            "niet_repareerbaar": faalvorm_data.get("Levensduur bepalend"),
             "status_oorzaak": faalvorm_data.get("Status(Oorzaak)"),
             "status_gevolg": faalvorm_data.get("Status(Gevolg)"),
             "oorzaak_detail": faalvorm_data.get("Oorzaak(detail)"),
