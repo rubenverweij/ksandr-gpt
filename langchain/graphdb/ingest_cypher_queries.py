@@ -263,9 +263,23 @@ predefined_queries = [
             b AS beleid
         """,
         "example_questions": [
-            "Welk beleid adviseert de fabrikant voor de installatie?",
+            "Welk periodiek onderhoud wordt gedaan voor de FMX?",
+            "Welk onderhoud wordt periodiek gedaan?",
         ],
         "tags": "po/pi;periodiek",
+    },
+    {
+        "cypher": """
+        {base_query}
+        MATCH (d:dossier)-[:heeft_document]->(doc:document)
+        RETURN DISTINCT 
+            d.aad_id as aad_dossier_id,
+            doc as document
+        """,
+        "example_questions": [
+            "Waar kan ik de notulen van het beheerteam overleg 2023 voor het AAD 10kv COQ vinden?"
+        ],
+        "tags": "beheerteam overleg;bestanden;brondocumenten aad",
     },
 ]
 
