@@ -114,6 +114,8 @@ predefined_queries = [
         "example_questions": [
             "Van welke component heeft netbeheerder het meest?",
             "Welke asset heeft netbeheerder het meeste?",
+            "Geef een opsomming van de populatiegegevens van Stedin",
+            "Geef de populatie componenten van Stedin",
             "Hoeveel installaties heeft netbeheerder per component?",
             "Geef het aantal componenten per netbeheerder",
         ],
