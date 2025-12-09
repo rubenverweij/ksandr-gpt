@@ -181,9 +181,11 @@ def ingest_dossier(data, aad_id, component_id):
         documents = data.get("Bestanden", {}).get("Bestanden", [])
         for document in documents:
             doc_id = document.get("documentId")
-            props = {"id": doc_id}
-            for k, v in document.items():
-                props[clean_key(k)] = v
+            props = {
+                "id": doc_id,
+                "naam": document.get("name"),
+                "locatie": document.get("directory"),
+            }
             session.execute_write(merge_node, "document", "id", props)
             session.execute_write(
                 merge_relation,
@@ -199,7 +201,7 @@ def ingest_dossier(data, aad_id, component_id):
         media_groups = data.get("Dossier", {}).get("Media", [])
         for group in media_groups:
             for item in group:
-                doc_id = f"media_{item.get('aadDocumentId')}"
+                doc_id = item.get("aadDocumentId")
                 props = {"id": doc_id}
                 for k, v in item.items():
                     props[clean_key(k)] = v

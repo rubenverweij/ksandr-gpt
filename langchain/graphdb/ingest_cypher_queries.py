@@ -127,8 +127,13 @@ predefined_queries = [
             c.component_id AS component_naam
         ORDER BY aad_dossier_id, component_naam;
         """,
-        "example_questions": ["Geef een overzicht van alle componenten met een AAD"],
-        "tags": "overzicht;aad",
+        "example_questions": [
+            "Geef een opsomming van alle componenten met een AAD",
+            "Geef een lijst van alle componenten met een AAD dossier",
+            "Geef een lijst van alle AAD dossiers",
+            "Geef alle AAD dossiers.",
+        ],
+        "tags": "lijst;aad",
         "threshold": 0.85,
     },
     {
