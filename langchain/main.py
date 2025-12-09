@@ -21,7 +21,6 @@ from helpers import (
     is_valid_sentence,
 )
 from fastapi import FastAPI
-import threading
 from pydantic import BaseModel
 from typing import Dict, Optional, Union, List
 from langchain_chroma import Chroma
@@ -279,24 +278,6 @@ def build_prompt_template(prompt: str, chroma_filter: Optional[Dict | None], rag
     return prompt_with_template, reference_documents, time_stages
 
 
-# Async wrapper voor een sync generator
-async def async_stream_generator_old(sync_gen):
-    loop = asyncio.get_event_loop()
-    queue = asyncio.Queue()
-
-    def run_sync():
-        for item in sync_gen:
-            asyncio.run_coroutine_threadsafe(queue.put(item), loop)
-        asyncio.run_coroutine_threadsafe(queue.put(None), loop)
-
-    threading.Thread(target=run_sync, daemon=True).start()
-    while True:
-        item = await queue.get()
-        if item is None:
-            break
-        yield item
-
-
 async def async_stream_generator(sync_gen):
     """
     Fully async wrapper for a synchronous generator.
@@ -482,9 +463,9 @@ async def get_status(request_id: str):
     if request_id in request_responses:
         response_data = request_responses[request_id]
         if response_data["status"] == "completed":
-            response_data.pop("partial_response")
             return response_data
-        elif "partial_response" in response_data:
+
+        if "partial_response" in response_data:
             return {
                 "status": "processing",
                 "start_time_formatted": response_data["start_time_formatted"],
@@ -497,6 +478,7 @@ async def get_status(request_id: str):
                     request_id=request_id
                 ),
             }
+
         return {
             "status": "processing",
             "start_time_formatted": response_data["start_time_formatted"],
