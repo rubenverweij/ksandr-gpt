@@ -45,14 +45,9 @@ TEMPLATES = {
                 <|im_start|>system
                 Je bent een Neo4j data expert. De query resultaten tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
                 Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.
+                
+                {prompt_elementen}
 
-                Wanneer je moet optellen:
-                - controleer eerst of een telling nodig op basis van het query resultaat
-                - schrijf elke waarde uit de data op
-                - tel ze stap-voor-stap op
-                - controleer de som
-                - geef daarna een kort en bondig antwoord
-                Fouten zijn niet toegestaan.
                 <|im_end|>
                 <|im_start|>user
 
@@ -64,6 +59,29 @@ TEMPLATES = {
 
                 <|im_end|>
                 <|im_start|>assistant
+                """
+        ),
+        "CORRECTION_PROMPT": PromptTemplate.from_template(
+            """                                  
+            <|im_start|>system
+            Je bent een controle- en verbetermodel. 
+            Je taak:
+            - Controleer of het gegeven antwoord de vraag correct beantwoordt.
+            - Verbeter het antwoord waar nodig.
+            - Verwijder herhalingen en onnodige dubbelingen.
+            - Corrigeer eventuele fouten in opsommingen, stappen of tellingen.
+            Geef als output uitsluitend het verbeterde antwoord.
+            <|im_end|>
+
+            <|im_start|>user
+            Vraag van de gebruiker:
+            {question}
+
+            Antwoord dat gecontroleerd moet worden:
+            {result}
+            <|im_end|>
+
+            <|im_start|>assistant
                 """
         ),
     },
@@ -148,3 +166,19 @@ Vraag:
 
 Cypher-query:
 """
+
+PROMPT_ELEMENTEN = {
+    "telling": """
+    Wanneer je moet optellen:
+    - controleer eerst of een telling nodig op basis van het query resultaat
+    - schrijf elke waarde uit de data op
+    - tel ze stap-voor-stap op
+    - controleer de som
+    - geef daarna een kort en bondig antwoord
+    - Fouten zijn niet toegestaan.
+    """
+}
+
+
+def dynamische_prompt_elementen():
+    return PROMPT_ELEMENTEN["telling"]

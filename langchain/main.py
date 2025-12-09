@@ -5,7 +5,7 @@ import os
 import re
 from datetime import datetime
 
-from templates import TEMPLATES, SYSTEM_PROMPT
+from templates import TEMPLATES, SYSTEM_PROMPT, dynamische_prompt_elementen
 from graph import build_cypher_query, check_for_nbs, match_query_by_tags
 from helpers import (
     maak_metadata_filter,
@@ -577,7 +577,11 @@ def retrieve_neo_answer(question, neo4j_result):
     logging.info(
         f"Trimmed neo4j result: {len(str(neo4j_result))} to {len(trimmed_neo4j_result)}"
     )
-    return CYPHER_PROMPT.format(result=trimmed_neo4j_result, question=question)
+    return CYPHER_PROMPT.format(
+        prompt_elemten=dynamische_prompt_elementen(),
+        result=trimmed_neo4j_result,
+        question=question,
+    )
 
 
 def get_image_name() -> str:
