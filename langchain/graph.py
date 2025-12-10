@@ -44,10 +44,10 @@ def build_cypher_query(question, clause=""):
     columns = {
         "oorzaak": ["f.OorzaakGeneriek:oorzaak_generiek"],
         "oorzaken": ["f.OorzaakGeneriek:oorzaak_generiek"],
-        "lijst": ["f.faalvorm_id:nummer_faalvorm"],
-        "opsomming": ["f.faalvorm_id:nummer_faalvorm"],
-        "nummer": ["f.faalvorm_id:nummer_faalvorm"],
-        "id": ["f.faalvorm_id:nummer_faalvorm"],
+        # "lijst": ["f.faalvorm_id:nummer_faalvorm"],
+        # "opsomming": ["f.faalvorm_id:nummer_faalvorm"],
+        # "nummer": ["f.faalvorm_id:nummer_faalvorm"],
+        # "id": ["f.faalvorm_id:nummer_faalvorm"],
         "component": ["c.component_id:naam_component"],
         "repareer": ["c.niet_repareerbaar:niet_repareerbaar"],
         "incidenten": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
@@ -64,7 +64,7 @@ def build_cypher_query(question, clause=""):
     base_query = """
     MATCH (d:dossier)-[:HEEFT_COMPONENT]->(c:component)-[:HEEFT_FAALVORM]->(f:faalvorm)
     {where_clause}
-    RETURN c.component_id AS component, f.Naam AS faalvorm 
+    {return_clause}
     """
     q_lower = question.lower()
     # --------------------------------------------------------
@@ -82,10 +82,11 @@ def build_cypher_query(question, clause=""):
     # --------------------------------------------------------
     # 3. Detect requested columns
     # --------------------------------------------------------
-    selected_fields = []
+    selected_fields = set()
     for key, fields in columns.items():
         if key in q_lower:
             selected_fields.extend(fields)
+    selected_fields = list(selected_fields)
 
     # --------------------------------------------------------
     # 4. Detect “contains” / “bevat” patterns
@@ -133,7 +134,13 @@ def build_cypher_query(question, clause=""):
     # --------------------------------------------------------
     return_parts = []
     if not wants_quantity:
-        return_parts.extend(["c.component_id AS component", "f.Naam AS faalvorm"])
+        return_parts.extend(
+            [
+                "c.component_id AS component",
+                "f.Naam AS faalvorm",
+                "f.faalvorm_id as nummer_faalvorm",
+            ]
+        )
     for f in selected_fields:
         column = f.split(":")
         return_parts.append(f"{column[0]} AS {column[1]}")
@@ -144,10 +151,7 @@ def build_cypher_query(question, clause=""):
     # --------------------------------------------------------
     # 7. Assemble final cypher
     # --------------------------------------------------------
-    query = base_query.format(where_clause=where_clause).replace(
-        "RETURN c.component_id AS component, f.Naam AS faalvorm",
-        return_clause,
-    )
+    query = base_query.format(where_clause=where_clause, return_clause=return_clause)
     if wants_quantity:
         query += "\nORDER BY aantalFaalvorm DESC"
     return query.strip()
