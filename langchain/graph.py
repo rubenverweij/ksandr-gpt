@@ -85,7 +85,7 @@ def build_cypher_query(question, clause=""):
     selected_fields = set()
     for key, fields in columns.items():
         if key in q_lower:
-            selected_fields.extend(fields)
+            selected_fields.update(fields)
     selected_fields = list(selected_fields)
 
     # --------------------------------------------------------
