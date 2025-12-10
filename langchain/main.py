@@ -578,7 +578,7 @@ def retrieve_neo_answer(question, neo4j_result):
         f"Trimmed neo4j result: {len(str(neo4j_result))} to {len(trimmed_neo4j_result)}"
     )
     return CYPHER_PROMPT.format(
-        prompt_elemten=dynamische_prompt_elementen(),
+        prompt_elementen=dynamische_prompt_elementen(),
         result=trimmed_neo4j_result,
         question=question,
     )
