@@ -348,6 +348,12 @@ async def process_request(request: AskRequest):
     # Generator klaar, final answer
     final_answer = uniek_antwoord(full_answer)
 
+    # TODO
+    # Nacontrole
+
+    # TODO
+    # Toevoegen referenties
+
     return {
         "question": request.prompt,
         "answer": final_answer,
@@ -356,63 +362,6 @@ async def process_request(request: AskRequest):
         "source_documents": reference_docs,
         "time_stages": time_stages,
     }
-
-
-# Verwerkt het verzoek en haalt de reactie op
-async def process_request_old(request: AskRequest):
-    """Process a request asynchronously and stream the result."""
-    time_start = time.time()
-    if CONFIG["INCLUDE_FILTER"]:
-        active_filter = maak_metadata_filter(
-            request=request,
-            componenten_dict=COMPONENTS,
-            include_permission=CONFIG["INCLUDE_PERMISSION"],
-        )
-    else:
-        active_filter = None
-    time_vind_component = time.time()
-    callback = StreamingResponseCallback(request.id)
-    if request.prompt.startswith("!"):
-        logging.info("Prompt starts with ! no_rag mode on")
-        request.rag = 0
-    try:
-        # Pass request_id for tracking the streaming response
-        response = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: ask_llm(
-                prompt=request.prompt,
-                model=LLM,
-                chroma_filter=active_filter,
-                rag=request.rag,
-            ),
-        )
-
-        full_answer = ""
-        for chunk in response["stream"]:
-            token = chunk["choices"][0]["text"]
-            callback.on_llm_new_token(token)
-            full_answer += token
-            logging.info(f"Partial response: {callback.partial_response}")
-
-        time_ask_llm = time.time()
-        response["active_filter"] = str(active_filter)
-        response["answer"] = uniek_antwoord(full_answer)
-        time_uniek_antwoord = time.time()
-        response["time_stages"].update(
-            {
-                "vind_relevante_componenten": time_vind_component - time_start,
-                "ask_llm": time_ask_llm - time_vind_component,
-                "uniek_antwoord": time_uniek_antwoord - time_ask_llm,
-            }
-        )
-        if request.rag:
-            if not response.get("source_documents"):
-                response["answer"] = (
-                    "Op basis van de informatie die ik tot mijn beschikking heb, weet ik het antwoord helaas niet."
-                )
-        return response
-    except Exception as e:
-        return {"error": str(e), "filter": active_filter}
 
 
 # Worker voor het verwerken van verzoeken in de wachtrij
@@ -532,36 +481,6 @@ def validate_structured_query_embedding(question):
         return result
     else:
         return []
-
-
-def deprecated_retrieve_neo_answer(question, neo4j_result):
-    """Verwerk NEO4J verzoeken."""
-    _, trimmed_neo4j_result = trim_context_to_fit(
-        model=LLM.client,
-        template=DEFAULT_QA_PROMPT,
-        context_text=str(neo4j_result),
-        question=question,
-        n_ctx=CONFIG["MAX_CTX"],
-        max_tokens=CONFIG["MAX_TOKENS"],
-    )
-    logging.info(
-        f"trimmed neo4j result: {len(str(neo4j_result))} to {len(trimmed_neo4j_result)}"
-    )
-
-    try:
-        llm_result = LLM.invoke(
-            CYPHER_PROMPT.format(result=trimmed_neo4j_result, question=question)
-        )
-    except ValueError:
-        llm_result = (
-            "De hoeveelheid gegevens die nodig is om de vraag te beantwoorden is te groot. "
-            "Maak de vraag bijvoorbeeld component specifiek.\n\n"
-            "Dit is query resultaat: \n\n"
-            f"{neo4j_result}"
-        )
-        logging.info(f"The llm result: {llm_result}")
-        return llm_result
-    return llm_result
 
 
 def retrieve_neo_answer(question, neo4j_result):
