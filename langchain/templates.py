@@ -84,6 +84,22 @@ TEMPLATES = {
             <|im_start|>assistant
                 """
         ),
+        "SUMMARY_PROMPT": """                                  
+            <|im_start|>system
+            Je bent een professionele tekstsamenvatter. 
+            Maak een duidelijke, objectieve algemene samenvatting van de tekst in ongeveer {words} woorden. 
+            - Focus op kernpunten en hoofdzaken.
+            - Voeg geen nieuwe informatie toe.
+            - Schrijf in neutrale, begrijpelijke taal.
+            - Als de tekst te kort is voor {words} woorden, geef dan een volledige maar niet-opgevulde samenvatting.
+            <|im_end|>
+
+            <|im_start|>user
+            Maak een samenvatting van deze tekst:
+            {tekst}
+            <|im_end|>
+            <|im_start|>assistant
+                """,
     },
     "zephyr-7b-beta.Q4_K_M.gguf": {
         "EVALUATIE_PROMPT": "",
