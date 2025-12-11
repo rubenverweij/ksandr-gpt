@@ -487,7 +487,7 @@ async def get_status(request_id: str):
 @app.post("/context")
 def context(req: ContextRequest):
     return {
-        "answer": LLM_MANAGER.invoke(req.prompt),
+        "answer": LLM_MANAGER.get_llm().invoke(req.prompt),
     }
 
 
