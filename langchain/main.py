@@ -409,6 +409,7 @@ def summarize(req: FileRequest):
 
     # Read text
     text = file_path.read_text(encoding="utf-8")
+    logging.info(f"Done reading text file {req.file_path}")
     summarizer = RecursiveSummarizer(
         llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
     )
