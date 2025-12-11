@@ -4,8 +4,9 @@ import uuid
 import os
 import re
 from datetime import datetime
-
+from pathlib import Path
 from templates import TEMPLATES, SYSTEM_PROMPT, dynamische_prompt_elementen
+from llm import LLMManager, RecursiveSummarizer
 from graph import build_cypher_query, check_for_nbs, match_query_by_tags
 from helpers import (
     maak_metadata_filter,
@@ -20,11 +21,10 @@ from helpers import (
     source_document_dummy,
     is_valid_sentence,
 )
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Optional, Union, List
 from langchain_chroma import Chroma
-from langchain_community.llms import LlamaCpp
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_neo4j import Neo4jGraph
 
@@ -68,18 +68,17 @@ model = os.path.basename(CONFIG["DEFAULT_MODEL_PATH"])
 DEFAULT_QA_PROMPT = TEMPLATES[model]["DEFAULT_QA_PROMPT"]
 CYPHER_PROMPT = TEMPLATES[model]["CYPHER_PROMPT"]
 DEFAULT_QA_PROMPT_SIMPLE = TEMPLATES[model]["DEFAULT_QA_PROMPT_SIMPLE"]
+SUMMARY_PROMPT = TEMPLATES[model]["SUMMARY_PROMPT"]
 
 # Initialisatie van het taalmodel
-LLM = LlamaCpp(
+LLM_MANAGER = LLMManager(
     model_path=CONFIG["DEFAULT_MODEL_PATH"],
     max_tokens=CONFIG["MAX_TOKENS"],
     n_gpu_layers=-1,
-    n_ctx=CONFIG["MAX_CTX"],
-    verbose=False,
-    streaming=True,
     temperature=CONFIG["TEMPERATURE"],
     top_p=0.9,
 )
+LLM_MANAGER.load_llm(n_ctx=CONFIG["MAX_CTX"])
 
 
 embedding_function = get_embedding_function()
@@ -106,6 +105,17 @@ class StreamingResponseCallback(BaseCallbackHandler):
             request_responses[self.request_id]["partial_response"] = (
                 self.partial_response
             )
+
+
+class LLMRequest(BaseModel):
+    n_ctx: int
+
+
+class FileRequest(BaseModel):
+    file_path: str
+    summary_file_path: str = (
+        None  # optional, default will be file_path + "_summary.txt"
+    )
 
 
 class AskRequest(BaseModel):
@@ -157,7 +167,7 @@ def retrieve_answer_from_vector_store(
     logging.info("Done building context")
     time_build_context = time.time()
     _, trimmed_context_text = trim_context_to_fit(
-        model=LLM.client,
+        model=LLM_MANAGER.get_llm().client,
         template=DEFAULT_QA_PROMPT,
         context_text=context_text,
         question=prompt,
@@ -181,63 +191,6 @@ def retrieve_answer_from_vector_store(
         }
     )
     return prompt_with_template, results_new_schema, time_stages
-
-
-def ask_llm(
-    prompt: str, chroma_filter: Optional[Dict | None], model: LlamaCpp, rag: int
-):
-    if rag:
-        if detect_aad(prompt):
-            neo4j_result = validate_structured_query(prompt)
-            if len(neo4j_result) > 0:
-                logging.info(f"Start LLM on neo4j: {neo4j_result}")
-                return {
-                    "question": prompt,
-                    "answer": retrieve_neo_answer(prompt, neo4j_result),
-                    "prompt": "",
-                    "source_documents": source_document_dummy(),
-                    "time_stages": {},
-                }
-            else:
-                logging.info(f"Closest query: {neo4j_result}")
-                prompt_with_template, results_new_schema, time_stages = (
-                    retrieve_answer_from_vector_store(prompt, chroma_filter, model)
-                )
-        else:
-            neo4j_result = validate_structured_query_embedding(prompt)
-            neo_answer = False
-            if len(neo4j_result) > 0:
-                logging.info(f"Start LLM on neo4j: {neo4j_result}")
-                neo_answer = retrieve_neo_answer(prompt, neo4j_result)
-
-            if neo_answer:
-                return {
-                    "question": prompt,
-                    "answer": neo_answer,
-                    "prompt": "",
-                    "source_documents": source_document_dummy(),
-                    "time_stages": {},
-                }
-            else:
-                prompt_with_template, results_new_schema, time_stages = (
-                    retrieve_answer_from_vector_store(prompt, chroma_filter, model)
-                )
-    else:
-        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
-            system_prompt=SYSTEM_PROMPT, question=prompt
-        )
-        results_new_schema = None
-        time_stages = {}
-
-    stream = LLM.client(prompt_with_template, stream=True)
-    return {
-        "question": prompt,
-        "answer": "",
-        "stream": stream,
-        "prompt": prompt_with_template,
-        "source_documents": results_new_schema,
-        "time_stages": time_stages,
-    }
 
 
 def build_prompt_template(prompt: str, chroma_filter: Optional[Dict | None], rag: int):
@@ -305,7 +258,9 @@ async def process_request(request: AskRequest):
         chroma_filter=database_filter, prompt=request.prompt, rag=request.rag
     )
 
-    stream = LLM.client(prompt_with_template, stream=True, max_tokens=1500)
+    stream = LLM_MANAGER.get_llm().client(
+        prompt_with_template, stream=True, max_tokens=1500
+    )
     full_answer = ""
     buffer = ""
     sentence_end_re = re.compile(r"[.!?]")
@@ -383,6 +338,95 @@ async def request_worker():
             )
 
 
+def validate_structured_query(question):
+    aads = haal_dossiers_op(question)
+    if len(aads) > 0:
+        where_clause = "WHERE d.aad_id IN $aad_ids"
+    else:
+        where_clause = ""
+    cypher_to_run = build_cypher_query(question, clause=where_clause)
+    cypher_to_run = cypher_to_run.format(where_clause=where_clause)
+    logging.info(f"Closest query: {cypher_to_run}")
+    parameters = {"aad_ids": aads}
+    return GRAPH.query(cypher_to_run, params=parameters)
+
+
+def validate_structured_query_embedding(question):
+    aads = haal_dossiers_op(question)
+    nbs = check_for_nbs(question)
+    results = db_cypher.similarity_search_with_relevance_scores(question, k=20)
+    # NOTE: doc[0] = actual query info and doc[1] = sim score
+    tag_filtered_results = [
+        doc
+        for doc in results
+        if match_query_by_tags(question=question, query=doc[0].metadata)
+        and doc[1] > doc[0].metadata["threshold"]
+    ]
+    if len(tag_filtered_results) > 0:
+        top_doc, score = tag_filtered_results[0]
+        cypher_to_run = top_doc.metadata["cypher"]
+        logging.info(f"Closest query: {cypher_to_run} with score {score}")
+        parameters = {"aad_ids": aads, "netbeheerders": nbs}
+        logging.info(f"Parameters found: {parameters}")
+        result = GRAPH.query(cypher_to_run, params=parameters)
+        logging.info(f"Neo4j results: {result}")
+        return result
+    else:
+        return []
+
+
+def retrieve_neo_answer(question, neo4j_result):
+    """Verwerk NEO4J verzoeken."""
+    _, trimmed_neo4j_result = trim_context_to_fit(
+        model=LLM_MANAGER.get_llm().client,
+        template=DEFAULT_QA_PROMPT,
+        context_text=str(neo4j_result),
+        question=question,
+        n_ctx=CONFIG["MAX_CTX"],
+        max_tokens=CONFIG["MAX_TOKENS"],
+    )
+    logging.info(
+        f"Trimmed neo4j result: {len(str(neo4j_result))} to {len(trimmed_neo4j_result)}"
+    )
+    return CYPHER_PROMPT.format(
+        prompt_elementen=dynamische_prompt_elementen(),
+        result=trimmed_neo4j_result,
+        question=question,
+    )
+
+
+def get_image_name() -> str:
+    return os.getenv("IMAGE_NAME", "Unknown")
+
+
+@app.post("/summarize")
+def summarize(req: FileRequest):
+    file_path = Path(req.file_path)
+
+    # Check file exists
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Read text
+    text = file_path.read_text(encoding="utf-8")
+    summarizer = RecursiveSummarizer(
+        llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
+    )
+    summary = summarizer.summarize()
+
+    return {
+        "status": "ok",
+        "summary": summary,
+        "summary_length": len(summary),
+    }
+
+
+@app.post("/set-context")
+def set_context(req: LLMRequest):
+    LLM_MANAGER.load_llm(req.n_ctx)
+    return {"status": "ok", "new_context": req.n_ctx}
+
+
 @app.post("/ask")
 async def ask(request: AskRequest):
     """Verwerkt binnenkomende verzoeken."""
@@ -442,69 +486,8 @@ async def get_status(request_id: str):
 @app.post("/context")
 def context(req: ContextRequest):
     return {
-        "answer": LLM.invoke(req.prompt),
+        "answer": LLM_MANAGER.invoke(req.prompt),
     }
-
-
-def validate_structured_query(question):
-    aads = haal_dossiers_op(question)
-    if len(aads) > 0:
-        where_clause = "WHERE d.aad_id IN $aad_ids"
-    else:
-        where_clause = ""
-    cypher_to_run = build_cypher_query(question, clause=where_clause)
-    cypher_to_run = cypher_to_run.format(where_clause=where_clause)
-    logging.info(f"Closest query: {cypher_to_run}")
-    parameters = {"aad_ids": aads}
-    return GRAPH.query(cypher_to_run, params=parameters)
-
-
-def validate_structured_query_embedding(question):
-    aads = haal_dossiers_op(question)
-    nbs = check_for_nbs(question)
-    results = db_cypher.similarity_search_with_relevance_scores(question, k=20)
-    # NOTE: doc[0] = actual query info and doc[1] = sim score
-    tag_filtered_results = [
-        doc
-        for doc in results
-        if match_query_by_tags(question=question, query=doc[0].metadata)
-        and doc[1] > doc[0].metadata["threshold"]
-    ]
-    if len(tag_filtered_results) > 0:
-        top_doc, score = tag_filtered_results[0]
-        cypher_to_run = top_doc.metadata["cypher"]
-        logging.info(f"Closest query: {cypher_to_run} with score {score}")
-        parameters = {"aad_ids": aads, "netbeheerders": nbs}
-        logging.info(f"Parameters found: {parameters}")
-        result = GRAPH.query(cypher_to_run, params=parameters)
-        logging.info(f"Neo4j results: {result}")
-        return result
-    else:
-        return []
-
-
-def retrieve_neo_answer(question, neo4j_result):
-    """Verwerk NEO4J verzoeken."""
-    _, trimmed_neo4j_result = trim_context_to_fit(
-        model=LLM.client,
-        template=DEFAULT_QA_PROMPT,
-        context_text=str(neo4j_result),
-        question=question,
-        n_ctx=CONFIG["MAX_CTX"],
-        max_tokens=CONFIG["MAX_TOKENS"],
-    )
-    logging.info(
-        f"Trimmed neo4j result: {len(str(neo4j_result))} to {len(trimmed_neo4j_result)}"
-    )
-    return CYPHER_PROMPT.format(
-        prompt_elementen=dynamische_prompt_elementen(),
-        result=trimmed_neo4j_result,
-        question=question,
-    )
-
-
-def get_image_name() -> str:
-    return os.getenv("IMAGE_NAME", "Unknown")
 
 
 @app.get("/metadata")
