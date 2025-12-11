@@ -1,7 +1,7 @@
 import gc
 import threading
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from llama_cpp import LlamaCpp
+from langchain_community.llms import LlamaCpp
 from typing import List
 import re
 import logging
