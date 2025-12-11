@@ -4,6 +4,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from llama_cpp import LlamaCpp
 from typing import List
 import re
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 class LLMManager:
@@ -66,6 +69,9 @@ class RecursiveSummarizer:
     def summarize_chunk(self, chunk: str, summary_length: int) -> str:
         llm = self.llm_manager.get_llm()
         prompt = self.template.format(words=summary_length, tekst=chunk)
+        logging.info(
+            f"LLM loaded and prompt formatted for chunk {len(chunk)} with summary len {summary_length}"
+        )
         response = llm(prompt)
         if isinstance(response, dict):
             if "choices" in response:
