@@ -95,9 +95,9 @@ class RecursiveSummarizer:
         chunk_lengths = self.calculate_chunk_summary_length(chunks, len_chunk_sum)
         summaries = [
             self.summarize_chunk(chunk, length)
-            for chunk, length in zip(chunks, chunk_lengths)
+            for chunk, length in zip(chunks[:2], chunk_lengths)
         ]
-        # Check the summary
+        # Finalize the summary
         llm = self.llm_manager.get_llm()
         final_summary = " ".join(summaries)
         response = llm.invoke(
