@@ -73,8 +73,8 @@ class RecursiveSummarizer:
             f"LLM loaded and prompt formatted for chunk {len(chunk)} with summary len {summary_length}"
         )
         response = llm.invoke(prompt)
-        logging.info(f"The text was {chunk}")
-        logging.info(f"The summary is {response}")
+        logging.info(f"The text is: {chunk}")
+        logging.info(f"The summary is: {response}")
         if isinstance(response, dict):
             if "choices" in response:
                 return response["choices"][0].get("text", "").strip()
@@ -103,8 +103,8 @@ class RecursiveSummarizer:
         response = llm.invoke(
             self.template.format(words=len_final_sum, tekst=final_summary)
         )
-        logging.info(f"The complete summarised text is {final_summary}")
-        logging.info(f"The summary is {response}")
+        logging.info(f"The complete summarised text is: {final_summary}")
+        logging.info(f"The summary is: {response}")
         if isinstance(response, dict):
             if "choices" in response:
                 return response["choices"][0].get("text", "").strip()

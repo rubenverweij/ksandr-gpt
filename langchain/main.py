@@ -20,6 +20,7 @@ from helpers import (
     detect_aad,
     source_document_dummy,
     is_valid_sentence,
+    clean_text_with_dup_detection,
 )
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -289,7 +290,7 @@ async def process_request(request: AskRequest):
             and last_sentence in seen_sentences
         ):
             logging.info(f"Detected duplicate sentence: {last_sentence}")
-            final_answer = uniek_antwoord(full_answer)
+            final_answer = clean_text_with_dup_detection(uniek_antwoord(full_answer))
             return {
                 "question": request.prompt,
                 "answer": final_answer,
@@ -301,7 +302,7 @@ async def process_request(request: AskRequest):
         seen_sentences.add(last_sentence)
 
     # Generator klaar, final answer
-    final_answer = uniek_antwoord(full_answer)
+    final_answer = clean_text_with_dup_detection(uniek_antwoord(full_answer))
 
     # TODO
     # Nacontrole
@@ -414,11 +415,11 @@ def summarize(req: FileRequest):
         llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
     )
     summary = summarizer.summarize()
-
+    summary_cleaned = clean_text_with_dup_detection(summary)
     return {
         "status": "ok",
-        "summary": summary,
-        "summary_length": len(summary),
+        "summary": summary_cleaned,
+        "summary_length": len(summary_cleaned.split()),
     }
 
 
