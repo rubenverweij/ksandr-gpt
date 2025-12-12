@@ -29,6 +29,7 @@ NLP = spacy.load("nl_core_news_sm")
 FREQUENCY_THRESHOLD = 5  # Only include nouns used at least this many times
 FREQUENCY_THRESHOLD_MAX = 5e5
 MIN_WORDS = 3  # <--- minimale aantal woorden voor een zin
+SENTENCE_END_RE = re.compile(r"[.!?]")
 
 # Load saved data
 with open("/root/onprem_data/keywords/lemma_counter.pkl", "rb") as f:
@@ -36,6 +37,85 @@ with open("/root/onprem_data/keywords/lemma_counter.pkl", "rb") as f:
 
 with open("/root/onprem_data/keywords/lemmas.pkl", "rb") as f:
     LEMMA_TO_VARIANTS = pickle.load(f)
+
+
+def is_valid_sentence(sentence: str, min_words: int = MIN_WORDS) -> bool:
+    words = [w for w in sentence.strip().split() if w]
+    return len(words) >= min_words
+
+
+def get_4grams(words):
+    return [tuple(words[i : i + 4]) for i in range(len(words) - 4 + 1)]
+
+
+def normalize(s: str) -> str:
+    return " ".join(s.lower().split())
+
+
+def sentence_in_previous(current: str, previous: list[str]) -> bool:
+    """Check if current sentence is fully contained inside any earlier one."""
+    cur = normalize(current)
+    for prev in previous:
+        if cur in normalize(prev):
+            return True
+    return False
+
+
+def clean_text_with_dup_detection(text) -> str:
+    """
+    Processes a text stream, removes or stops at:
+    - full-sentence duplicates
+    - sentences contained inside previous
+    - previous contained inside current
+    - 4-gram duplicate windows
+
+    Returns cleaned string (up to the first duplication).
+    """
+
+    # Support: full text or streamed chunks
+    if isinstance(text, str):
+        stream = text
+    else:
+        stream = text  # assume generator or list of chunks
+
+    seen_sentences = []
+    seen_4grams = set()
+    buffer = ""
+    cleaned = ""
+
+    for chunk in stream:
+        token = chunk or ""
+        buffer += token
+        # Not the end of a sentence yet → continue accumulating
+        if not SENTENCE_END_RE.search(token):
+            continue
+        # Split buffer at sentence boundaries
+        parts = re.split(r"(?<=[.!?])\s*", buffer)
+        completed = parts[:-1]  # full sentences
+        buffer = parts[-1]  # remainder
+        if not completed:
+            continue
+        sentence = completed[-1].strip()
+        # Validate sentence length
+        if not (sentence and is_valid_sentence(sentence)):
+            continue
+        if sentence_in_previous(sentence, seen_sentences):
+            print(f"[Sentence contained in previous] {sentence}")
+            return cleaned.strip()
+        for prev in seen_sentences:
+            if normalize(prev) in normalize(sentence):
+                print(f"[Previous sentence is contained in current] {sentence}")
+                return cleaned.strip()
+        words = sentence.split()
+        grams = get_4grams(words)
+        if any(g in seen_4grams for g in grams):
+            print(f"[4-gram duplicate detected] {sentence}")
+            return cleaned.strip()
+        cleaned += sentence + " "
+        seen_sentences.append(sentence)
+        for g in grams:
+            seen_4grams.add(g)
+    return cleaned.strip()
 
 
 def verwijder_herhalingen(text: str) -> str:
@@ -427,12 +507,6 @@ def source_document_dummy():
             "type": "Document",
         }
     ]
-
-
-def is_valid_sentence(sentence: str, min_words: int = MIN_WORDS) -> bool:
-    # verwijder dubbele spaties en splits
-    words = [w for w in sentence.strip().split() if w]
-    return len(words) >= min_words
 
 
 if __name__ == "__main__":
