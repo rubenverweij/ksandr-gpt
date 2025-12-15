@@ -418,7 +418,8 @@ def summarize(req: FileRequest):
     summary_cleaned = clean_text_with_dup_detection(summary)
     return {
         "status": "ok",
-        "summary": summary_cleaned,
+        "summary_cleaned": summary_cleaned,
+        "summary_raw": summary,
         "summary_length": len(summary_cleaned.split()),
     }
 
