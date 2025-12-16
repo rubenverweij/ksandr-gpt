@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from templates import TEMPLATES, SYSTEM_PROMPT, dynamische_prompt_elementen
 from llm import LLMManager, RecursiveSummarizer
+from refs import replace_patterns
 from graph import build_cypher_query, check_for_nbs, match_query_by_tags
 from helpers import (
     maak_metadata_filter,
@@ -290,7 +291,9 @@ async def process_request(request: AskRequest):
             and last_sentence in seen_sentences
         ):
             logging.info(f"Detected duplicate sentence: {last_sentence}")
-            final_answer = clean_text_with_dup_detection(uniek_antwoord(full_answer))
+            final_answer = replace_patterns(
+                clean_text_with_dup_detection(uniek_antwoord(full_answer))
+            )
             return {
                 "question": request.prompt,
                 "answer": final_answer,
@@ -302,13 +305,12 @@ async def process_request(request: AskRequest):
         seen_sentences.add(last_sentence)
 
     # Generator klaar, final answer
-    final_answer = clean_text_with_dup_detection(uniek_antwoord(full_answer))
+    final_answer = replace_patterns(
+        clean_text_with_dup_detection(uniek_antwoord(full_answer))
+    )
 
     # TODO
     # Nacontrole
-
-    # TODO
-    # Toevoegen referenties
 
     return {
         "question": request.prompt,
