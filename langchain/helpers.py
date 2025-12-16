@@ -520,7 +520,9 @@ def summary_request(question: str):
 def get_summary(question):
     number = re.search(r"\d+", question).group()
     try:
-        with open(f"root/onprem_data/summary/{number}.txt", "r", encoding="utf-8") as f:
+        with open(
+            f"/root/onprem_data/summary/{number}.txt", "r", encoding="utf-8"
+        ) as f:
             data = json.load(f)
         return data.get("summary_cleaned")
     except OSError:
