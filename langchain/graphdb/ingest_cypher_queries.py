@@ -137,7 +137,7 @@ predefined_queries = [
             "Geef alle AAD dossiers.",
             "Geef een opsomming van alle AAD's",
         ],
-        "tags": "lijst;aad",
+        "tags": "lijst;aad;aad's",
         "threshold": 0.85,
     },
     {

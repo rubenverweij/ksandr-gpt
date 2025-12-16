@@ -291,9 +291,7 @@ async def process_request(request: AskRequest):
             and last_sentence in seen_sentences
         ):
             logging.info(f"Detected duplicate sentence: {last_sentence}")
-            final_answer = replace_patterns(
-                clean_text_with_dup_detection(uniek_antwoord(full_answer))
-            )
+            final_answer = replace_patterns(uniek_antwoord(full_answer))
             return {
                 "question": request.prompt,
                 "answer": final_answer,
@@ -305,9 +303,7 @@ async def process_request(request: AskRequest):
         seen_sentences.add(last_sentence)
 
     # Generator klaar, final answer
-    final_answer = replace_patterns(
-        clean_text_with_dup_detection(uniek_antwoord(full_answer))
-    )
+    final_answer = replace_patterns(uniek_antwoord(full_answer))
 
     # TODO
     # Nacontrole
