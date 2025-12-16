@@ -2,6 +2,7 @@ import re
 from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 import pickle
+import json
 import os
 from typing import Dict, Optional, Union, List, Any
 import string
@@ -507,6 +508,23 @@ def source_document_dummy():
             "type": "Document",
         }
     ]
+
+
+def summary_request(question: str):
+    if "samenvatting van document" in question:
+        return True
+    else:
+        False
+
+
+def get_summary(question):
+    number = re.search(r"\d+", question).group()
+    try:
+        with open(f"root/onprem_data/summary/{number}.txt", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get("summary_cleaned")
+    except OSError:
+        return f"Samenvatting van document {number} kan niet worden gevonden"
 
 
 if __name__ == "__main__":

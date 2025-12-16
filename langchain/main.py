@@ -22,6 +22,8 @@ from helpers import (
     source_document_dummy,
     is_valid_sentence,
     clean_text_with_dup_detection,
+    summary_request,
+    get_summary,
 )
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -245,6 +247,16 @@ async def async_stream_generator(sync_gen):
 
 async def process_request(request: AskRequest):
     """Verwerkt een verzoek en streamt partial responses."""
+
+    if summary_request(request.prompt):
+        return {
+            "question": request.prompt,
+            "answer": get_summary(request.prompt),
+            "prompt": "",
+            "active_filter": "",
+            "source_documents": [],
+            "time_stages": {},
+        }
 
     database_filter = (
         maak_metadata_filter(request, COMPONENTS, CONFIG["INCLUDE_PERMISSION"])
