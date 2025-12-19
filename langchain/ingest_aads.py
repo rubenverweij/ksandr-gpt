@@ -3,6 +3,7 @@ import json
 import os
 from bs4 import BeautifulSoup
 import re
+from config import COMPONENTS
 
 driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
 
@@ -37,15 +38,19 @@ def extract_nummer_info(nummer_str):
     return nummer_str, None
 
 
-def create_component_faalvorm(session, aad_id, component_id, faalvorm_data, file_path):
+def create_component_faalvorm(
+    session, aad_id, component_id, faalvorm_data, file_path, permission
+):
     nummer_str = faalvorm_data.get("Nummer")
     prefix, nummer_int = extract_nummer_info(nummer_str)
+    # NOTE: f.columns in the json extract should exist
     cypher = """
     MERGE (d:dossier {aad_id: $aad_id})
     MERGE (c:component {component_id: $component_id})
     MERGE (f:faalvorm {faalvorm_id: $faalvorm_id})
       ON CREATE SET f.Naam = $naam,
                     f.NummerInt = $nummer_int,
+                    f.Permission = $permission,
                     f.Prefix = $prefix,
                     f.Beschrijving = $beschrijving,
                     f.MogelijkGevolg = $mogelijk_gevolg,
@@ -73,6 +78,7 @@ def create_component_faalvorm(session, aad_id, component_id, faalvorm_data, file
             "faalvorm_id": nummer_str,
             "naam": faalvorm_data.get("Naam"),
             "nummer_int": nummer_int,
+            "permission": permission,
             "prefix": prefix,
             "beschrijving": faalvorm_data.get("Beschrijving"),
             "mogelijk_gevolg": faalvorm_data.get("Mogelijk gevolg"),
@@ -121,11 +127,12 @@ def merge_relation(tx, a_label, a_key, a_val, rel, b_label, b_key, b_val):
     tx.run(query, a_val=a_val, b_val=b_val)
 
 
-def ingest_dossier(data, aad_id, component_id):
+def ingest_dossier(data, aad_id, component_id, permission):
     with driver.session() as session:
         dossier_json = data.get("Dossier", {}).get("Dossier", {})
         dossier_props = {
             "aad_id": aad_id,
+            "permission": permission,
             "naam": optional(dossier_json, "Naam"),
             "publicatiedatum": optional(dossier_json, "Publicatiedatum"),
             "laatste_update": optional(dossier_json, "Laatste update"),
@@ -145,6 +152,7 @@ def ingest_dossier(data, aad_id, component_id):
                 "id": person_id,
                 "link": optional(member, "link"),
                 "naam": optional(member, "text"),
+                "permission": permission,
             }
             session.execute_write(merge_node, "persoon", "id", person_props)
             session.execute_write(
@@ -161,7 +169,7 @@ def ingest_dossier(data, aad_id, component_id):
         # Component → component node
         # ---------------------------------------------------------
         comp = data.get("Dossier", {}).get("Component", {})
-        comp_props = {"component_id": component_id}
+        comp_props = {"component_id": component_id, "permission": permission}
         for k, v in comp.items():
             comp_props[clean_key(k)] = v
         session.execute_write(merge_node, "component", "component_id", comp_props)
@@ -185,6 +193,7 @@ def ingest_dossier(data, aad_id, component_id):
                 "id": doc_id,
                 "naam": document.get("name"),
                 "locatie": document.get("directory"),
+                "permission": permission,
             }
             session.execute_write(merge_node, "document", "id", props)
             session.execute_write(
@@ -202,7 +211,7 @@ def ingest_dossier(data, aad_id, component_id):
         for group in media_groups:
             for item in group:
                 doc_id = item.get("aadDocumentId")
-                props = {"id": doc_id}
+                props = {"id": doc_id, "permission": permission}
                 for k, v in item.items():
                     props[clean_key(k)] = v
                 session.execute_write(merge_node, "document", "id", props)
@@ -222,8 +231,8 @@ def ingest_dossier(data, aad_id, component_id):
         overige = data.get("Dossier", {}).get("Overige bestanden", [])
         for group in overige:
             for item in group:
-                doc_id = f"doc_{item.get('documentId')}"
-                props = {"id": doc_id}
+                doc_id = item.get("documentId")
+                props = {"id": doc_id, "permission": permission}
                 for k, v in item.items():
                     props[clean_key(k)] = v
                 session.execute_write(merge_node, "document", "id", props)
@@ -245,13 +254,13 @@ def ingest_dossier(data, aad_id, component_id):
         )
         for p in pop_entries:
             nb_name = p.get("Netbeheerder") or "onbekend"
-            nb_id = f"netbeheerder_{nb_name}".lower()
+            nb_id = hash(nb_name)
             # netbeheerder node
             nb_props = {"id": nb_id, "naam": nb_name}
             session.execute_write(merge_node, "netbeheerder", "id", nb_props)
             # populatie node
             pop_id = f"pop_{nb_name}_{aad_id}_{p.get('Populatie')}".lower()
-            pop_props = {"id": pop_id}
+            pop_props = {"id": pop_id, "permission": permission}
             for k, v in p.items():
                 pop_props[clean_key(k)] = v
             session.execute_write(merge_node, "populatie", "id", pop_props)
@@ -331,7 +340,7 @@ def ingest_dossier(data, aad_id, component_id):
                 if not item:
                     continue
                 pol_id = f"pol_{abs(hash(str(item)))}"
-                props = {"id": pol_id, "soort": key}
+                props = {"id": pol_id, "soort": key, "permission": permission}
                 if isinstance(item, dict):
                     nb_name = item.get("Netbeheerder", None)  # of via pop_entries
                     for k, v in item.items():
@@ -385,7 +394,11 @@ def ingest_dossier(data, aad_id, component_id):
                     if not inspectie_punt:
                         continue
                     inspectie_id = f"inspectie_{abs(hash(str(inspectie_punt)))}"
-                    props = {"id": inspectie_id, "soort": "onderhoud_en_inspectie"}
+                    props = {
+                        "id": inspectie_id,
+                        "soort": "onderhoud_en_inspectie",
+                        "permission": permission,
+                    }
                     if isinstance(inspectie_punt, dict):
                         for k, v in inspectie_punt.items():
                             if v:
@@ -416,57 +429,46 @@ def ingest_dossier(data, aad_id, component_id):
                     )
 
 
-COMPONENTS = {
-    "10535": "LK ELA12 schakelinstallatie",
-    "10536": "ABB VD4 vaccuum vermogensschakelaar",
-    "10540": "Eaton L-SEP installatie",
-    "10542": "Siemens NXplusC schakelaar",
-    "10545": "Siemens 8DJH schakelaar",
-    "10546": "Eaton FMX schakelinstallatie",
-    "10551": "Laagspanning",
-    "1555": "Merlin Gerin RM6 schakelaar",
-    "1556": "Hazemeijer CONEL schakelinstallatie",
-    "1557": "Eaton 10 kV COQ schakelaar",
-    "1558": "Eaton Capitole schakelaar",
-    "2059": "Eaton Xiria schakelinstallatie",
-    "2061": "Eaton Holec SVS schakelaar",
-    "2963": "MS/LS distributie transformator",
-    "318": "Eaton Magnefix MD MF schakelinstallatie",
-    "655": "ABB DR12 schakelaar",
-    "8825": "ABB Safe safeplus schakelinstallatie",
-    "8827": "MS kabelmoffen",
-    "9026": "Eaton MMS schakelinstallatie",
-    "9027": "ABB BBC DB10 schakelaar",
-    "9028": "HS MS vermogens transformator",
-}
-
 with driver.session() as session:
     session.run("MATCH (n) DETACH DELETE n")
 
 print("Database deleted.")
 
 with driver.session() as session:
+    permissions = ["cat-1", "cat-2"]
     for aad_id, component_id in COMPONENTS.items():
-        json_folder = f"/home/ubuntu/ksandr_files/aads/{aad_id}/cat-1/fail-types/"
-        # process faalvormen
-        for root, dirs, files in os.walk(json_folder):
-            for filename in files:
-                if filename.endswith(".json"):
-                    file_path = os.path.join(root, filename)
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        faalvorm_data = data.get("Beschrijving")
-                    if faalvorm_data:
-                        print(f"Processing {file_path}... for component {component_id}")
-                        create_component_faalvorm(
-                            session, aad_id, component_id, faalvorm_data, file_path
-                        )
-        # Process ageing asset dossier
-        json_file = f"/home/ubuntu/ksandr_files/aads/{aad_id}/cat-1/main.json"
-        print(f"Ingesting: {json_file}")
-        with open(json_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            data = clean_html(data)
-        ingest_dossier(data, aad_id, component_id)
+        for permission in permissions:
+            json_folder = (
+                f"/home/ubuntu/ksandr_files/aads/{aad_id}/{permission}/fail-types/"
+            )
+            # process faalvormen
+            for root, dirs, files in os.walk(json_folder):
+                for filename in files:
+                    if filename.endswith(".json"):
+                        file_path = os.path.join(root, filename)
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                            faalvorm_data = data.get("Beschrijving")
+                        if faalvorm_data:
+                            print(
+                                f"Processing {file_path}... for component {component_id}"
+                            )
+                            create_component_faalvorm(
+                                session,
+                                aad_id,
+                                component_id,
+                                faalvorm_data,
+                                file_path,
+                                permission,
+                            )
+            # Process ageing asset dossier
+            json_file = (
+                f"/home/ubuntu/ksandr_files/aads/{aad_id}/{permission}/main.json"
+            )
+            print(f"Ingesting: {json_file}")
+            with open(json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                data = clean_html(data)
+            ingest_dossier(data, aad_id, component_id, permission)
 
 driver.close()
