@@ -136,6 +136,129 @@ class ContextRequest(BaseModel):
     prompt: str
 
 
+async def async_stream_generator(sync_gen):
+    """
+    Fully async wrapper for a synchronous generator.
+    Yields items without using threads.
+    """
+    for item in sync_gen:
+        await asyncio.sleep(0.001)  # yield control to event loop
+        yield item
+
+
+async def process_request(request: AskRequest):
+    """Verwerkt een verzoek en streamt partial responses."""
+
+    if summary_request(request.prompt):
+        return {
+            "question": request.prompt,
+            "answer": get_summary(request.prompt),
+            "prompt": "",
+            "active_filter": "",
+            "source_documents": [],
+            "time_stages": {},
+        }
+
+    database_filter = (
+        maak_metadata_filter(request, COMPONENTS, CONFIG["INCLUDE_PERMISSION"])
+        if CONFIG["INCLUDE_FILTER"]
+        else None
+    )
+    callback = StreamingResponseCallback(request.id)
+    if request.prompt.startswith("!"):
+        request.rag = 0
+
+    # Retrieve the correct template and reference docs
+    prompt_with_template, reference_docs, time_stages = build_prompt_template(
+        chroma_filter=database_filter, request=request
+    )
+
+    stream = LLM_MANAGER.get_llm().client(
+        prompt_with_template, stream=True, max_tokens=1500
+    )
+    full_answer = ""
+    buffer = ""
+    sentence_end_re = re.compile(r"[.!?]")
+    seen_sentences = set()
+    async for chunk in async_stream_generator(stream):
+        token = chunk["choices"][0]["text"]
+        full_answer += token
+        buffer += token
+        callback.on_llm_new_token(token)
+
+        if not sentence_end_re.search(token):
+            continue
+
+        # Only check the last sentence is a replication
+        sentences = re.split(r"(?<=[.!?])\s*", buffer)
+        completed = sentences[:-1]
+        buffer = sentences[-1]
+        if not completed:
+            continue
+
+        # We only check the LAST completed sentence
+        last_sentence = completed[-1].strip()
+        if (
+            last_sentence
+            and is_valid_sentence(last_sentence)
+            and last_sentence in seen_sentences
+        ):
+            logging.info(f"Detected duplicate sentence: {last_sentence}")
+            final_answer = replace_patterns(uniek_antwoord(full_answer))
+            return {
+                "question": request.prompt,
+                "answer": final_answer,
+                "prompt": prompt_with_template,
+                "active_filter": str(database_filter),
+                "source_documents": reference_docs,
+                "time_stages": time_stages,
+            }
+        seen_sentences.add(last_sentence)
+
+    # Generator klaar, final answer
+    final_answer = replace_patterns(uniek_antwoord(full_answer))
+
+    # TODO
+    # Nacontrole
+
+    return {
+        "question": request.prompt,
+        "answer": final_answer,
+        "prompt": prompt_with_template,
+        "active_filter": str(database_filter),
+        "source_documents": reference_docs,
+        "time_stages": time_stages,
+    }
+
+
+async def request_worker():
+    """Verwerkt verzoeken één voor één."""
+    # Worker voor het verwerken van verzoeken in de wachtrij
+    while True:
+        request = await request_queue.get()
+        async with semaphore:
+            response = await process_request(request)
+            end_time = time.time()
+            duration = end_time - request_responses[request.id]["start_time"]
+            request_responses[request.id].update(
+                {
+                    "status": "completed",
+                    "response": response,
+                    "end_time": end_time,
+                    "time_duration": duration,
+                }
+            )
+
+
+async def get_request_position_in_queue(request_id: str) -> int:
+    """Calculate the real-time position of the request in the queue."""
+    queue_list = list(request_queue._queue)
+    for index, queued_request in enumerate(queue_list):
+        if queued_request.id == request_id:
+            return index + 1
+    return 0
+
+
 def retrieve_answer_from_vector_store(
     prompt: str, chroma_filter: Optional[Dict | None]
 ):
@@ -233,120 +356,6 @@ def build_prompt_template(request: AskRequest, chroma_filter: Optional[Dict | No
             system_prompt=SYSTEM_PROMPT, question=request.prompt
         )
     return prompt_with_template, reference_documents, time_stages
-
-
-async def async_stream_generator(sync_gen):
-    """
-    Fully async wrapper for a synchronous generator.
-    Yields items without using threads.
-    """
-    for item in sync_gen:
-        await asyncio.sleep(0.001)  # yield control to event loop
-        yield item
-
-
-async def process_request(request: AskRequest):
-    """Verwerkt een verzoek en streamt partial responses."""
-
-    if summary_request(request.prompt):
-        return {
-            "question": request.prompt,
-            "answer": get_summary(request.prompt),
-            "prompt": "",
-            "active_filter": "",
-            "source_documents": [],
-            "time_stages": {},
-        }
-
-    database_filter = (
-        maak_metadata_filter(request, COMPONENTS, CONFIG["INCLUDE_PERMISSION"])
-        if CONFIG["INCLUDE_FILTER"]
-        else None
-    )
-    callback = StreamingResponseCallback(request.id)
-    if request.prompt.startswith("!"):
-        request.rag = 0
-
-    # Retrieve the correct template and reference docs
-    prompt_with_template, reference_docs, time_stages = build_prompt_template(
-        chroma_filter=database_filter, request=request
-    )
-
-    stream = LLM_MANAGER.get_llm().client(
-        prompt_with_template, stream=True, max_tokens=1500
-    )
-    full_answer = ""
-    buffer = ""
-    sentence_end_re = re.compile(r"[.!?]")
-    seen_sentences = set()
-    async for chunk in async_stream_generator(stream):
-        token = chunk["choices"][0]["text"]
-        full_answer += token
-        buffer += token
-        callback.on_llm_new_token(token)
-
-        if not sentence_end_re.search(token):
-            continue
-
-        # Only check the last sentence is a replication
-        sentences = re.split(r"(?<=[.!?])\s*", buffer)
-        completed = sentences[:-1]
-        buffer = sentences[-1]
-        if not completed:
-            continue
-
-        # We only check the LAST completed sentence
-        last_sentence = completed[-1].strip()
-        if (
-            last_sentence
-            and is_valid_sentence(last_sentence)
-            and last_sentence in seen_sentences
-        ):
-            logging.info(f"Detected duplicate sentence: {last_sentence}")
-            final_answer = replace_patterns(uniek_antwoord(full_answer))
-            return {
-                "question": request.prompt,
-                "answer": final_answer,
-                "prompt": prompt_with_template,
-                "active_filter": str(database_filter),
-                "source_documents": reference_docs,
-                "time_stages": time_stages,
-            }
-        seen_sentences.add(last_sentence)
-
-    # Generator klaar, final answer
-    final_answer = replace_patterns(uniek_antwoord(full_answer))
-
-    # TODO
-    # Nacontrole
-
-    return {
-        "question": request.prompt,
-        "answer": final_answer,
-        "prompt": prompt_with_template,
-        "active_filter": str(database_filter),
-        "source_documents": reference_docs,
-        "time_stages": time_stages,
-    }
-
-
-# Worker voor het verwerken van verzoeken in de wachtrij
-async def request_worker():
-    """Verwerkt verzoeken één voor één."""
-    while True:
-        request = await request_queue.get()
-        async with semaphore:
-            response = await process_request(request)
-            end_time = time.time()
-            duration = end_time - request_responses[request.id]["start_time"]
-            request_responses[request.id].update(
-                {
-                    "status": "completed",
-                    "response": response,
-                    "end_time": end_time,
-                    "time_duration": duration,
-                }
-            )
 
 
 def validate_structured_query(request: AskRequest):
@@ -513,12 +522,3 @@ def get_metadata():
 async def startup():
     """Start de worker om verzoeken sequentieel te verwerken."""
     asyncio.create_task(request_worker())
-
-
-async def get_request_position_in_queue(request_id: str) -> int:
-    """Calculate the real-time position of the request in the queue."""
-    queue_list = list(request_queue._queue)
-    for index, queued_request in enumerate(queue_list):
-        if queued_request.id == request_id:
-            return index + 1
-    return 0
