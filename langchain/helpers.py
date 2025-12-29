@@ -184,7 +184,7 @@ def get_embedding_function():
     return embeddings
 
 
-def _bouw_permissie_filter(
+def bouw_permissie_filter_vector_store(
     permissie_data: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]],
 ) -> Dict[str, Any]:
     """
@@ -256,7 +256,7 @@ def maak_metadata_filter(request, componenten_dict, include_permission):
     )  # Converteer de gebruikersvraag naar kleine letters voor betere matching
     permissie_filter = None
     if include_permission:
-        permissie_filter = _bouw_permissie_filter(
+        permissie_filter = bouw_permissie_filter_vector_store(
             request.permission
         )  # Bouw het permissiefilter op basis van request
 
@@ -548,11 +548,3 @@ if __name__ == "__main__":
         )
         print(f"Gevonden component sleutels: {gevonden_sleutels}")
         print("-" * 40)
-
-    print(
-        verwijder_onafgeronde_zinnen(
-            verwijder_herhalingen(
-                text="De Xiria is een serie. \n De Xiria is een gave serie. De Xiria is een"
-            )
-        )
-    )

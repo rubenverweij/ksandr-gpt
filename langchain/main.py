@@ -197,40 +197,40 @@ def retrieve_answer_from_vector_store(
     return prompt_with_template, results_new_schema, time_stages
 
 
-def build_prompt_template(prompt: str, chroma_filter: Optional[Dict | None], rag: int):
+def build_prompt_template(request: AskRequest, chroma_filter: Optional[Dict | None]):
     reference_documents = None
     time_stages = {}
-    if rag:
-        if detect_aad(prompt):
-            neo4j_result = validate_structured_query(prompt)
+    if request.rag:
+        if detect_aad(request.prompt):
+            neo4j_result = validate_structured_query(request)
             if len(neo4j_result) > 0:
                 logging.info(f"Start LLM on neo4j: {neo4j_result}")
                 return (
-                    retrieve_neo_answer(prompt, neo4j_result),
+                    retrieve_neo_answer(request.prompt, neo4j_result),
                     source_document_dummy(),
                     {},
                 )
             else:
                 logging.info(f"Closest query: {neo4j_result}")
                 prompt_with_template, reference_documents, time_stages = (
-                    retrieve_answer_from_vector_store(prompt, chroma_filter)
+                    retrieve_answer_from_vector_store(request.prompt, chroma_filter)
                 )
         else:
-            neo4j_result = validate_structured_query_embedding(prompt)
+            neo4j_result = validate_structured_query_embedding(request)
             if len(neo4j_result) > 0:
                 logging.info(f"Start LLM on neo4j: {neo4j_result}")
                 return (
-                    retrieve_neo_answer(prompt, neo4j_result),
+                    retrieve_neo_answer(request.prompt, neo4j_result),
                     source_document_dummy(),
                     {},
                 )
             else:
                 prompt_with_template, reference_documents, time_stages = (
-                    retrieve_answer_from_vector_store(prompt, chroma_filter)
+                    retrieve_answer_from_vector_store(request.prompt, chroma_filter)
                 )
     else:
         prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
-            system_prompt=SYSTEM_PROMPT, question=prompt
+            system_prompt=SYSTEM_PROMPT, question=request.prompt
         )
     return prompt_with_template, reference_documents, time_stages
 
@@ -269,7 +269,7 @@ async def process_request(request: AskRequest):
 
     # Retrieve the correct template and reference docs
     prompt_with_template, reference_docs, time_stages = build_prompt_template(
-        chroma_filter=database_filter, prompt=request.prompt, rag=request.rag
+        chroma_filter=database_filter, request=request
     )
 
     stream = LLM_MANAGER.get_llm().client(
@@ -349,28 +349,28 @@ async def request_worker():
             )
 
 
-def validate_structured_query(question):
-    aads = haal_dossiers_op(question)
+def validate_structured_query(request: AskRequest):
+    aads = haal_dossiers_op(request.prompt)
     if len(aads) > 0:
         where_clause = "WHERE d.aad_id IN $aad_ids"
     else:
         where_clause = ""
-    cypher_to_run = build_cypher_query(question, clause=where_clause)
+    cypher_to_run = build_cypher_query(request.prompt, clause=where_clause)
     cypher_to_run = cypher_to_run.format(where_clause=where_clause)
     logging.info(f"Closest query: {cypher_to_run}")
     parameters = {"aad_ids": aads}
     return GRAPH.query(cypher_to_run, params=parameters)
 
 
-def validate_structured_query_embedding(question):
-    aads = haal_dossiers_op(question)
-    nbs = check_for_nbs(question)
-    results = db_cypher.similarity_search_with_relevance_scores(question, k=20)
+def validate_structured_query_embedding(request: AskRequest):
+    aads = haal_dossiers_op(request.prompt)
+    nbs = check_for_nbs(request.prompt)
+    results = db_cypher.similarity_search_with_relevance_scores(request.prompt, k=20)
     # NOTE: doc[0] = actual query info and doc[1] = sim score
     tag_filtered_results = [
         doc
         for doc in results
-        if match_query_by_tags(question=question, query=doc[0].metadata)
+        if match_query_by_tags(question=request.prompt, query=doc[0].metadata)
         and doc[1] > doc[0].metadata["threshold"]
     ]
     if len(tag_filtered_results) > 0:
