@@ -139,9 +139,8 @@ def ingest_dossier(data, aad_id, component_id, permission):
             "leeswijzer": optional(dossier_json, "Leeswijzer"),
         }
         session.execute_write(merge_node, "dossier", "aad_id", dossier_props)
-        # ---------------------------------------------------------
-        # Beheerteam → person nodes
-        # ---------------------------------------------------------
+
+        # Beheerteam → toevoegen persoon nodes
         deelnemers = data.get("Dossier", {}).get("Deelnemers", {})
         beheerteam = deelnemers.get("Beheerteam", [])
         for member in beheerteam:
@@ -165,9 +164,8 @@ def ingest_dossier(data, aad_id, component_id, permission):
                 "id",
                 person_id,
             )
-        # ---------------------------------------------------------
+
         # Component → component node
-        # ---------------------------------------------------------
         comp = data.get("Dossier", {}).get("Component", {})
         comp_props = {"component_id": component_id, "permission": permission}
         for k, v in comp.items():
@@ -183,9 +181,8 @@ def ingest_dossier(data, aad_id, component_id, permission):
             "component_id",
             component_id,
         )
-        # ---------------------------------------------------------
+
         # Media → document nodes
-        # ---------------------------------------------------------
         documents = data.get("Bestanden", {}).get("Bestanden", [])
         for document in documents:
             doc_id = document.get("documentId")
@@ -225,9 +222,8 @@ def ingest_dossier(data, aad_id, component_id, permission):
                     "id",
                     doc_id,
                 )
-        # ---------------------------------------------------------
+
         # Overige bestanden → document nodes
-        # ---------------------------------------------------------
         overige = data.get("Dossier", {}).get("Overige bestanden", [])
         for group in overige:
             for item in group:
@@ -246,9 +242,8 @@ def ingest_dossier(data, aad_id, component_id, permission):
                     "id",
                     doc_id,
                 )
-        # ---------------------------------------------------------
+
         # Populatiegegevens → populatie + netbeheerder nodes
-        # ---------------------------------------------------------
         pop_entries = data.get("Populatiegegevens", {}).get(
             "Populatie per netbeheerder", []
         )
@@ -365,12 +360,11 @@ def ingest_dossier(data, aad_id, component_id, permission):
                 )
 
                 if nb_name:
-                    nb_id = f"netbeheerder_{nb_name}".lower()
                     session.execute_write(
                         merge_relation,
                         "netbeheerder",
                         "id",
-                        nb_id,
+                        hash(nb_name),
                         "heeft_beleid",
                         "beleid",
                         "id",
