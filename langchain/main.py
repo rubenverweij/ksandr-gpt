@@ -121,6 +121,9 @@ class FileRequest(BaseModel):
         None  # optional, default will be file_path + "_summary.txt"
     )
 
+    class Config:
+        extra = "allow"  # Allow extra fields
+
 
 class AskRequest(BaseModel):
     prompt: str
@@ -146,7 +149,7 @@ async def async_stream_generator(sync_gen):
         yield item
 
 
-async def process_request(request: AskRequest):
+async def process_ask(request: AskRequest):
     """Verwerkt een verzoek en streamt partial responses."""
 
     if summary_request(request.prompt):
@@ -231,13 +234,40 @@ async def process_request(request: AskRequest):
     }
 
 
+async def process_summarize(request: FileRequest):
+    """Process a summarize request including a file location."""
+    file_path = Path(request.file_path)
+    # Check file exists
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Read text and summarize
+    text = file_path.read_text(encoding="utf-8")
+    logging.info(f"Done reading text file {request.file_path}")
+    summarizer = RecursiveSummarizer(
+        llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
+    )
+    summary = summarizer.summarize()
+    summary_cleaned = clean_text_with_dup_detection(summary)
+    return {
+        "status": "ok",
+        "summary_cleaned": summary_cleaned,
+        "summary_raw": summary,
+        "summary_length": len(summary_cleaned.split()),
+    }
+
+
 async def request_worker():
-    """Verwerkt verzoeken één voor één."""
-    # Worker voor het verwerken van verzoeken in de wachtrij
+    """Process requests one by one."""
     while True:
         request = await request_queue.get()
         async with semaphore:
-            response = await process_request(request)
+            if request.type == "ask":
+                response = await process_ask(request)
+            elif request.type == "summarize":
+                response = await process_summarize(request)
+            else:
+                logging.error()
             end_time = time.time()
             duration = end_time - request_responses[request.id]["start_time"]
             request_responses[request.id].update(
@@ -420,39 +450,9 @@ def get_image_name() -> str:
 
 
 @app.post("/summarize")
-def summarize(req: FileRequest):
-    file_path = Path(req.file_path)
-
-    # Check file exists
-    if not file_path.is_file():
-        raise HTTPException(status_code=404, detail="File not found")
-
-    # Read text
-    text = file_path.read_text(encoding="utf-8")
-    logging.info(f"Done reading text file {req.file_path}")
-    summarizer = RecursiveSummarizer(
-        llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
-    )
-    summary = summarizer.summarize()
-    summary_cleaned = clean_text_with_dup_detection(summary)
-    return {
-        "status": "ok",
-        "summary_cleaned": summary_cleaned,
-        "summary_raw": summary,
-        "summary_length": len(summary_cleaned.split()),
-    }
-
-
-@app.post("/set-context")
-def set_context(req: LLMRequest):
-    LLM_MANAGER.load_llm(req.n_ctx)
-    return {"status": "ok", "new_context": req.n_ctx}
-
-
-@app.post("/ask")
-async def ask(request: AskRequest):
-    """Verwerkt binnenkomende verzoeken."""
+async def summarize(request: FileRequest):
     request.id = str(uuid.uuid4())  # Genereer een uniek ID
+    request.type = "summarize"
     await request_queue.put(request)  # Voeg het verzoek toe aan de wachtrij
     start_time = time.time()
     in_queue = request_queue.qsize()
@@ -467,6 +467,38 @@ async def ask(request: AskRequest):
     return {
         "message": "Verzoek wordt verwerkt",
         "request_id": request.id,
+        "type": request.type,
+        "in_queue_start": in_queue,
+        "start_time": datetime.fromtimestamp(start_time).strftime("%H:%M:%S %d-%m-%Y"),
+    }
+
+
+@app.post("/set-context")
+def set_context(req: LLMRequest):
+    LLM_MANAGER.load_llm(req.n_ctx)
+    return {"status": "ok", "new_context": req.n_ctx}
+
+
+@app.post("/ask")
+async def ask(request: AskRequest):
+    """Verwerkt binnenkomende verzoeken."""
+    request.id = str(uuid.uuid4())  # Genereer een uniek ID
+    request.type = "ask"
+    await request_queue.put(request)  # Voeg het verzoek toe aan de wachtrij
+    start_time = time.time()
+    in_queue = request_queue.qsize()
+    request_responses[request.id] = {
+        "status": "processing",
+        "start_time": start_time,
+        "in_queue_start": in_queue,
+        "start_time_formatted": datetime.fromtimestamp(start_time).strftime(
+            "%H:%M:%S %d-%m-%Y"
+        ),
+    }
+    return {
+        "message": "Verzoek wordt verwerkt",
+        "request_id": request.id,
+        "type": request.type,
         "in_queue_start": in_queue,
         "start_time": datetime.fromtimestamp(start_time).strftime("%H:%M:%S %d-%m-%Y"),
     }
