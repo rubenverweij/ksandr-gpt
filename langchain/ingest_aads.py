@@ -410,7 +410,7 @@ def ingest_dossier(data, aad_id, component_id, permission):
                         "id",
                         inspectie_id,
                     )
-                    nb_id = f"netbeheerder_{netbeheerder}".lower()
+                    nb_id = hash(netbeheerder)
                     session.execute_write(
                         merge_relation,
                         "netbeheerder",
