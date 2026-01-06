@@ -120,7 +120,7 @@ class FileRequest(BaseModel):
     summary_file_path: str = (
         None  # optional, default will be file_path + "_summary.txt"
     )
-    summary_length = 500
+    summary_length: int = 500
 
     class Config:
         extra = "allow"  # Allow extra fields
