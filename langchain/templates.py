@@ -1,5 +1,7 @@
 from langchain_core.prompts import PromptTemplate
 
+QUANITY_TERMS = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "telling"]
+
 TEMPLATES = {
     "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf": {
         "DEFAULT_QA_PROMPT": """
@@ -187,17 +189,28 @@ Cypher-query:
 """
 
 PROMPT_ELEMENTEN = {
+    "leeg": "",
     "telling": """
     Wanneer je moet optellen:
-    - controleer eerst of een telling nodig op basis van het query resultaat
-    - schrijf elke waarde uit de data op
-    - tel ze stap-voor-stap op
-    - controleer de som
-    - geef daarna een kort en bondig antwoord
+    - Controleer eerst of een telling nodig op basis van het query resultaat
+    - Maak expliciet onderscheid tussen 1) Het tellen van rijen en 2) het optellen van numerieke waarden per rij 
+    - Geef alleen een telling als daarom gevraagd wordt
+    - Schrijf elke waarde uit de data op
+    - Tel ze stap-voor-stap op
+    - Controleer de som
+    - Geef daarna een kort en bondig antwoord
     - Fouten zijn niet toegestaan.
-    """
+    """,
+    "overzicht": """
+    - Wanneer 'ids', 'namen', of 'nummers' in het query resultaat staan geef deze dan mee in het antwoord
+    """,
 }
 
 
-def dynamische_prompt_elementen():
-    return PROMPT_ELEMENTEN["telling"]
+def dynamische_prompt_elementen(question: str):
+    """Return instructions based on question"""
+    wants_quantity = any(term in question.lower() for term in QUANITY_TERMS)
+    if wants_quantity:
+        return PROMPT_ELEMENTEN["telling"]
+    else:
+        return PROMPT_ELEMENTEN["overzicht"]
