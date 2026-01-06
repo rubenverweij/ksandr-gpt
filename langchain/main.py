@@ -120,6 +120,7 @@ class FileRequest(BaseModel):
     summary_file_path: str = (
         None  # optional, default will be file_path + "_summary.txt"
     )
+    summary_length = 500
 
     class Config:
         extra = "allow"  # Allow extra fields
@@ -247,7 +248,7 @@ async def process_summarize(request: FileRequest):
     summarizer = RecursiveSummarizer(
         llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
     )
-    summary = summarizer.summarize()
+    summary = summarizer.summarize(len_chunk_sum=request.summary_length)
     summary_cleaned = clean_text_with_dup_detection(summary)
     return {
         "status": "ok",

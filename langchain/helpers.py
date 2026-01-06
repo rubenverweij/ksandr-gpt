@@ -45,8 +45,8 @@ def is_valid_sentence(sentence: str, min_words: int = MIN_WORDS) -> bool:
     return len(words) >= min_words
 
 
-def get_4grams(words):
-    return [tuple(words[i : i + 4]) for i in range(len(words) - 4 + 1)]
+def get_7grams(words):
+    return [tuple(words[i : i + 7]) for i in range(len(words) - 7 + 1)]
 
 
 def normalize(s: str) -> str:
@@ -80,7 +80,7 @@ def clean_text_with_dup_detection(text) -> str:
         stream = text  # assume generator or list of chunks
 
     seen_sentences = []
-    seen_4grams = set()
+    seen_7grams = set()
     buffer = ""
     cleaned = ""
 
@@ -108,14 +108,14 @@ def clean_text_with_dup_detection(text) -> str:
                 print(f"[Previous sentence is contained in current] {sentence}")
                 return cleaned.strip()
         words = sentence.split()
-        grams = get_4grams(words)
-        if any(g in seen_4grams for g in grams):
-            print(f"[4-gram duplicate detected] {sentence}")
+        grams = get_7grams(words)
+        if any(g in seen_7grams for g in grams):
+            print(f"[7-gram duplicate detected] {sentence}")
             return cleaned.strip()
         cleaned += sentence + " "
         seen_sentences.append(sentence)
         for g in grams:
-            seen_4grams.add(g)
+            seen_7grams.add(g)
     return cleaned.strip()
 
 
