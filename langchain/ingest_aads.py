@@ -50,7 +50,6 @@ def create_component_faalvorm(
     MERGE (f:faalvorm {faalvorm_id: $faalvorm_id})
       ON CREATE SET f.Naam = $naam,
                     f.NummerInt = $nummer_int,
-                    f.Permission = $permission,
                     f.Prefix = $prefix,
                     f.Beschrijving = $beschrijving,
                     f.MogelijkGevolg = $mogelijk_gevolg,
@@ -67,8 +66,11 @@ def create_component_faalvorm(
                     f.Faaltempo = $faaltempo,
                     f.GemiddeldAantalIncidenten = $gemiddeld_aantal_incidenten,
                     f.Bestandspad = $bestandspad
+    
+    MERGE (p:permission {category: $permission})
     MERGE (d)-[:HEEFT_COMPONENT]->(c)
     MERGE (c)-[:HEEFT_FAALVORM]->(f)
+    MERGE (f)-[:HAS_PERMISSION]->(p)
     """
     session.run(
         cypher,
@@ -127,18 +129,46 @@ def merge_relation(tx, a_label, a_key, a_val, rel, b_label, b_key, b_val):
     tx.run(query, a_val=a_val, b_val=b_val)
 
 
-def ingest_dossier(data, aad_id, component_id, permission):
+def create_permission_constraint(driver: GraphDatabase):
+    """Create permission constraint."""
+    with driver.session() as session:
+        session.run(
+            """
+            CREATE CONSTRAINT permission_category IF NOT EXISTS
+            FOR (p:permission)
+            REQUIRE p.category IS UNIQUE;
+        """
+        )
+
+
+def create_permission_nodes(driver: GraphDatabase, permission: str):
+    """Create permission nodes."""
+    with driver.session() as session:
+        permission_props = {"category": permission}
+        session.execute_write(merge_node, "permission", "category", permission_props)
+
+
+def ingest_dossier(driver: GraphDatabase, data, aad_id, component_id, permission):
     with driver.session() as session:
         dossier_json = data.get("Dossier", {}).get("Dossier", {})
         dossier_props = {
             "aad_id": aad_id,
-            "permission": permission,
             "naam": optional(dossier_json, "Naam"),
             "publicatiedatum": optional(dossier_json, "Publicatiedatum"),
             "laatste_update": optional(dossier_json, "Laatste update"),
             "leeswijzer": optional(dossier_json, "Leeswijzer"),
         }
         session.execute_write(merge_node, "dossier", "aad_id", dossier_props)
+        session.execute_write(
+            merge_relation,
+            "dossier",
+            "aad_id",
+            aad_id,
+            "HAS_PERMISSION",
+            "permission",
+            "category",
+            permission,
+        )
 
         # Beheerteam → toevoegen persoon nodes
         deelnemers = data.get("Dossier", {}).get("Deelnemers", {})
@@ -151,7 +181,6 @@ def ingest_dossier(data, aad_id, component_id, permission):
                 "id": person_id,
                 "link": optional(member, "link"),
                 "naam": optional(member, "text"),
-                "permission": permission,
             }
             session.execute_write(merge_node, "persoon", "id", person_props)
             session.execute_write(
@@ -163,6 +192,16 @@ def ingest_dossier(data, aad_id, component_id, permission):
                 "persoon",
                 "id",
                 person_id,
+            )
+            session.execute_write(
+                merge_relation,
+                "persoon",
+                "id",
+                person_id,
+                "HAS_PERMISSION",
+                "permission",
+                "category",
+                permission,
             )
 
         # Component → component node
@@ -181,6 +220,16 @@ def ingest_dossier(data, aad_id, component_id, permission):
             "component_id",
             component_id,
         )
+        session.execute_write(
+            merge_relation,
+            "component",
+            "component_id",
+            component_id,
+            "HAS_PERMISSION",
+            "permission",
+            "category",
+            permission,
+        )
 
         # Media → document nodes
         documents = data.get("Bestanden", {}).get("Bestanden", [])
@@ -190,7 +239,6 @@ def ingest_dossier(data, aad_id, component_id, permission):
                 "id": doc_id,
                 "naam": document.get("name"),
                 "locatie": document.get("directory"),
-                "permission": permission,
             }
             session.execute_write(merge_node, "document", "id", props)
             session.execute_write(
@@ -203,12 +251,22 @@ def ingest_dossier(data, aad_id, component_id, permission):
                 "id",
                 doc_id,
             )
+            session.execute_write(
+                merge_relation,
+                "document",
+                "id",
+                doc_id,
+                "HAS_PERMISSION",
+                "permission",
+                "category",
+                permission,
+            )
 
         media_groups = data.get("Dossier", {}).get("Media", [])
         for group in media_groups:
             for item in group:
                 doc_id = item.get("aadDocumentId")
-                props = {"id": doc_id, "permission": permission}
+                props = {"id": doc_id}
                 for k, v in item.items():
                     props[clean_key(k)] = v
                 session.execute_write(merge_node, "document", "id", props)
@@ -222,13 +280,23 @@ def ingest_dossier(data, aad_id, component_id, permission):
                     "id",
                     doc_id,
                 )
+                session.execute_write(
+                    merge_relation,
+                    "document",
+                    "id",
+                    doc_id,
+                    "HAS_PERMISSION",
+                    "permission",
+                    "category",
+                    permission,
+                )
 
         # Overige bestanden → document nodes
         overige = data.get("Dossier", {}).get("Overige bestanden", [])
         for group in overige:
             for item in group:
                 doc_id = item.get("documentId")
-                props = {"id": doc_id, "permission": permission}
+                props = {"id": doc_id}
                 for k, v in item.items():
                     props[clean_key(k)] = v
                 session.execute_write(merge_node, "document", "id", props)
@@ -241,6 +309,16 @@ def ingest_dossier(data, aad_id, component_id, permission):
                     "document",
                     "id",
                     doc_id,
+                )
+                session.execute_write(
+                    merge_relation,
+                    "document",
+                    "id",
+                    doc_id,
+                    "HAS_PERMISSION",
+                    "permission",
+                    "category",
+                    permission,
                 )
 
         # Populatiegegevens → populatie + netbeheerder nodes
@@ -279,6 +357,16 @@ def ingest_dossier(data, aad_id, component_id, permission):
                 "populatie",
                 "id",
                 pop_id,
+            )
+            session.execute_write(
+                merge_relation,
+                "populatie",
+                "id",
+                pop_id,
+                "HAS_PERMISSION",
+                "permission",
+                "category",
+                permission,
             )
         # ---------------------------------------------------------
         # Populatiegegevens per type → populatie + netbeheerder nodes
@@ -335,7 +423,7 @@ def ingest_dossier(data, aad_id, component_id, permission):
                 if not item:
                     continue
                 pol_id = f"pol_{abs(hash(str(item)))}"
-                props = {"id": pol_id, "soort": key, "permission": permission}
+                props = {"id": pol_id, "soort": key}
                 if isinstance(item, dict):
                     nb_name = item.get("Netbeheerder", None)  # of via pop_entries
                     for k, v in item.items():
@@ -357,6 +445,16 @@ def ingest_dossier(data, aad_id, component_id, permission):
                     "beleid",
                     "id",
                     pol_id,
+                )
+                session.execute_write(
+                    merge_relation,
+                    "beleid",
+                    "id",
+                    pol_id,
+                    "HAS_PERMISSION",
+                    "permission",
+                    "category",
+                    permission,
                 )
 
                 if nb_name:
@@ -388,11 +486,7 @@ def ingest_dossier(data, aad_id, component_id, permission):
                     if not inspectie_punt:
                         continue
                     inspectie_id = f"inspectie_{abs(hash(str(inspectie_punt)))}"
-                    props = {
-                        "id": inspectie_id,
-                        "soort": "onderhoud_en_inspectie",
-                        "permission": permission,
-                    }
+                    props = {"id": inspectie_id, "soort": "onderhoud_en_inspectie"}
                     if isinstance(inspectie_punt, dict):
                         for k, v in inspectie_punt.items():
                             if v:
@@ -421,6 +515,16 @@ def ingest_dossier(data, aad_id, component_id, permission):
                         "id",
                         inspectie_id,
                     )
+                    session.execute_write(
+                        merge_relation,
+                        "beleid",
+                        "id",
+                        inspectie_id,
+                        "HAS_PERMISSION",
+                        "permission",
+                        "category",
+                        permission,
+                    )
 
 
 with driver.session() as session:
@@ -430,6 +534,9 @@ print("Database deleted.")
 
 with driver.session() as session:
     permissions = ["cat-1", "cat-2"]
+    for permission in permissions:
+        create_permission_nodes(driver, permission)
+    create_permission_constraint(driver)
     for aad_id, component_id in COMPONENTS.items():
         for permission in permissions:
             json_folder = (
@@ -463,6 +570,6 @@ with driver.session() as session:
             with open(json_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 data = clean_html(data)
-            ingest_dossier(data, aad_id, component_id, permission)
+            ingest_dossier(driver, data, aad_id, component_id, permission)
 
 driver.close()
