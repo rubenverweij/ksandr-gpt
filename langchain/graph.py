@@ -1,7 +1,16 @@
 import re
 import Levenshtein
+from helpers import AskRequest
+from config import (
+    COLUMN_MAPPING_FAALVORM,
+    NETBEHEERDERS_LOWER,
+    STOPWORDS,
+    QUANTITY_TERMS,
+)
+import logging
 
-STOPWORDS = {"de", "het", "een", "en", "van", "voor", "op"}
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def tokenize(text):
@@ -37,36 +46,17 @@ def match_query_by_tags(question: str, query: dict) -> bool:
     return False
 
 
-def build_cypher_query(question, clause=""):
+def build_cypher_query(request: AskRequest, clause=""):
     """Build cypher query with contains support."""
-    quantity = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "telling"]
-
-    columns = {
-        "oorzaak": ["f.OorzaakGeneriek:oorzaak_generiek"],
-        "oorzaken": ["f.OorzaakGeneriek:oorzaak_generiek"],
-        # "lijst": ["f.faalvorm_id:nummer_faalvorm"],
-        # "opsomming": ["f.faalvorm_id:nummer_faalvorm"],
-        # "nummer": ["f.faalvorm_id:nummer_faalvorm"],
-        # "id": ["f.faalvorm_id:nummer_faalvorm"],
-        "component": ["c.component_id:naam_component"],
-        "repareer": ["c.niet_repareerbaar:niet_repareerbaar"],
-        "incidenten": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
-        "meest voorkomende": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
-        "asset": ["c.component_id:naam_component"],
-        "gevolg": ["f.MogelijkGevolg:mogelijk_gevolg"],
-        "faalindicator": ["f.Faalindicatoren:faalindicator"],
-        "faaltempo": ["f.Faaltempo:faaltempo"],
-        "effect": ["f.EffectOpSubsysteem:effect_op_systeem"],
-        "beschrijving": ["f.Beschrijving:beschrijving"],
-        "omschrijving": ["f.Beschrijving:beschrijving"],
-    }
+    quantity = QUANTITY_TERMS
+    logger.info(f"Permissions are: {request.permission}")
 
     base_query = """
     MATCH (d:dossier)-[:HEEFT_COMPONENT]->(c:component)-[:HEEFT_FAALVORM]->(f:faalvorm)
     {where_clause}
     {return_clause}
     """
-    q_lower = question.lower()
+    q_lower = request.prompt.lower()
     # --------------------------------------------------------
     # 1. Start WHERE clauses with user-supplied base clause
     # --------------------------------------------------------
@@ -83,7 +73,7 @@ def build_cypher_query(question, clause=""):
     # 3. Detect requested columns
     # --------------------------------------------------------
     selected_fields = set()
-    for key, fields in columns.items():
+    for key, fields in COLUMN_MAPPING_FAALVORM.items():
         if key in q_lower:
             selected_fields.update(fields)
     selected_fields = list(selected_fields)
@@ -107,7 +97,7 @@ def build_cypher_query(question, clause=""):
         # Prefer explicit description-related keywords
         for key in ["beschrijving", "omschrijving", "oorzaak"]:
             if key in q_lower:
-                target_columns = columns[key]
+                target_columns = COLUMN_MAPPING_FAALVORM[key]
         # fallback → search description
         if not target_columns:
             target_columns = ["f.Beschrijving"]
@@ -159,16 +149,7 @@ def build_cypher_query(question, clause=""):
 
 def check_for_nbs(question):
     """Check if netbeheerders are present."""
-    lijst_nb = [
-        "coteq",
-        "enduris",
-        "enexis",
-        "liander",
-        "stedin",
-        "westland",
-        "rendo",
-        "tennet",
-    ]
+    lijst_nb = NETBEHEERDERS_LOWER
     question_lower = question.lower()
     matched_variants = []
     for variant in lijst_nb:

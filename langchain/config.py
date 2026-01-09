@@ -1,32 +1,3 @@
-from typing import List, Dict
-
-PATH_SUMMARY = "/root/onprem_data/summary"
-
-PATROON_UITBREIDING: Dict[str, List[str]] = {
-    "onderhoud": ["Onderhoud", "onderhoud"],
-    "aantal": ["Populatie", "aantal", "populatie"],
-    "populatie": ["Populatie", "aantal", "populatie"],
-    "-": [],
-    "faalvorm": ["Faalvorm", "faalvorm"],
-    "vervanging": ["Vervanging", "vervanging"],
-    "inspectie": ["Inspectie", "inspectie"],
-    "eaton": ["Eaton"],
-    "beleid": ["beleid", "Beleid"],
-}
-
-LIJST_ALGEMENE_WOORDEN = [
-    "eaton",
-    "siemens",
-    "abb",
-    "transformator",
-    "merlin",
-    "gerin",
-    "holec",
-    "conel",
-    "hazemeijer",
-    "lk",
-]
-
 LIJST_SPECIFIEKE_COMPONENTEN = [
     "db10",
     "dr12",
@@ -63,6 +34,17 @@ NETBEHEERDERS = {
     "Rendo N.V.": ["Rendo", "RENDO", "rendo"],
     "Tennet": ["Tennet", "TENNET", "tennet"],
 }
+
+NETBEHEERDERS_LOWER = [
+    "coteq",
+    "enduris",
+    "enexis",
+    "liander",
+    "stedin",
+    "westland",
+    "rendo",
+    "tennet",
+]
 
 LEMMA_EXCLUDE = (
     [
@@ -112,3 +94,28 @@ COMPONENTS = {
     "9027": "ABB BBC DB10 schakelaar",
     "9028": "HS MS vermogens transformator",
 }
+
+# Cypher config
+COLUMN_MAPPING_FAALVORM = {
+    "oorzaak": ["f.OorzaakGeneriek:oorzaak_generiek"],
+    "oorzaken": ["f.OorzaakGeneriek:oorzaak_generiek"],
+    # "lijst": ["f.faalvorm_id:nummer_faalvorm"],
+    # "opsomming": ["f.faalvorm_id:nummer_faalvorm"],
+    # "nummer": ["f.faalvorm_id:nummer_faalvorm"],
+    # "id": ["f.faalvorm_id:nummer_faalvorm"],
+    "component": ["c.component_id:naam_component"],
+    "repareer": ["c.niet_repareerbaar:niet_repareerbaar"],
+    "incidenten": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
+    "meest voorkomende": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
+    "asset": ["c.component_id:naam_component"],
+    "gevolg": ["f.MogelijkGevolg:mogelijk_gevolg"],
+    "faalindicator": ["f.Faalindicatoren:faalindicator"],
+    "faaltempo": ["f.Faaltempo:faaltempo"],
+    "effect": ["f.EffectOpSubsysteem:effect_op_systeem"],
+    "beschrijving": ["f.Beschrijving:beschrijving"],
+    "omschrijving": ["f.Beschrijving:beschrijving"],
+}
+
+STOPWORDS = {"de", "het", "een", "en", "van", "voor", "op"}
+
+QUANTITY_TERMS = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "telling"]

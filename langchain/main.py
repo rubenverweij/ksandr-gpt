@@ -24,10 +24,13 @@ from helpers import (
     clean_text_with_dup_detection,
     summary_request,
     get_summary,
+    AskRequest,
+    ContextRequest,
+    LLMRequest,
+    FileRequest,
 )
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Dict, Optional, Union, List
+from typing import Dict, Optional
 from langchain_chroma import Chroma
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_neo4j import Neo4jGraph
@@ -109,35 +112,6 @@ class StreamingResponseCallback(BaseCallbackHandler):
             request_responses[self.request_id]["partial_response"] = (
                 self.partial_response
             )
-
-
-class LLMRequest(BaseModel):
-    n_ctx: int
-
-
-class FileRequest(BaseModel):
-    file_path: str
-    summary_file_path: str = (
-        None  # optional, default will be file_path + "_summary.txt"
-    )
-    summary_length: int = 500
-
-    class Config:
-        extra = "allow"  # Allow extra fields
-
-
-class AskRequest(BaseModel):
-    prompt: str
-    permission: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]] = None
-    user_id: Optional[str] = "123"
-    rag: Optional[int] = 1
-
-    class Config:
-        extra = "allow"  # Allow extra fields
-
-
-class ContextRequest(BaseModel):
-    prompt: str
 
 
 async def async_stream_generator(sync_gen):
@@ -395,7 +369,7 @@ def validate_structured_query(request: AskRequest):
         where_clause = "WHERE d.aad_id IN $aad_ids"
     else:
         where_clause = ""
-    cypher_to_run = build_cypher_query(request.prompt, clause=where_clause)
+    cypher_to_run = build_cypher_query(request, clause=where_clause)
     cypher_to_run = cypher_to_run.format(where_clause=where_clause)
     logging.info(f"Closest query: {cypher_to_run}")
     parameters = {"aad_ids": aads}

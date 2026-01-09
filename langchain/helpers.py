@@ -17,11 +17,42 @@ from config import (
 from langchain_chroma import Chroma
 from sentence_transformers import CrossEncoder
 from templates import SYSTEM_PROMPT
+from pydantic import BaseModel
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 reranker = CrossEncoder(
     "NetherlandsForensicInstitute/robbert-2023-dutch-base-cross-encoder", device=device
 )
+
+
+class AskRequest(BaseModel):
+    prompt: str
+    permission: Optional[Dict[str, Union[Dict[str, List[int]], List[int], bool]]] = None
+    user_id: Optional[str] = "123"
+    rag: Optional[int] = 1
+
+    class Config:
+        extra = "allow"  # Allow extra fields
+
+
+class LLMRequest(BaseModel):
+    n_ctx: int
+
+
+class FileRequest(BaseModel):
+    file_path: str
+    summary_file_path: str = (
+        None  # optional, default will be file_path + "_summary.txt"
+    )
+    summary_length: int = 500
+
+    class Config:
+        extra = "allow"  # Allow extra fields
+
+
+class ContextRequest(BaseModel):
+    prompt: str
+
 
 # Gebruiken we voor het definieren van zelfstandig naamwoorden
 NLP = spacy.load("nl_core_news_sm")
