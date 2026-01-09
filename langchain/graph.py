@@ -46,11 +46,18 @@ def match_query_by_tags(question: str, query: dict) -> bool:
     return False
 
 
-def build_cypher_query(request: AskRequest, clause=""):
-    """Build cypher query with contains support."""
-    quantity = QUANTITY_TERMS
-    logger.info(f"Permissions are: {request.permission}")
+def build_cypher_query(request: AskRequest, clause: str = "") -> str:
+    """Build cypher query with contains support.
 
+    Args:
+        request (AskRequest): the original request including prompt and permission
+        clause (str): string where clause
+
+    Returns:
+        str: cypher query
+    """
+
+    quantity = QUANTITY_TERMS
     base_query = """
     MATCH (d:dossier)-[:HEEFT_COMPONENT]->(c:component)-[:HEEFT_FAALVORM]->(f:faalvorm)
     {where_clause}

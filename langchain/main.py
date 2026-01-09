@@ -64,7 +64,7 @@ CONFIG = {
             "/root/huggingface/hub/models--unsloth--Qwen3-30B-A3B-Instruct-2507-GGUF/snapshots/eea7b2be5805a5f151f8847ede8e5f9a9284bf77/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
         )
     ),
-    "INCLUDE_PERMISSION": int(os.getenv("INCLUDE_PERMISSION", 0)),
+    "INCLUDE_PERMISSION": int(os.getenv("INCLUDE_PERMISSION", 1)),
     "CHROMA_PATH": os.getenv("CHROMA_PATH", "/root/onprem_data/chroma"),
     "CHROMA_PATH_CYPHER": os.getenv(
         "CHROMA_PATH_CYPHER", "/root/onprem_data/chroma_cypher"
@@ -370,7 +370,7 @@ def validate_structured_query(request: AskRequest):
     else:
         where_clause = ""
     cypher_to_run = build_cypher_query(request, clause=where_clause)
-    cypher_to_run = cypher_to_run.format(where_clause=where_clause)
+    # cypher_to_run = cypher_to_run.format(where_clause=where_clause)
     logging.info(f"Closest query: {cypher_to_run}")
     parameters = {"aad_ids": aads}
     return GRAPH.query(cypher_to_run, params=parameters)
