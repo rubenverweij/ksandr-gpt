@@ -257,8 +257,15 @@ def bouw_permissie_filter_vector_store(
     return {"permission_and_type": {"$in": permissions}}
 
 
-def haal_dossiers_op(vraag):
-    """ "Haal relevante dossiers op."""
+def get_aad_based_on_question(vraag: str) -> list[str]:
+    """Return list with AAD based on question.
+
+    Args:
+        vraag (str): Question as string
+
+    Returns:
+        list[str]: list with AAD ids
+    """
     vraag = vraag.lower()
     gevonden_sleutels = []
     for sleutel, waarde in COMPONENTS.items():

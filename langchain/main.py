@@ -17,7 +17,7 @@ from helpers import (
     vind_relevante_context,
     maak_chroma_filter,
     trim_context_to_fit,
-    haal_dossiers_op,
+    get_aad_based_on_question,
     detect_aad,
     source_document_dummy,
     is_valid_sentence,
@@ -364,7 +364,7 @@ def build_prompt_template(request: AskRequest, chroma_filter: Optional[Dict | No
 
 
 def validate_structured_query(request: AskRequest):
-    aads = haal_dossiers_op(request.prompt)
+    aads = get_aad_based_on_question(request.prompt)
     if len(aads) > 0:
         where_clause = "WHERE d.aad_id IN $aad_ids"
     else:
@@ -377,7 +377,7 @@ def validate_structured_query(request: AskRequest):
 
 
 def validate_structured_query_embedding(request: AskRequest):
-    aads = haal_dossiers_op(request.prompt)
+    aads = get_aad_based_on_question(request.prompt)
     nbs = check_for_nbs(request.prompt)
     results = db_cypher.similarity_search_with_relevance_scores(request.prompt, k=20)
     # NOTE: doc[0] = actual query info and doc[1] = sim score
