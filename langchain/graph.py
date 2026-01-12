@@ -19,6 +19,7 @@ MATCH (d:dossier {aad_id: allowed_dossier_id})-[:HEEFT_COMPONENT]->(c:component)
 MATCH (d)-[:HAS_PERMISSION]->(:permission {category: category})
 MATCH (f)-[:HAS_PERMISSION]->(:permission {category: category})
 WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+{return_clause}
 """
 
 
