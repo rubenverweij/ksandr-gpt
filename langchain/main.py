@@ -364,13 +364,9 @@ def build_prompt_template(request: AskRequest, chroma_filter: Optional[Dict | No
 
 
 def validate_structured_query(request: AskRequest):
+    """Query the Neo4J database."""
     aads = get_aad_based_on_question(request.prompt)
-    # if len(aads) > 0:
-    #     where_clause = "WHERE d.aad_id IN $aad_ids"
-    # else:
-    #     where_clause = ""
     cypher_to_run = build_cypher_query(request.prompt)
-    # cypher_to_run = cypher_to_run.format(where_clause=where_clause)
     user_permissions = {
         k: list(map(str, v)) for k, v in request.permission.get("aads").items()
     }
@@ -380,6 +376,7 @@ def validate_structured_query(request: AskRequest):
 
 
 def validate_structured_query_embedding(request: AskRequest):
+    """Query the Neo4J database based on embeddings."""
     aads = get_aad_based_on_question(request.prompt)
     nbs = check_for_nbs(request.prompt)
     results = db_cypher.similarity_search_with_relevance_scores(request.prompt, k=20)
@@ -394,7 +391,14 @@ def validate_structured_query_embedding(request: AskRequest):
         top_doc, score = tag_filtered_results[0]
         cypher_to_run = top_doc.metadata["cypher"]
         logging.info(f"Closest query: {cypher_to_run} with score {score}")
-        parameters = {"aad_ids": aads, "netbeheerders": nbs}
+        user_permissions = {
+            k: list(map(str, v)) for k, v in request.permission.get("aads").items()
+        }
+        parameters = {
+            "aad_ids": aads,
+            "netbeheerders": nbs,
+            "permissions": user_permissions,
+        }
         logging.info(f"Parameters found: {parameters}")
         result = GRAPH.query(cypher_to_run, params=parameters)
         logging.info(f"Neo4j results: {result}")

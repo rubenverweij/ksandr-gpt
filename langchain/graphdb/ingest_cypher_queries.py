@@ -7,11 +7,20 @@ import shutil
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
 
+BASE_DOSSIER_QUERY_BASIC = """
+WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs, $permissions AS permissions
+UNWIND keys(permissions) AS category
+UNWIND permissions[category] AS allowed_dossier_id
+"""
+
 BASE_DOSSIER_QUERY = """
-WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs, $permissions AS permissions
+UNWIND keys(permissions) AS category
+UNWIND permissions[category] AS allowed_dossier_id
 MATCH (d:dossier)
 WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
 MATCH (d)-[:heeft_component]->(c:component)
+MATCH (d)-[:HAS_PERMISSION]->(:permission {{category: category}})
 """
 
 predefined_queries = [
@@ -91,13 +100,14 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        {base_query}
         MATCH (d:dossier)
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (nb:netbeheerder)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
         MATCH (nb)-[:heeft_populatie]->(p:populatie)
         MATCH (d)-[:heeft_populatie]->(p)
+        MATCH (p)-[:HAS_PERMISSION]->(:permission {{category: category}})
         MATCH (d)-[:heeft_component]->(c:component)
         WITH 
             nb.naam AS naam_netbeheerder,
@@ -142,8 +152,9 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids
+        {base_query_simple}
         MATCH (d:dossier)-[:heeft_beheerteam_lid]->(p:persoon)
+        MATCH (p)-[:HAS_PERMISSION]->(:permission {{category: category}})
         MATCH (d:dossier)-[:heeft_component]->(c:component)
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids   
         RETURN 
@@ -162,8 +173,9 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
@@ -182,8 +194,9 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
@@ -203,8 +216,9 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids AND
         toLower(b.soort) = toLower("onderhoud_en_inspectie")
         MATCH (d)-[:heeft_component]->(c:component)
@@ -223,8 +237,9 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
@@ -243,8 +258,9 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids
+        {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids 
         MATCH (d)-[:heeft_component]->(c:component)
         WHERE toLower(b.soort) CONTAINS "fabrikant"
@@ -259,8 +275,9 @@ predefined_queries = [
     },
     {
         "cypher": """
-        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs
+        {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
@@ -279,7 +296,7 @@ predefined_queries = [
     },
     {
         "cypher": """
-        {base_query}
+        {base_query_simple}
         MATCH (d:dossier)-[:heeft_document]->(doc:document)
         RETURN DISTINCT 
             d.aad_id as aad_dossier_id,
@@ -302,6 +319,10 @@ def ingest_cypher_queries(chroma_path, queries: List[Dict]):
     for query in queries:
         if "{base_query}" in query["cypher"]:
             query["cypher"] = query["cypher"].format(base_query=BASE_DOSSIER_QUERY)
+        if "{base_query_simple}" in query["cypher"]:
+            query["cypher"] = query["cypher"].format(
+                base_query_simple=BASE_DOSSIER_QUERY_BASIC
+            )
         for question in query["example_questions"]:
             documenten.append(
                 Document(

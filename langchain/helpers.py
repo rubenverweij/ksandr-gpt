@@ -17,7 +17,7 @@ from config import (
 from langchain_chroma import Chroma
 from sentence_transformers import CrossEncoder
 from templates import SYSTEM_PROMPT
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 reranker = CrossEncoder(
@@ -31,18 +31,8 @@ class AskRequest(BaseModel):
     user_id: Optional[str] = "123"
     rag: Optional[int] = 1
 
-    model_config = {"extra": "allow"}
-
-    @field_validator("permission", mode="before")
-    @classmethod
-    def convert_permission_ids_to_str(cls, value):
-        if not value:
-            return value
-
-        return {
-            k: [str(x) for x in v] if isinstance(v, list) else v
-            for k, v in value.items()
-        }
+    class Config:
+        extra = "allow"  # Allow extra fields
 
 
 class LLMRequest(BaseModel):
