@@ -20,13 +20,13 @@ UNWIND permissions[category] AS allowed_dossier_id
 MATCH (d:dossier)
 WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
 MATCH (d)-[:heeft_component]->(c:component)
-MATCH (d)-[:HAS_PERMISSION]->(:permission {category: category})
 """
 
 predefined_queries = [
     {
         "cypher": """
         {base_query}
+        MATCH (d)-[:HAS_PERMISSION]->(:permission {{category: category}})
         RETURN DISTINCT 
             d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
@@ -42,6 +42,7 @@ predefined_queries = [
     {
         "cypher": """
         {base_query}
+        MATCH (d)-[:HAS_PERMISSION]->(:permission {{category: category}})
         RETURN DISTINCT 
             d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
@@ -53,6 +54,7 @@ predefined_queries = [
     {
         "cypher": """
         {base_query}
+        MATCH (d)-[:HAS_PERMISSION]->(:permission {{category: category}})
         RETURN DISTINCT 
             d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
@@ -64,6 +66,7 @@ predefined_queries = [
     {
         "cypher": """
         {base_query}
+        MATCH (d)-[:HAS_PERMISSION]->(:permission {{category: category}})
         RETURN DISTINCT 
             d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
@@ -75,6 +78,7 @@ predefined_queries = [
     {
         "cypher": """
         {base_query}
+        MATCH (d)-[:HAS_PERMISSION]->(:permission {{category: category}})
         RETURN DISTINCT 
             d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
@@ -86,6 +90,7 @@ predefined_queries = [
     {
         "cypher": """
         {base_query}
+        MATCH (d)-[:HAS_PERMISSION]->(:permission {{category: category}})
         RETURN DISTINCT 
             d.aad_id as aad_dossier_id,
             c.component_id AS component_naam,
@@ -102,12 +107,13 @@ predefined_queries = [
         "cypher": """
         {base_query}
         MATCH (d:dossier)
+        MATCH (d)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (nb:netbeheerder)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
         MATCH (nb)-[:heeft_populatie]->(p:populatie)
         MATCH (d)-[:heeft_populatie]->(p)
-        MATCH (p)-[:HAS_PERMISSION]->(:permission {category: category})
+        MATCH (p)-[:HAS_PERMISSION]->(:permission {{category: category}})
         MATCH (d)-[:heeft_component]->(c:component)
         WITH 
             nb.naam AS naam_netbeheerder,
@@ -154,7 +160,7 @@ predefined_queries = [
         "cypher": """
         {base_query_simple}
         MATCH (d:dossier)-[:heeft_beheerteam_lid]->(p:persoon)
-        MATCH (p)-[:HAS_PERMISSION]->(:permission {category: category})
+        MATCH (p)-[:HAS_PERMISSION]->(:permission {{category: category}})
         MATCH (d:dossier)-[:heeft_component]->(c:component)
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids   
         RETURN 
@@ -175,7 +181,7 @@ predefined_queries = [
         "cypher": """
         {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
-        MATCH (b)-[:HAS_PERMISSION]->(:permission {category: category})
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
@@ -196,7 +202,7 @@ predefined_queries = [
         "cypher": """
         {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
-        MATCH (b)-[:HAS_PERMISSION]->(:permission {category: category})
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
@@ -218,7 +224,7 @@ predefined_queries = [
         "cypher": """
         {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
-        MATCH (b)-[:HAS_PERMISSION]->(:permission {category: category})
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids AND
         toLower(b.soort) = toLower("onderhoud_en_inspectie")
         MATCH (d)-[:heeft_component]->(c:component)
@@ -239,7 +245,7 @@ predefined_queries = [
         "cypher": """
         {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
-        MATCH (b)-[:HAS_PERMISSION]->(:permission {category: category})
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
@@ -260,7 +266,7 @@ predefined_queries = [
         "cypher": """
         {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
-        MATCH (b)-[:HAS_PERMISSION]->(:permission {category: category})
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids 
         MATCH (d)-[:heeft_component]->(c:component)
         WHERE toLower(b.soort) CONTAINS "fabrikant"
@@ -277,7 +283,7 @@ predefined_queries = [
         "cypher": """
         {base_query_simple}
         MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
-        MATCH (b)-[:HAS_PERMISSION]->(:permission {category: category})
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {{category: category}})
         WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
         MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
         WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
