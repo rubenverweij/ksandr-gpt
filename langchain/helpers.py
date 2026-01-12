@@ -31,8 +31,7 @@ class AskRequest(BaseModel):
     user_id: Optional[str] = "123"
     rag: Optional[int] = 1
 
-    class Config:
-        extra = "allow"  # Allow extra fields
+    model_config = {"extra": "allow"}
 
     @field_validator("permission", mode="before")
     @classmethod

@@ -371,7 +371,10 @@ def validate_structured_query(request: AskRequest):
     #     where_clause = ""
     cypher_to_run = build_cypher_query(request.prompt)
     # cypher_to_run = cypher_to_run.format(where_clause=where_clause)
-    parameters = {"aad_ids": aads, "permissions": request.permission.get("aads")}
+    user_permissions = {
+        k: list(map(str, v)) for k, v in request.permission.get("aads").items()
+    }
+    parameters = {"aad_ids": aads, "permissions": user_permissions}
     logging.info(f"Build cypher query: {cypher_to_run} with parameters {parameters}")
     return GRAPH.query(cypher_to_run, params=parameters)
 
