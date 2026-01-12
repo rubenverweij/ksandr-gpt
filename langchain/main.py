@@ -365,14 +365,14 @@ def build_prompt_template(request: AskRequest, chroma_filter: Optional[Dict | No
 
 def validate_structured_query(request: AskRequest):
     aads = get_aad_based_on_question(request.prompt)
-    if len(aads) > 0:
-        where_clause = "WHERE d.aad_id IN $aad_ids"
-    else:
-        where_clause = ""
-    cypher_to_run = build_cypher_query(request, clause=where_clause)
+    # if len(aads) > 0:
+    #     where_clause = "WHERE d.aad_id IN $aad_ids"
+    # else:
+    #     where_clause = ""
+    cypher_to_run = build_cypher_query(request.prompt)
     # cypher_to_run = cypher_to_run.format(where_clause=where_clause)
-    logging.info(f"Closest query: {cypher_to_run}")
-    parameters = {"aad_ids": aads}
+    logging.info(f"Build cypher query: {cypher_to_run}")
+    parameters = {"aad_ids": aads, "permissions": request.permission.get("aads")}
     return GRAPH.query(cypher_to_run, params=parameters)
 
 

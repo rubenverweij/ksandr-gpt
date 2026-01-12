@@ -1,6 +1,5 @@
 import re
 import Levenshtein
-from helpers import AskRequest
 from config import (
     COLUMN_MAPPING_FAALVORM,
     NETBEHEERDERS_LOWER,
@@ -11,6 +10,16 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+BASE_QUERY_SPEC = """
+WITH $aad_ids AS dossier_ids, $permissions AS permissions
+UNWIND keys(permissions) AS category
+UNWIND permissions[category] AS allowed_dossier_id
+MATCH (d:dossier {aad_id: allowed_dossier_id})-[:HEEFT_COMPONENT]->(c:component)-[:HEEFT_FAALVORM]->(f:faalvorm)
+MATCH (d)-[:HAS_PERMISSION]->(:permission {category: category})
+MATCH (f)-[:HAS_PERMISSION]->(:permission {category: category})
+WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+"""
 
 
 def tokenize(text):
@@ -46,7 +55,7 @@ def match_query_by_tags(question: str, query: dict) -> bool:
     return False
 
 
-def build_cypher_query(request: AskRequest, clause: str = "") -> str:
+def build_cypher_query(request: str) -> str:
     """Build cypher query with contains support.
 
     Args:
@@ -58,18 +67,20 @@ def build_cypher_query(request: AskRequest, clause: str = "") -> str:
     """
 
     quantity = QUANTITY_TERMS
-    base_query = """
-    MATCH (d:dossier)-[:HEEFT_COMPONENT]->(c:component)-[:HEEFT_FAALVORM]->(f:faalvorm)
-    {where_clause}
-    {return_clause}
-    """
-    q_lower = request.prompt.lower()
+    base_query = BASE_QUERY_SPEC
+    # base_query = """
+    # MATCH (d:dossier)-[:HEEFT_COMPONENT]->(c:component)-[:HEEFT_FAALVORM]->(f:faalvorm)
+    # {where_clause}
+    # {return_clause}
+    # """
+
+    q_lower = request.lower()
     # --------------------------------------------------------
     # 1. Start WHERE clauses with user-supplied base clause
     # --------------------------------------------------------
-    where_clauses = []
-    if clause:
-        where_clauses.append(clause)  # e.g. "WHERE a.aad_id IN $aad_ids"
+    # where_clauses = []
+    # if clause:
+    #     where_clauses.append(clause)  # e.g. "WHERE a.aad_id IN $aad_ids"
 
     # --------------------------------------------------------
     # 2. Detect quantity (count?)
@@ -88,43 +99,43 @@ def build_cypher_query(request: AskRequest, clause: str = "") -> str:
     # --------------------------------------------------------
     # 4. Detect “contains” / “bevat” patterns
     # --------------------------------------------------------
-    contains_patterns = ["bevat de term", "m.b.t.", "bevat:"]
-    contains_term = None
+    # contains_patterns = ["bevat de term", "m.b.t.", "bevat:"]
+    # contains_term = None
 
-    for pat in contains_patterns:
-        if pat in q_lower:
-            match = re.search(pat + r"\s+(.*)", q_lower)
-            if match:
-                contains_term = match.group(1).strip()
-                break
+    # for pat in contains_patterns:
+    #     if pat in q_lower:
+    #         match = re.search(pat + r"\s+(.*)", q_lower)
+    #         if match:
+    #             contains_term = match.group(1).strip()
+    #             break
 
     # If contains detected, build WHERE contains clause
-    if contains_term:
-        target_columns = []
-        # Prefer explicit description-related keywords
-        for key in ["beschrijving", "omschrijving", "oorzaak"]:
-            if key in q_lower:
-                target_columns = COLUMN_MAPPING_FAALVORM[key]
-        # fallback → search description
-        if not target_columns:
-            target_columns = ["f.Beschrijving"]
-        for col in target_columns:
-            where_clauses.append(f'toLower({col}) CONTAINS toLower("{contains_term}")')
+    # if contains_term:
+    #     target_columns = []
+    #     # Prefer explicit description-related keywords
+    #     for key in ["beschrijving", "omschrijving", "oorzaak"]:
+    #         if key in q_lower:
+    #             target_columns = COLUMN_MAPPING_FAALVORM[key]
+    #     # fallback → search description
+    #     if not target_columns:
+    #         target_columns = ["f.Beschrijving"]
+    #     for col in target_columns:
+    #         where_clauses.append(f'toLower({col}) CONTAINS toLower("{contains_term}")')
 
     # --------------------------------------------------------
     # 5. Build WHERE clause output
     # --------------------------------------------------------
-    if where_clauses:
-        # If the first clause already begins with WHERE, don’t repeat it
-        if where_clauses[0].strip().upper().startswith("WHERE"):
-            where_clause = where_clauses[0]
-            extra_filters = where_clauses[1:]
-            if extra_filters:
-                where_clause += " AND " + " AND ".join(extra_filters)
-        else:
-            where_clause = "WHERE " + " AND ".join(where_clauses)
-    else:
-        where_clause = ""
+    # if where_clauses:
+    #     # If the first clause already begins with WHERE, don’t repeat it
+    #     if where_clauses[0].strip().upper().startswith("WHERE"):
+    #         where_clause = where_clauses[0]
+    #         extra_filters = where_clauses[1:]
+    #         if extra_filters:
+    #             where_clause += " AND " + " AND ".join(extra_filters)
+    #     else:
+    #         where_clause = "WHERE " + " AND ".join(where_clauses)
+    # else:
+    #     where_clause = ""
 
     # --------------------------------------------------------
     # 6. Build RETURN clause
@@ -148,7 +159,7 @@ def build_cypher_query(request: AskRequest, clause: str = "") -> str:
     # --------------------------------------------------------
     # 7. Assemble final cypher
     # --------------------------------------------------------
-    query = base_query.format(where_clause=where_clause, return_clause=return_clause)
+    query = base_query.format(return_clause=return_clause)
     if wants_quantity:
         query += "\nORDER BY aantalFaalvorm DESC"
     return query.strip()
