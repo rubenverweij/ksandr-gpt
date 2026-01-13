@@ -35,6 +35,12 @@ from langchain_chroma import Chroma
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_neo4j import Neo4jGraph
 
+from fastapi import UploadFile, File
+from io import BytesIO
+
+from PyPDF2 import PdfReader
+
+
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -210,14 +216,31 @@ async def process_ask(request: AskRequest):
 
 
 async def process_summarize(request: FileRequest):
-    """Process a summarize request including a file location."""
-    file_path = Path(request.file_path)
-    # Check file exists
-    if not file_path.is_file():
-        raise HTTPException(status_code=404, detail="File not found")
+    """Process a summarize request from either a file or in-memory content."""
+    text: str | None = None
 
-    # Read text and summarize
-    text = file_path.read_text(encoding="utf-8")
+    # Content or file path is provided directly
+    if request.content:
+        logging.info("Summarize request received with in-memory content")
+        text = request.content
+    elif request.file_path:
+        file_path = Path(request.file_path)
+
+        if not file_path.is_file():
+            raise HTTPException(status_code=404, detail="File not found")
+
+        try:
+            text = file_path.read_text(encoding="utf-8")
+            logging.info(f"Done reading text file {request.file_path}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to read file: {e}")
+    # Neither content nor file_path provided
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="No content or file_path provided for summarization",
+        )
+
     logging.info(f"Done reading text file {request.file_path}")
     summarizer = RecursiveSummarizer(
         llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
@@ -450,6 +473,61 @@ async def summarize(request: FileRequest):
         "message": "Verzoek wordt verwerkt",
         "request_id": request.id,
         "type": request.type,
+        "in_queue_start": in_queue,
+        "start_time": datetime.fromtimestamp(start_time).strftime("%H:%M:%S %d-%m-%Y"),
+    }
+
+
+@app.post("/summarize/pdf")
+async def summarize_pdf(file: UploadFile = File(...)):
+    if file.content_type != "application/pdf":
+        raise HTTPException(
+            status_code=400, detail="Alleen PDF-bestanden zijn toegestaan"
+        )
+
+    # Lees bestand in geheugen
+    pdf_bytes = await file.read()
+
+    # Extraheer tekst uit PDF
+    try:
+        reader = PdfReader(BytesIO(pdf_bytes))
+        text = ""
+        for page in reader.pages:
+            extracted = page.extract_text()
+            if extracted:
+                text += extracted + "\n"
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fout bij lezen PDF: {e}")
+
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Geen tekst gevonden in PDF")
+
+    # Maak FileRequest aan
+    request = FileRequest(
+        id=str(uuid.uuid4()),
+        type="summarize",
+        content=text,
+        filename=file.filename,
+    )
+
+    # Queue metadata
+    start_time = time.time()
+    in_queue = request_queue.qsize()
+    await request_queue.put(request)
+    request_responses[request.id] = {
+        "status": "processing",
+        "start_time": start_time,
+        "in_queue_start": in_queue,
+        "start_time_formatted": datetime.fromtimestamp(start_time).strftime(
+            "%H:%M:%S %d-%m-%Y"
+        ),
+    }
+
+    return {
+        "message": "PDF geüpload en toegevoegd aan samenvattingswachtrij",
+        "request_id": request.id,
+        "type": request.type,
+        "filename": file.filename,
         "in_queue_start": in_queue,
         "start_time": datetime.fromtimestamp(start_time).strftime("%H:%M:%S %d-%m-%Y"),
     }

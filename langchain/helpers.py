@@ -40,11 +40,12 @@ class LLMRequest(BaseModel):
 
 
 class FileRequest(BaseModel):
-    file_path: str
-    summary_file_path: str = (
-        None  # optional, default will be file_path + "_summary.txt"
-    )
+    file_path: str | None = None
+    summary_file_path: str | None = None
     summary_length: int = 500
+    type: str | None = None
+    id: str | None = None
+    content: str | None = None
 
     class Config:
         extra = "allow"  # Allow extra fields
