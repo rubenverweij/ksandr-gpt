@@ -43,7 +43,11 @@ from PyPDF2 import PdfReader
 
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 logger = logging.getLogger(__name__)
 GRAPH = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="password")
 
