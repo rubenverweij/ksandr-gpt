@@ -155,7 +155,7 @@ async def async_stream_generator(sync_gen):
         yield item
 
 
-async def process_ask(request: AskRequest):
+def process_ask(request: AskRequest):
     """Verwerkt een verzoek en streamt partial responses."""
 
     if summary_request(request.prompt):
@@ -189,7 +189,7 @@ async def process_ask(request: AskRequest):
     buffer = ""
     sentence_end_re = re.compile(r"[.!?]")
     seen_sentences = set()
-    async for chunk in async_stream_generator(stream):
+    for chunk in stream:
         token = chunk["choices"][0]["text"]
         full_answer += token
         buffer += token
