@@ -281,26 +281,27 @@ async def process_summarize(request: FileRequest):
 
 
 async def request_worker():
-    """Process requests one by one."""
     while True:
         request = await request_queue.get()
-        async with semaphore:
-            if request.type == "ask":
-                response = await process_ask(request)
-            elif request.type == "summarize":
-                response = await process_summarize(request)
-            else:
-                logging.error()
-            end_time = time.time()
-            duration = end_time - request_responses[request.id]["start_time"]
-            request_responses[request.id].update(
-                {
-                    "status": "completed",
-                    "response": response,
-                    "end_time": end_time,
-                    "time_duration": duration,
-                }
-            )
+        try:
+            async with semaphore:
+                if request.type == "ask":
+                    response = await asyncio.to_thread(process_ask, request)
+                elif request.type == "summarize":
+                    response = await asyncio.to_thread(process_summarize, request)
+        finally:
+            request_queue.task_done()
+
+        end_time = time.time()
+        duration = end_time - request_responses[request.id]["start_time"]
+        request_responses[request.id].update(
+            {
+                "status": "completed",
+                "response": response,
+                "end_time": end_time,
+                "time_duration": duration,
+            }
+        )
 
 
 async def get_request_position_in_queue(request_id: str) -> int:
