@@ -396,9 +396,7 @@ def build_prompt_template(request: AskRequest, chroma_filter: Optional[Dict | No
     time_stages = {}
     if request.rag:
         if detect_location(request.prompt):
-            prompt_with_template = retrieve_weblocation_template(
-                request.prompt, chroma_filter
-            )
+            prompt_with_template = retrieve_weblocation_template(request.prompt)
 
         if detect_aad(request.prompt):
             neo4j_result = validate_structured_query(request)
