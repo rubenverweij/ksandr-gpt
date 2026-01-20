@@ -119,3 +119,23 @@ COLUMN_MAPPING_FAALVORM = {
 STOPWORDS = {"de", "het", "een", "en", "van", "voor", "op"}
 
 QUANTITY_TERMS = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "telling"]
+
+LOCATION_QUESTIONS = [
+    ["waar", "kan", "vinden"],
+    ["waar", "vind", "ik"],
+    ["waar", "staat", "het"],
+    ["waar", "staat", "de"],
+]
+
+
+WEBLOCATION_TEMPLATE = [
+    "- Hoofdpagina met [link to='/aad/{id}/dossier']dossierinformatie[/link]",
+    "- Overzicht met [link to='/aad/{id}/fail-types']faalvormen[/link]",
+    "- [link to='/aad/{id}/population-data']Populatiegegevens[/link]",
+    "- [link to='/aad/{id}/maintenance-policy']Onderhoudsbeleid[/link]",
+    "- [link to='/aad/{id}/maintenance-and-inspection']Onderhoud en inspectie[/link]",
+    "- [link to='/aad/{id}/files']Bestanden[/link]",
+    "- [link to='/aad/{id}/messages']Berichten[/link]",
+    "- [link to='/aad/search']Zoeken[/link]",
+    "- [link to='/aad/info']Informatie[/link]",
+]

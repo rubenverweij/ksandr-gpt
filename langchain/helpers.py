@@ -13,6 +13,8 @@ from config import (
     LIJST_SPECIFIEKE_COMPONENTEN,
     LEMMA_EXCLUDE,
     NETBEHEERDERS,
+    LOCATION_QUESTIONS,
+    WEBLOCATION_TEMPLATE,
 )
 from langchain_chroma import Chroma
 from sentence_transformers import CrossEncoder
@@ -532,6 +534,39 @@ def detect_aad(question):
     if "faalvorm" in question:
         return 1
     return 0
+
+
+def detect_location(question):
+    """Asks for a location."""
+    zin_lc = question.lower()
+    for combi in LOCATION_QUESTIONS:
+        pattern = r".*".join(combi)
+        if re.search(pattern, zin_lc):
+            return 1
+    return 0
+
+
+def build_links(aads):
+    """Return relevant links."""
+    answer_list = []
+    if len(aads) > 0:
+        for aad in aads:
+            answer_list.append(
+                f"Weblocaties voor het AAD dossier van {COMPONENTS[str(aad)]}"
+            )
+            for loc in WEBLOCATION_TEMPLATE:
+                answer_list.append(loc.format(id=aad))
+            answer_list.append("")
+        return "\n".join(answer_list)
+    else:
+        aad = "318"  # example
+        answer_list.append(
+            f"Voorbeeld locaties voor het AAD dossier van {COMPONENTS[str(aad)]}"
+        )
+        for loc in WEBLOCATION_TEMPLATE:
+            answer_list.append(loc.format(id=aad))
+        answer_list.append("")
+        return "\n".join(answer_list)
 
 
 def source_document_dummy():

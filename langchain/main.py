@@ -26,11 +26,13 @@ from helpers import (
     trim_context_to_fit,
     get_aad_based_on_question,
     detect_aad,
+    detect_location,
     source_document_dummy,
     is_valid_sentence,
     clean_text_with_dup_detection,
     summary_request,
     get_summary,
+    build_links,
     AskRequest,
     ContextRequest,
     LLMRequest,
@@ -90,6 +92,7 @@ model = os.path.basename(CONFIG["DEFAULT_MODEL_PATH"])
 DEFAULT_QA_PROMPT = TEMPLATES[model]["DEFAULT_QA_PROMPT"]
 CYPHER_PROMPT = TEMPLATES[model]["CYPHER_PROMPT"]
 DEFAULT_QA_PROMPT_SIMPLE = TEMPLATES[model]["DEFAULT_QA_PROMPT_SIMPLE"]
+LOCATION_QA_PROMPT = TEMPLATES[model]["LOCATION_QA_PROMPT"]
 SUMMARY_PROMPT = TEMPLATES[model]["SUMMARY_PROMPT"]
 
 # Initialisatie van het taalmodel
@@ -379,10 +382,24 @@ def retrieve_answer_from_vector_store(
     return prompt_with_template, results_new_schema, time_stages
 
 
+def retrieve_weblocation_template(question: str):
+    aads = get_aad_based_on_question(question)
+    prompt_with_template = LOCATION_QA_PROMPT.format(
+        locations=build_links(aads),
+        question=question,
+    )
+    return prompt_with_template
+
+
 def build_prompt_template(request: AskRequest, chroma_filter: Optional[Dict | None]):
     reference_documents = None
     time_stages = {}
     if request.rag:
+        if detect_location(request.prompt):
+            prompt_with_template = retrieve_weblocation_template(
+                request.prompt, chroma_filter
+            )
+
         if detect_aad(request.prompt):
             neo4j_result = validate_structured_query(request)
             if len(neo4j_result) > 0:

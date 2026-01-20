@@ -105,6 +105,28 @@ TEMPLATES = {
             <|im_end|>
             <|im_start|>assistant
                 """,
+        "LOCATION_QA_PROMPT": PromptTemplate.from_template(
+            """                                  
+                <|im_start|>system
+                Je helpt een gebruiker van het KSANDR platform (CB = Collectief Brein) om een weblocatie te vinden. 
+                
+                Instructies:
+                - Geef een nette opsomming van weblocaties, maak geen aanpassingen.
+                - Wijs de gebruiker in de goede richting waar de informatie mogelijk gevonden kan worden 
+                
+                <|im_end|>
+                <|im_start|>user
+
+                Overzicht weblocaties:
+                {locations}
+
+                Vraag:
+                {question}
+
+                <|im_end|>
+                <|im_start|>assistant
+                """
+        ),
     },
     "zephyr-7b-beta.Q4_K_M.gguf": {
         "EVALUATIE_PROMPT": "",
