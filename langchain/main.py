@@ -248,7 +248,7 @@ def process_ask(request: AskRequest):
     }
 
 
-async def process_summarize(request: FileRequest):
+def process_summarize(request: FileRequest):
     """Process a summarize request from either a file or in-memory content."""
     text: str | None = None
 
