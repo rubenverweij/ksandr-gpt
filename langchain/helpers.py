@@ -585,7 +585,12 @@ def source_document_dummy():
 
 
 def summary_request(question: str):
+    question = question.lower()
     if "samenvatting van document" in question:
+        return True
+    elif "samenvatting van bestand" in question:
+        return True
+    elif "samenvatting van de notulen" in question:
         return True
     else:
         False
