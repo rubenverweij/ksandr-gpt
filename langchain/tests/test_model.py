@@ -359,7 +359,7 @@ if __name__ == "__main__":
                     "vraag": question,
                     "verwacht_antwoord": expected,
                     "antwoord": answer,
-                    "response": response,
+                    # "response": response,
                     "duration": response.get("time_duration"),
                     "score_threshold": score_threshold,
                     "scores_ref": results_ref,
