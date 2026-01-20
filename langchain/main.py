@@ -281,7 +281,7 @@ async def process_summarize(request: FileRequest):
     summary = summarizer.summarize(len_chunk_sum=request.summary_length)
     summary_cleaned = clean_text_with_dup_detection(summary)
     return {
-        "status": "ok",
+        "status": "completed",
         "summary_cleaned": summary_cleaned,
         "summary_raw": summary,
         "summary_length": len(summary_cleaned.split()),
