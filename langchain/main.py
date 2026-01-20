@@ -397,8 +397,7 @@ def build_prompt_template(request: AskRequest, chroma_filter: Optional[Dict | No
     if request.rag:
         if detect_location(request.prompt):
             prompt_with_template = retrieve_weblocation_template(request.prompt)
-
-        if detect_aad(request.prompt):
+        elif detect_aad(request.prompt):
             neo4j_result = validate_structured_query(request)
             if len(neo4j_result) > 0:
                 logging.info(f"Start LLM on neo4j: {neo4j_result}")
