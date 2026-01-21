@@ -104,64 +104,98 @@ def filter_words_only(words):
 
 def clean_text_with_dup_detection(text) -> str:
     """
-    Processes a text stream, removes or stops at:
-    - full-sentence duplicates
-    - sentences contained inside previous
-    - previous contained inside current
-    - 7-gram duplicate windows (WORDS ONLY, no numbers)
+    Structure-aware cleaner.
+    - Preserves headers and list structure
+    - Deduplicates:
+        * paragraph sentences
+        * list item contents (intern)
+        * 7-grams (words only, no numbers)
     """
 
-    if isinstance(text, str):
-        stream = text
-    else:
-        stream = text
+    stream = text if isinstance(text, str) else "".join(text)
+
+    HEADER_RE = re.compile(r"^\s*(\*\*.+?\*\*|[A-Z][^.!?]{0,80}):\s*$")
+    LIST_ITEM_RE = re.compile(r"^(\s*(?:\d+\.\s+|[-*•]\s+))(.*)$")
 
     seen_sentences = []
     seen_7grams = set()
-    buffer = ""
-    cleaned = ""
 
-    for chunk in stream:
-        token = chunk or ""
-        buffer += token
+    seen_list_sentences = []
+    seen_list_7grams = set()
 
-        if not SENTENCE_END_RE.search(token):
+    cleaned_blocks = []
+
+    blocks = re.split(r"\n{2,}", stream)
+
+    for block in blocks:
+        block = block.strip()
+        if not block:
             continue
 
-        parts = re.split(r"(?<=[.!?])\s*", buffer)
-        completed = parts[:-1]
-        buffer = parts[-1]
-
-        if not completed:
+        # ── HEADER ─────────────────────────────
+        if HEADER_RE.match(block):
+            cleaned_blocks.append(block)
             continue
 
-        sentence = completed[-1].strip()
-        if not (sentence and is_valid_sentence(sentence)):
+        # ── LIST ITEM ──────────────────────────
+        m = LIST_ITEM_RE.match(block)
+        if m:
+            prefix, content = m.groups()
+            content = content.strip()
+
+            if not content or not is_valid_sentence(content):
+                continue
+
+            # Dedup on content
+            if sentence_in_previous(content, seen_list_sentences):
+                continue
+
+            if any(
+                normalize(prev) in normalize(content) for prev in seen_list_sentences
+            ):
+                continue
+
+            words = filter_words_only(content.split())
+            grams = get_7grams(words) if len(words) >= 7 else []
+
+            if any(g in seen_list_7grams for g in grams):
+                continue
+
+            # Accept list item
+            seen_list_sentences.append(content)
+            seen_list_7grams.update(grams)
+            cleaned_blocks.append(prefix + content)
             continue
 
-        if sentence_in_previous(sentence, seen_sentences):
-            print(f"[Sentence contained in previous] {sentence}")
-            return cleaned.strip()
+        # ── PARAGRAPH ──────────────────────────
+        sentences = re.split(r"(?<=[.!?])\s+", block)
+        kept = []
 
-        for prev in seen_sentences:
-            if normalize(prev) in normalize(sentence):
-                print(f"[Previous sentence is contained in current] {sentence}")
-                return cleaned.strip()
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence or not is_valid_sentence(sentence):
+                continue
 
-        words = sentence.split()
-        word_only_words = filter_words_only(words)
+            if sentence_in_previous(sentence, seen_sentences):
+                continue
 
-        grams = get_7grams(word_only_words) if len(word_only_words) >= 7 else []
+            if any(normalize(prev) in normalize(sentence) for prev in seen_sentences):
+                continue
 
-        if any(g in seen_7grams for g in grams):
-            print(f"[7-gram duplicate detected] {sentence}")
-            return cleaned.strip()
+            words = filter_words_only(sentence.split())
+            grams = get_7grams(words) if len(words) >= 7 else []
 
-        cleaned += sentence + " "
-        seen_sentences.append(sentence)
-        seen_7grams.update(grams)
+            if any(g in seen_7grams for g in grams):
+                continue
 
-    return cleaned.strip()
+            kept.append(sentence)
+            seen_sentences.append(sentence)
+            seen_7grams.update(grams)
+
+        if kept:
+            cleaned_blocks.append(" ".join(kept))
+
+    return "\n\n".join(cleaned_blocks)
 
 
 def schoon_antwoord(answer: str) -> str:
