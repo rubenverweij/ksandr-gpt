@@ -2,6 +2,8 @@ from langchain_core.prompts import PromptTemplate
 
 QUANITY_TERMS = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "telling"]
 
+COUNT_TERMS = ["totaal", "telling"]
+
 TEMPLATES = {
     "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf": {
         "DEFAULT_QA_PROMPT": """
@@ -49,7 +51,8 @@ TEMPLATES = {
                 
                 Instructies:
                 - Gebaseerd op de query resultaten geef je antwoord in het nederlands. 
-                - Gebruik alle kolommen in de query resultaten bij het beantwoorden van de vraag. 
+                - Gebruik alle kolommen bij het beantwoorden van de vraag. 
+                - Neem de waarden uit de query resultaten nauwkeurig over, verzin geen waarden.
                 
                 {prompt_elementen}
 
@@ -225,13 +228,14 @@ PROMPT_ELEMENTEN = {
     """,
     "overzicht": """
     - Wanneer 'ids', 'namen', of 'nummers' in het query resultaat staan geef deze dan mee in het antwoord
+    - Maak zelf geen telling.
     """,
 }
 
 
 def dynamische_prompt_elementen(question: str):
     """Return instructions based on question"""
-    wants_quantity = any(term in question.lower() for term in QUANITY_TERMS)
+    wants_quantity = any(term in question.lower() for term in COUNT_TERMS)
     if wants_quantity:
         return PROMPT_ELEMENTEN["telling"]
     else:
