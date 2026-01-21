@@ -96,7 +96,8 @@ TEMPLATES = {
             <|im_start|>system
             Je bent een professionele tekstsamenvatter. 
             Maak een duidelijke, objectieve algemene samenvatting van de tekst in ongeveer {words} woorden. 
-            - Focus op kernpunten en hoofdzaken.
+            - Benoem in de eerste zin van het antwoord eerst om wat voor soort document het gaat. 
+            - Beschrijf dan kernpunten en hoofdzaken.
             - Voeg geen nieuwe informatie toe.
             - Schrijf in neutrale, begrijpelijke Nederlandse taal.
             - Als de tekst te kort is voor {words} woorden, geef dan een volledige maar niet-opgevulde samenvatting.
