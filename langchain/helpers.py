@@ -25,6 +25,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 reranker = CrossEncoder(
     "NetherlandsForensicInstitute/robbert-2023-dutch-base-cross-encoder", device=device
 )
+WORD_RE = re.compile(r"^[A-Za-zÀ-ÿ]+$")  # ondersteunt ook accenten
 
 
 class AskRequest(BaseModel):
@@ -96,22 +97,24 @@ def sentence_in_previous(current: str, previous: list[str]) -> bool:
     return False
 
 
+def filter_words_only(words):
+    """Keep only words without digits."""
+    return [w for w in words if WORD_RE.match(w)]
+
+
 def clean_text_with_dup_detection(text) -> str:
     """
     Processes a text stream, removes or stops at:
     - full-sentence duplicates
     - sentences contained inside previous
     - previous contained inside current
-    - 4-gram duplicate windows
-
-    Returns cleaned string (up to the first duplication).
+    - 7-gram duplicate windows (WORDS ONLY, no numbers)
     """
 
-    # Support: full text or streamed chunks
     if isinstance(text, str):
         stream = text
     else:
-        stream = text  # assume generator or list of chunks
+        stream = text
 
     seen_sentences = []
     seen_7grams = set()
@@ -121,65 +124,44 @@ def clean_text_with_dup_detection(text) -> str:
     for chunk in stream:
         token = chunk or ""
         buffer += token
-        # Not the end of a sentence yet → continue accumulating
+
         if not SENTENCE_END_RE.search(token):
             continue
-        # Split buffer at sentence boundaries
+
         parts = re.split(r"(?<=[.!?])\s*", buffer)
-        completed = parts[:-1]  # full sentences
-        buffer = parts[-1]  # remainder
+        completed = parts[:-1]
+        buffer = parts[-1]
+
         if not completed:
             continue
+
         sentence = completed[-1].strip()
-        # Validate sentence length
         if not (sentence and is_valid_sentence(sentence)):
             continue
+
         if sentence_in_previous(sentence, seen_sentences):
             print(f"[Sentence contained in previous] {sentence}")
             return cleaned.strip()
+
         for prev in seen_sentences:
             if normalize(prev) in normalize(sentence):
                 print(f"[Previous sentence is contained in current] {sentence}")
                 return cleaned.strip()
+
         words = sentence.split()
-        grams = get_7grams(words)
+        word_only_words = filter_words_only(words)
+
+        grams = get_7grams(word_only_words) if len(word_only_words) >= 7 else []
+
         if any(g in seen_7grams for g in grams):
             print(f"[7-gram duplicate detected] {sentence}")
             return cleaned.strip()
+
         cleaned += sentence + " "
         seen_sentences.append(sentence)
-        for g in grams:
-            seen_7grams.add(g)
+        seen_7grams.update(grams)
+
     return cleaned.strip()
-
-
-def verwijder_herhalingen(text: str) -> str:
-    # Split the text by newline first to preserve the structure
-    sentences = text.split("\n")
-
-    # Create a list to store the unique sentences and a set to track already seen sentences
-    unique_sentences = set()
-    cleaned_sentences = []
-
-    for sentence in sentences:
-        # Split into individual sentences (this works for sentences ending with punctuation)
-        sub_sentences = re.split(
-            r"(?<=\w[.!?])\s*", sentence.strip()
-        )  # Split on sentence boundary
-
-        cleaned_sub_sentences = []
-        for sub_sentence in sub_sentences:
-            # If the sentence has not been seen before, keep it
-            if sub_sentence and sub_sentence not in unique_sentences:
-                unique_sentences.add(sub_sentence)
-                cleaned_sub_sentences.append(sub_sentence)
-
-        # Rejoin sub-sentences if any unique sentences are present in the current sentence block
-        if cleaned_sub_sentences:
-            cleaned_sentences.append(" ".join(cleaned_sub_sentences))
-
-    # Rebuild the text with cleaned sentences, preserving the newline structure
-    return "\n".join(cleaned_sentences)
 
 
 def schoon_antwoord(answer: str) -> str:
@@ -192,7 +174,7 @@ def schoon_antwoord(answer: str) -> str:
 
 def verwijder_onafgeronde_zinnen(text: str) -> str:
     # Look for the last complete sentence ending with a period
-    match = re.search(r"(.*?\.\s*)([^\.\n]*?)$", text, re.DOTALL)
+    match = re.search(r"(.*?[\.|]\s*)([^\.|\n]*?)$", text, re.DOTALL)
     if match:
         before_last, after_last = match.groups()
         # If the trailing part after the last '.' has no '.' and is not empty,
