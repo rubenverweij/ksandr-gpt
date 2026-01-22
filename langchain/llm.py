@@ -90,6 +90,12 @@ class RecursiveSummarizer:
             max(1, int(self.count_words(c) / total_words * final_words)) for c in chunks
         ]
 
+    def first_n_words(text, n=4000):
+        matches = list(re.finditer(r"\S+", text))
+        if len(matches) <= n:
+            return text
+        return text[: matches[n - 1].end()]
+
     def summarize(self, len_chunk_sum: int = 400, len_final_sum: int = 200) -> str:
         chunks = self.chunk_text(self.text)
         chunk_lengths = self.calculate_chunk_summary_length(chunks[:2], len_chunk_sum)
@@ -111,3 +117,9 @@ class RecursiveSummarizer:
         #     elif "content" in response:
         #         return response["content"].strip()
         return final_summary
+
+    def summarize_simple(self, len_chunk_sum: int = 500) -> str:
+        summary = self.summarize_chunk(
+            chunk=self.first_n_words(self.text), summary_length=len_chunk_sum
+        )
+        return summary

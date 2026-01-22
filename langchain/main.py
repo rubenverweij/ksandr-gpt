@@ -278,7 +278,7 @@ def process_summarize(request: FileRequest):
     summarizer = RecursiveSummarizer(
         llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
     )
-    summary = summarizer.summarize(len_chunk_sum=request.summary_length)
+    summary = summarizer.summarize_simple(len_chunk_sum=request.summary_length)
     summary_cleaned = clean_text_with_dup_detection(summary)
     return {
         "status": "completed",
