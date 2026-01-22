@@ -90,11 +90,11 @@ class RecursiveSummarizer:
             max(1, int(self.count_words(c) / total_words * final_words)) for c in chunks
         ]
 
-    def first_n_words(text, n=4000):
-        matches = list(re.finditer(r"\S+", text))
+    def first_n_words(self, n=4000):
+        matches = list(re.finditer(r"\S+", self.text))
         if len(matches) <= n:
-            return text
-        return text[: matches[n - 1].end()]
+            return self.text
+        return self.text[: matches[n - 1].end()]
 
     def summarize(self, len_chunk_sum: int = 400, len_final_sum: int = 200) -> str:
         chunks = self.chunk_text(self.text)
@@ -119,9 +119,11 @@ class RecursiveSummarizer:
         return final_summary
 
     def summarize_simple(self, len_chunk_sum: int = 500) -> str:
+        if len(self.text) < 1000:
+            return "De text is te kort om te kunnen samenvatten."
         if isinstance(self.text, str):
             summary = self.summarize_chunk(
-                chunk=self.first_n_words(self.text), summary_length=len_chunk_sum
+                chunk=self.first_n_words(), summary_length=len_chunk_sum
             )
             return summary
         return "Kan geen samenvatting maken van bestand."
