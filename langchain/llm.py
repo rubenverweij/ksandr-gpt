@@ -119,7 +119,9 @@ class RecursiveSummarizer:
         return final_summary
 
     def summarize_simple(self, len_chunk_sum: int = 500) -> str:
-        summary = self.summarize_chunk(
-            chunk=self.first_n_words(self.text), summary_length=len_chunk_sum
-        )
-        return summary
+        if isinstance(self.text, str):
+            summary = self.summarize_chunk(
+                chunk=self.first_n_words(self.text), summary_length=len_chunk_sum
+            )
+            return summary
+        return "Kan geen samenvatting maken van bestand."
