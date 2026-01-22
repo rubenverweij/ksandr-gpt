@@ -547,8 +547,6 @@ async def summarize_pdf(file: UploadFile = File(...)):
     if not text.strip():
         raise HTTPException(status_code=400, detail="Geen tekst gevonden in PDF")
 
-    logging.info(f"Tekst gevonden: {text}")
-
     # Maak FileRequest aan
     request = FileRequest(
         id=str(uuid.uuid4()),
