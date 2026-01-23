@@ -404,7 +404,7 @@ def ingest_cypher_queries(chroma_path, queries: List[Dict]):
                     metadata={
                         "cypher": query["cypher"],
                         "tags": query["tags"],
-                        "tags_list": query["tags_list"],
+                        "tags_list": query.get("tags_list", []),
                         "threshold": query.get("threshold", 0),
                     },
                 )
