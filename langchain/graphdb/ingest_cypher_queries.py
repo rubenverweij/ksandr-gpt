@@ -63,6 +63,7 @@ predefined_queries = [
         """,
         "example_questions": ["Geef productbeschrijving van component A"],
         "tags": "productbeschrijving",
+        "tags_list": [["productbeschrijving"], ["omschrijving", "component"]],
     },
     {
         "cypher": """
@@ -79,6 +80,7 @@ predefined_queries = [
         """,
         "example_questions": ["Beschrijf de primaire functie van component A"],
         "tags": "primaire functie",
+        "tags_list": [["primaire", "functie"]],
     },
     {
         "cypher": """
@@ -95,6 +97,7 @@ predefined_queries = [
         """,
         "example_questions": ["Beschrijf de secundaire functie van component A"],
         "tags": "secundaire functie",
+        "tags_list": [["secundaire", "functie"]],
     },
     {
         "cypher": """
@@ -111,6 +114,7 @@ predefined_queries = [
         """,
         "example_questions": ["Geef de materiaal omschrijving van de X"],
         "tags": "materiaal omschrijving",
+        "tags_list": [["materiaal", "omschrijving"]],
     },
     {
         "cypher": """
@@ -131,6 +135,7 @@ predefined_queries = [
             "Wanneer is het AAD dossier voor het laatst gewijzigd?",
         ],
         "tags": "laatste update;gewijzigd",
+        "tags_list": [["aad", "gewijzigd"], ["laatste", "update", "aad"]],
     },
     {
         "cypher": """
@@ -165,6 +170,13 @@ predefined_queries = [
             "Geef het aantal componenten per netbeheerder",
         ],
         "tags": "populatiegegevens;meeste;populatie;aantal velden;hoeveel;het aantal",
+        "tags_list": [
+            ["populatiegegevens"],
+            ["asset", "het", "meeste"],
+            ["component", "het", "meeste"],
+            ["aantal", "velden"],
+            ["hoeveel", "van"],
+        ],
     },
     {
         "cypher": """
@@ -184,6 +196,12 @@ predefined_queries = [
         ],
         "tags": "lijst;aad;aad's",
         "threshold": 0.85,
+        "tags_list": [
+            ["lijst", "aad"],
+            ["lijst", "dossier"],
+            ["geef", "dossier"],
+            ["geef", "aad"],
+        ],
     },
     {
         "cypher": """
@@ -207,6 +225,7 @@ predefined_queries = [
         ],
         "tags": "beheerteam",
         "threshold": 0.3,
+        "tags_list": [["beheerteam"]],
     },
     {
         "cypher": """
@@ -230,6 +249,7 @@ predefined_queries = [
             "Wat is het vervangingsbeleid van X voor de magnefix?",
         ],
         "tags": "vervangingsbeleid",
+        "tags_list": [["vervangingsbeleid"]],
     },
     {
         "cypher": """
@@ -254,6 +274,7 @@ predefined_queries = [
             "Hoe ziet het onderhoudsstrategie van X voor de Siemens 8DJH eruit?",
         ],
         "tags": "onderhoudsstrategie;onderhoudsbeleid",
+        "tags_list": [["onderhoudsbeleid"], ["onderhoudsstrategie"]],
     },
     {
         "cypher": """
@@ -277,6 +298,7 @@ predefined_queries = [
             "Wat zijn de goedkeuringseisen bij het inspecteren van olielekkage bij een COQ installatie?",
         ],
         "tags": "inspectie;inspectieronde;inspecteren;goedkeuringseisen",
+        "tags_list": [["inspectie"], ["inspecteren"], ["goedkeuringseisen"]],
     },
     {
         "cypher": """
@@ -300,6 +322,7 @@ predefined_queries = [
             "Wat zijn de vervangingscriteria van X voor de magnefix?",
         ],
         "tags": "vervangingscriteria",
+        "tags_list": [["vervangingscriteria"]],
     },
     {
         "cypher": """
@@ -319,6 +342,7 @@ predefined_queries = [
             "Welk beleid adviseert de fabrikant voor de installatie?",
         ],
         "tags": "fabrikant",
+        "tags_list": [["beleid", "fabrikant"]],
     },
     {
         "cypher": """
@@ -342,6 +366,7 @@ predefined_queries = [
             "Welk onderhoud wordt periodiek gedaan?",
         ],
         "tags": "po/pi;periodiek",
+        "tags_list": [["periodiek", "onderhoud"]],
     },
     {
         "cypher": """
@@ -365,6 +390,7 @@ predefined_queries = [
             "Welk onderhoud wordt gedaan?",
         ],
         "tags": "onderhoud;",
+        "tags_list": [["welk", "onderhoud"], ["wat", "voor", "onderhoud"]],
     },
     {
         "cypher": """
@@ -380,6 +406,7 @@ predefined_queries = [
             "Waar kan ik de notulen van het beheerteam overleg 2023 voor het AAD 10kv COQ vinden?"
         ],
         "tags": "beheerteam overleg;bestanden;brondocumenten aad",
+        "tags_list": [["brondocumenten"]],
     },
 ]
 
