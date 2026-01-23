@@ -19,7 +19,6 @@ from graph import build_cypher_query, check_for_nbs, match_query_by_tags
 from helpers import (
     maak_metadata_filter,
     COMPONENTS,
-    uniek_antwoord,
     get_embedding_function,
     vind_relevante_context,
     maak_chroma_filter,
@@ -217,9 +216,7 @@ def process_ask(request: AskRequest):
             and last_sentence in seen_sentences
         ):
             logging.info(f"Detected duplicate sentence: {last_sentence}")
-            final_answer = replace_patterns(
-                uniek_antwoord(clean_text_with_dup_detection(full_answer))
-            )
+            final_answer = replace_patterns(full_answer)
             return {
                 "question": request.prompt,
                 "answer": final_answer,
@@ -231,9 +228,7 @@ def process_ask(request: AskRequest):
         seen_sentences.add(last_sentence)
 
     # Generator klaar, final answer
-    final_answer = replace_patterns(
-        uniek_antwoord(clean_text_with_dup_detection(full_answer))
-    )
+    final_answer = replace_patterns(full_answer)
 
     # TODO
     # Nacontrole

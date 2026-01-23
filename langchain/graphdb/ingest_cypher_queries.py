@@ -245,7 +245,7 @@ predefined_queries = [
             b AS beleid
         """,
         "example_questions": [
-            "Welk vervangingsbeleid adviseert de fabrikant voor de installatie?",
+            "Welk vervangingsbeleid hanteert X voor de installatie?",
             "Wat is het vervangingsbeleid van X voor de magnefix?",
         ],
         "tags": "vervangingsbeleid",
