@@ -129,8 +129,8 @@ LOCATION_QUESTIONS = [
 
 
 WEBLOCATION_TEMPLATE = [
-    "- Hoofdpagina met [link to='/aad/{id}/dossier']dossierinformatie[/link]",
-    "- Overzicht met [link to='/aad/{id}/fail-types']faalvormen[/link]",
+    "- [link to='/aad/{id}/dossier']Dossierinformatie[/link]",
+    "- [link to='/aad/{id}/fail-types']Faalvormen[/link]",
     "- [link to='/aad/{id}/population-data']Populatiegegevens[/link]",
     "- [link to='/aad/{id}/maintenance-policy']Onderhoudsbeleid[/link]",
     "- [link to='/aad/{id}/maintenance-and-inspection']Onderhoud en inspectie[/link]",
