@@ -41,7 +41,12 @@ predefined_queries = [
             "Wat is de publicatiedatum van AAD",
             "Geef de publicatiedatum van dossier",
         ],
-        "tags": "publicatiedatum",
+        "tags": "publicatiedatum;gepubliceerd",
+        "tags_list": [
+            ["publicatiedatum", "aad"],
+            ["is", "gepubliceerd"],
+            ["publicatiedatum", "dossier"],
+        ],
     },
     {
         "cypher": """
@@ -340,6 +345,29 @@ predefined_queries = [
     },
     {
         "cypher": """
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs, $permissions AS permissions
+        UNWIND keys(permissions) AS category
+        UNWIND permissions[category] AS allowed_dossier_id
+        MATCH (d:dossier {aad_id: allowed_dossier_id})-[:HEEFT_COMPONENT]->(c:component)
+        MATCH (d:dossier)-[:heeft_beleid]->(b:beleid)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (b)-[:HAS_PERMISSION]->(:permission {category: category})
+        WHERE toLower(b.soort) CONTAINS "onderhoud"
+        MATCH (nb:netbeheerder)-[:heeft_beleid]->(b:beleid)
+        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t)) 
+        RETURN DISTINCT
+            nb.naam AS netbeheerder,
+            c.component_id AS component_naam,  
+            b AS beleid
+        """,
+        "example_questions": [
+            "Welk onderhoud wordt gedaan voor de FMX?",
+            "Welk onderhoud wordt gedaan?",
+        ],
+        "tags": "onderhoud;",
+    },
+    {
+        "cypher": """
         WITH $aad_ids AS dossier_ids, $permissions AS permissions
         UNWIND keys(permissions) AS category
         UNWIND permissions[category] AS allowed_dossier_id
@@ -376,6 +404,7 @@ def ingest_cypher_queries(chroma_path, queries: List[Dict]):
                     metadata={
                         "cypher": query["cypher"],
                         "tags": query["tags"],
+                        "tags_list": query["tags_list"],
                         "threshold": query.get("threshold", 0),
                     },
                 )
