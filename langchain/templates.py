@@ -44,7 +44,7 @@ TEMPLATES = {
                 <|im_end|>
                 <|im_start|>assistant
                 """,
-        "CYPHER_PROMPT": PromptTemplate.from_template(
+        "CYPHER_PROMPT_DEPR": PromptTemplate.from_template(
             """                                  
                 <|im_start|>system
                 Je bent een Neo4j data expert. De query resultaten tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
@@ -53,6 +53,37 @@ TEMPLATES = {
                 - Gebaseerd op de query resultaten geef je antwoord in het nederlands. 
                 - Gebruik alle kolommen bij het beantwoorden van de vraag. 
                 - Neem de waarden uit de query resultaten nauwkeurig over, verzin geen waarden.
+                Wanneer query resultaten bestaan uit een lijst van records:
+                - Behandel elk record afzonderlijk
+                - Voer de gevraagde beoordeling uit per record
+                - Sla geen records over
+                - Presenteer het resultaat per record
+                
+                {prompt_elementen}
+
+                <|im_end|>
+                <|im_start|>user
+
+                Query resultaten:
+                {result}
+
+                Vraag:
+                {question}
+
+                <|im_end|>
+                <|im_start|>assistant
+                """
+        ),
+        "CYPHER_PROMPT": PromptTemplate.from_template(
+            """                                  
+                <|im_start|>system
+                Je bent een Neo4j data expert. De query resultaten tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
+                
+                Wanneer query resultaten bestaan uit een lijst van records:
+                - Behandel elk record afzonderlijk
+                - Voer de gevraagde beoordeling uit per record
+                - Sla geen records over
+                - Presenteer het resultaat per record
                 
                 {prompt_elementen}
 
@@ -170,33 +201,6 @@ Belangrijke instructies:
 - Gebruik duidelijk, natuurlijk en professioneel Nederlands.
 - Antwoord beknopt maar volledig, en vermijd dubbelzinnigheid
 """
-
-CYPHER_PROMPT = PromptTemplate.from_template(
-    """                                  
-<|im_start|>system
-Je bent een Neo4j data expert. De query resultaten tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
-Gebaseerd op de query resultaten geef een kort en bondig antwoord in het nederlands.
-
-Wanneer je moet optellen:
-- controleer eerst of een telling nodig op basis van het query resultaat
-- schrijf elke waarde uit de data op
-- tel ze stap-voor-stap op
-- controleer de som
-- geef daarna een kort en bondig antwoord
-Fouten zijn niet toegestaan.
-<|im_end|>
-<|im_start|>user
-
-Query resultaten:
-{result}
-
-Vraag:
-{question}
-
-<|im_end|>
-<|im_start|>assistant
-"""
-)
 
 CYPHER_GEN_PROMPT = """
 Genereer een Cypher-query om een grafendatabase te doorzoeken. 
