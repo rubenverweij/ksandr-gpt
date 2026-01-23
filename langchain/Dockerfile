@@ -28,5 +28,6 @@ RUN python3 -m pip install PyPDF2 bs4 redis chromadb langchain_chroma sentence-t
 WORKDIR /ksandr-gpt
 COPY ./ /ksandr-gpt/api
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONWARNINGS="ignore::UserWarning"
 
 CMD ["fastapi", "run", "api/main.py", "--port", "8080"]
