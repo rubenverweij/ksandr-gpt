@@ -298,7 +298,12 @@ predefined_queries = [
             "Wat zijn de goedkeuringseisen bij het inspecteren van olielekkage bij een COQ installatie?",
         ],
         "tags": "inspectie;inspectieronde;inspecteren;goedkeuringseisen",
-        "tags_list": [["inspectie"], ["inspecteren"], ["goedkeuringseisen"]],
+        "tags_list": [
+            ["inspectie"],
+            ["inspecteren"],
+            ["goedkeuringseisen"],
+            ["inspectieronde"],
+        ],
     },
     {
         "cypher": """
