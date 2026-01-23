@@ -1,4 +1,5 @@
 import re
+import json
 import Levenshtein
 from config import (
     COLUMN_MAPPING_FAALVORM,
@@ -31,7 +32,7 @@ def tokenize(text):
     return set(tokens)
 
 
-def match_query_by_tags(question: str, query: dict) -> bool:
+def match_query_by_tags_deprecated(question: str, query: dict) -> bool:
     """
     Returns True if any tag from query["tags"] is found in the question text,
     allowing for up to 1 character typo (Levenshtein distance <= 1).
@@ -53,6 +54,37 @@ def match_query_by_tags(question: str, query: dict) -> bool:
                 return True
         if tag in question:
             return True
+    return False
+
+
+def match_tag_combi(question, combi, max_afstand=1):
+    woorden = question.lower().split()
+    idx = 0
+    for target in combi:
+        gevonden = False
+        for i in range(idx, len(woorden)):
+            if Levenshtein.distance(woorden[i], target) <= max_afstand:
+                idx = i + 1  # volgorde bewaken
+                gevonden = True
+                break
+        if not gevonden:
+            return False
+    return True
+
+
+def match_query_by_tags(question: str, query: dict) -> bool:
+    if "tags_list" not in query or not query["tags_list"]:
+        return True
+
+    try:
+        tag_combinaties = json.loads(query["tags_list"])
+    except Exception:
+        return False
+
+    for combi in tag_combinaties:
+        if match_tag_combi(question, combi):
+            return True
+
     return False
 
 

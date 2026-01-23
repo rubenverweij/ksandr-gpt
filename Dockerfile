@@ -31,5 +31,6 @@ RUN python3 -m pip install --upgrade onprem chromadb langchain_chroma fastapi[st
 WORKDIR /ksandr-gpt
 COPY ./api /ksandr-gpt/api
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONWARNINGS="ignore::UserWarning"
 
 CMD ["fastapi", "run", "api/main.py", "--port", "8080"]
