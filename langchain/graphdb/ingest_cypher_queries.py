@@ -156,7 +156,7 @@ predefined_queries = [
         RETURN
             naam_netbeheerder,
             naam_component,
-            totale_populatie_component
+            apoc.number.format(totale_populatie_component, "#,###", "nl-NL") AS totale_populatie
         ORDER BY totale_populatie_component DESC;
         """,
         "example_questions": [
