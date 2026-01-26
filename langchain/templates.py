@@ -4,6 +4,8 @@ QUANITY_TERMS = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "tel
 
 COUNT_TERMS = ["totaal", "telling", "alle netbeheerders samen"]
 
+COMPARISON_TERMS = ["vergelijking", "komt bij zowel"]
+
 TEMPLATES = {
     "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf": {
         "DEFAULT_QA_PROMPT": """
@@ -50,6 +52,7 @@ TEMPLATES = {
                 Je bent een Neo4j data expert. De query resultaten tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
                 
                 Instructies:
+                - Herhaal instructies niet in het antwoord.
                 - Gebaseerd op de query resultaten geef je antwoord in het nederlands. 
                 - Gebruik alle kolommen bij het beantwoorden van de vraag. 
                 - Neem de waarden uit de query resultaten nauwkeurig over, verzin geen waarden.
@@ -80,6 +83,7 @@ TEMPLATES = {
                 Je bent een Neo4j data expert. De query resultaten tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
                 
                 Wanneer query resultaten bestaan uit een lijst van records:
+                - Herhaal instructies niet in het antwoord.
                 - Behandel elk record afzonderlijk
                 - Voer de gevraagde beoordeling uit per record
                 - Sla geen records over
@@ -221,7 +225,7 @@ Cypher-query:
 PROMPT_ELEMENTEN = {
     "leeg": "",
     "telling": """
-    Wanneer je moet optellen:
+
     - Controleer eerst of een telling nodig op basis van het query resultaat
     - Maak expliciet onderscheid tussen 1) Het tellen van rijen en 2) het optellen van numerieke waarden per rij 
     - Geef alleen een telling als daarom gevraagd wordt
@@ -235,13 +239,20 @@ PROMPT_ELEMENTEN = {
     - Wanneer 'ids', 'namen', of 'nummers' in het query resultaat staan geef deze dan mee in het antwoord
     - Maak zelf geen telling.
     """,
+    "vergelijking": """
+    - Maak een vergelijking tussen de
+    """,
 }
 
 
 def dynamische_prompt_elementen(question: str):
     """Return instructions based on question"""
     wants_quantity = any(term in question.lower() for term in COUNT_TERMS)
+    wants_comparison = any(term in question.lower() for term in COMPARISON_TERMS)
+
     if wants_quantity:
         return PROMPT_ELEMENTEN["telling"]
+    elif wants_comparison:
+        return PROMPT_ELEMENTEN["vergelijking"]
     else:
         return PROMPT_ELEMENTEN["overzicht"]
