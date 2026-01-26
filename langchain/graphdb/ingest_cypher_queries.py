@@ -176,9 +176,41 @@ predefined_queries = [
             ["hoeveel", "hebben"],
             ["geef", "aantallen"],
             ["aantal", "installaties"],
-            ["hebben", "in", "totaal"],
-            ["hoeveel", "hebben", "samen"],
             ["hoeveel", "van"],
+        ],
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs, $permissions AS permissions
+        UNWIND keys(permissions) AS category
+        UNWIND permissions[category] AS allowed_dossier_id
+        MATCH (d:dossier {aad_id: allowed_dossier_id})-[:HEEFT_COMPONENT]->(c:component)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (nb:netbeheerder)
+        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        MATCH (nb)-[:heeft_populatie]->(p:populatie)
+        MATCH (d)-[:heeft_populatie]->(p)
+        MATCH (p)-[:HAS_PERMISSION]->(:permission {category: category})
+        WITH 
+            c.component_id AS naam_component,
+            SUM(p.populatie) AS totale_populatie_component
+        RETURN
+            naam_netbeheerder,
+            naam_component,
+            totale_populatie_component
+        ORDER BY totale_populatie_component DESC;
+        """,
+        "example_questions": [
+            "Hoeveel installaties van x hebben de netbeheerders in totaal",
+            "Hoeveel componenten hebben de netbeheerders samen",
+        ],
+        "tags": "populatiegegevens;meeste;populatie;aantal velden;hoeveel;het aantal",
+        "tags_list": [
+            ["geef", "de", "som"],
+            ["hoeveel", "hebben", "samen"],
+            ["hoeveel", "totaal"],
+            ["hebben", "in", "totaal"],
+            ["geef", "het", "totaal"],
         ],
     },
     {
