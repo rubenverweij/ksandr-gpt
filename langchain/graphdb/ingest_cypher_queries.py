@@ -152,13 +152,11 @@ predefined_queries = [
         WITH 
             nb.naam AS naam_netbeheerder,
             c.component_id AS naam_component,
-            SUM(p.populatie) AS totale_populatie_component,
-            SUM(p.aantal_velden) AS totaal_aantal_velden
+            SUM(p.populatie) AS totale_populatie_component
         RETURN
             naam_netbeheerder,
             naam_component,
-            totale_populatie_component,
-            totaal_aantal_velden
+            totale_populatie_component
         ORDER BY totale_populatie_component DESC;
         """,
         "example_questions": [
@@ -178,10 +176,45 @@ predefined_queries = [
             ["hoeveel", "hebben"],
             ["geef", "aantallen"],
             ["aantal", "installaties"],
-            ["aantal", "velden"],
             ["hebben", "in", "totaal"],
             ["hoeveel", "hebben", "samen"],
             ["hoeveel", "van"],
+        ],
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs, $permissions AS permissions
+        UNWIND keys(permissions) AS category
+        UNWIND permissions[category] AS allowed_dossier_id
+        MATCH (d:dossier {aad_id: allowed_dossier_id})-[:HEEFT_COMPONENT]->(c:component)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (nb:netbeheerder)
+        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        MATCH (nb)-[:heeft_populatie]->(p:populatie)
+        MATCH (d)-[:heeft_populatie]->(p)
+        MATCH (p)-[:HAS_PERMISSION]->(:permission {category: category})
+        WITH 
+            nb.naam AS naam_netbeheerder,
+            c.component_id AS naam_component,
+            SUM(p.aantal_velden) AS totaal_aantal_velden
+        RETURN
+            naam_netbeheerder,
+            naam_component,
+            totaal_aantal_velden
+        ORDER BY totaal_aantal_velden DESC;
+        """,
+        "example_questions": [
+            "Van welke component heeft netbeheerder het meest velden?",
+            "Welke asset heeft netbeheerder het meeste velden?",
+            "Geef een opsomming van de velden van Stedin",
+            "Geef de populatie velden van Stedin",
+            "Hoeveel velden heeft netbeheerder per component?",
+            "Geef het aantal velden per netbeheerder",
+        ],
+        "tags": "populatiegegevens;meeste;populatie;aantal velden;hoeveel;het aantal",
+        "tags_list": [
+            ["aantal", "velden"],
+            ["hoeveel", "velden"],
         ],
     },
     {
