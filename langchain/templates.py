@@ -88,7 +88,6 @@ TEMPLATES = {
                 - Voer de gevraagde beoordeling uit per record
                 - Sla geen records over
                 - Presenteer het resultaat per record
-                
                 {prompt_elementen}
 
                 <|im_end|>
@@ -226,7 +225,7 @@ PROMPT_ELEMENTEN = {
     "leeg": "",
     "telling": """
 
-    - Controleer eerst of een telling nodig op basis van het query resultaat
+    - Controleer of een telling nodig op basis van het query resultaat
     - Maak expliciet onderscheid tussen 1) Het tellen van rijen en 2) het optellen van numerieke waarden per rij 
     - Geef alleen een telling als daarom gevraagd wordt
     - Schrijf elke waarde uit de data op
@@ -240,7 +239,8 @@ PROMPT_ELEMENTEN = {
     - Maak zelf geen telling.
     """,
     "vergelijking": """
-    - Maak een vergelijking tussen de
+    - Maak een nauwkeurige vergelijking tussen beschrijvingen van beleid of faalvormen
+    - Vergelijk geen nummers, indexen of id's
     """,
 }
 
