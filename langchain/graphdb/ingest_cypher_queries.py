@@ -195,7 +195,6 @@ predefined_queries = [
             c.component_id AS naam_component,
             SUM(p.populatie) AS totale_populatie_component
         RETURN
-            naam_netbeheerder,
             naam_component,
             totale_populatie_component
         ORDER BY totale_populatie_component DESC;
