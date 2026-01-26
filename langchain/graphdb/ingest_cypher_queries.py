@@ -351,7 +351,11 @@ predefined_queries = [
             "Welk beleid adviseert de fabrikant voor de installatie?",
         ],
         "tags": "fabrikant",
-        "tags_list": [["beleid", "fabrikant"], ["fabrikant", "beleid"]],
+        "tags_list": [
+            ["beleid", "fabrikant"],
+            ["fabrikant", "beleid"],
+            ["onderhoudsbeleid", "fabrikant"],
+        ],
     },
     {
         "cypher": """
