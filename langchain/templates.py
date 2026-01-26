@@ -2,7 +2,7 @@ from langchain_core.prompts import PromptTemplate
 
 QUANITY_TERMS = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "telling"]
 
-COUNT_TERMS = ["totaal", "telling"]
+COUNT_TERMS = ["totaal", "telling", "alle netbeheerders samen"]
 
 TEMPLATES = {
     "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf": {
@@ -226,9 +226,9 @@ PROMPT_ELEMENTEN = {
     - Maak expliciet onderscheid tussen 1) Het tellen van rijen en 2) het optellen van numerieke waarden per rij 
     - Geef alleen een telling als daarom gevraagd wordt
     - Schrijf elke waarde uit de data op
-    - Tel ze stap-voor-stap op
+    - Tel ze stap-voor-stap 
     - Controleer de som
-    - Geef daarna een kort en bondig antwoord
+    - Geef daarna een kort en bondig antwoord, toon de tussenstappen niet.
     - Fouten zijn niet toegestaan.
     """,
     "overzicht": """

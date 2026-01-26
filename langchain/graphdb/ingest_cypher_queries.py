@@ -173,8 +173,12 @@ predefined_queries = [
         "tags_list": [
             ["populatiegegevens"],
             ["asset", "het", "meeste"],
+            ["welke", "het", "meeste"],
             ["component", "het", "meeste"],
+            ["aantal", "installaties"],
             ["aantal", "velden"],
+            ["hebben", "in", "totaal"],
+            ["hoeveel", "hebben", "samen"],
             ["hoeveel", "van"],
         ],
     },
