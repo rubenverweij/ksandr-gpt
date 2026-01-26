@@ -159,7 +159,7 @@ predefined_queries = [
             naam_component,
             totale_populatie_component,
             totaal_aantal_velden
-        ORDER BY totale_populatie_component;
+        ORDER BY totale_populatie_component DESC;
         """,
         "example_questions": [
             "Van welke component heeft netbeheerder het meest?",
@@ -188,7 +188,7 @@ predefined_queries = [
         RETURN 
             d.aad_id AS aad_dossier_id,
             c.component_id AS component_naam
-        ORDER BY aad_dossier_id, component_naam;
+        ORDER BY component_naam;
         """,
         "example_questions": [
             "Geef een opsomming van alle componenten met een AAD",
@@ -351,7 +351,7 @@ predefined_queries = [
             "Welk beleid adviseert de fabrikant voor de installatie?",
         ],
         "tags": "fabrikant",
-        "tags_list": [["beleid", "fabrikant"]],
+        "tags_list": [["beleid", "fabrikant"], ["fabrikant", "beleid"]],
     },
     {
         "cypher": """
@@ -375,7 +375,7 @@ predefined_queries = [
             "Welk onderhoud wordt periodiek gedaan?",
         ],
         "tags": "po/pi;periodiek",
-        "tags_list": [["periodiek", "onderhoud"]],
+        "tags_list": [["periodiek", "onderhoud"], ["onderhoud", "periodiek"]],
     },
     {
         "cypher": """
