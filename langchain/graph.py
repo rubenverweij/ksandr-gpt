@@ -180,6 +180,7 @@ def build_cypher_query(request: str) -> str:
                 "c.component_id AS component",
                 "f.Naam AS faalvorm",
                 "f.faalvorm_id as nummer_faalvorm",
+                "f.NummerInt as index",
             ]
         )
     for f in selected_fields:
@@ -195,6 +196,8 @@ def build_cypher_query(request: str) -> str:
     query = base_query.format(return_clause=return_clause)
     if wants_quantity:
         query += "\nORDER BY aantalFaalvorm DESC"
+    else:
+        query += "\nORDER BY index"
     return query.strip()
 
 
