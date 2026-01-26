@@ -210,16 +210,20 @@ def process_ask(request: AskRequest):
 
         # We only check the LAST completed sentence
         last_sentence = completed[-1].strip()
+        last_sentence_no_digits = re.sub(r"\d+", "", last_sentence)
         if (
-            last_sentence
-            and is_valid_sentence(last_sentence)
-            and last_sentence in seen_sentences
+            last_sentence_no_digits
+            and is_valid_sentence(last_sentence_no_digits)
+            and last_sentence_no_digits in seen_sentences
         ):
             logging.info(f"Detected duplicate sentence: {last_sentence}")
-            final_answer = replace_patterns(full_answer)
+            final_answer = full_answer.replace(last_sentence, "").strip()
+            if len(final_answer) == 0:
+                final_answer = last_sentence
+            final_answer = re.sub(r"\n+\s*\d+[\.\)\-]\s*$", "", final_answer)
             return {
                 "question": request.prompt,
-                "answer": final_answer,
+                "answer": replace_patterns(final_answer),
                 "prompt": prompt_with_template,
                 "active_filter": str(database_filter),
                 "source_documents": reference_docs,
