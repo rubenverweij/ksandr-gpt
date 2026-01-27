@@ -3,10 +3,14 @@ import threading
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.llms import LlamaCpp
 from typing import List
+import spacy
 import re
 import logging
 
 logging.basicConfig(level=logging.INFO)
+
+
+nlp = spacy.load("en_core_web_sm")
 
 
 class LLMManager:
@@ -90,6 +94,10 @@ class RecursiveSummarizer:
             max(1, int(self.count_words(c) / total_words * final_words)) for c in chunks
         ]
 
+    def keep_sentences_spacy(self) -> str:
+        doc = nlp(self.text)
+        return " ".join(sent.text.strip() for sent in doc.sents)
+
     def first_n_words(self, n=4000):
         matches = list(re.finditer(r"\S+", self.text))
         if len(matches) <= n:
@@ -139,7 +147,7 @@ class RecursiveSummarizer:
         dummy_prompt = self.template.format(words=max_tokens, tekst="")
         prompt_overhead_tokens = self.count_tokens(dummy_prompt)
         available_tokens_for_context = n_ctx - max_tokens - prompt_overhead_tokens
-        context_tokens = llm.tokenize(self.text.encode("utf-8"))
+        context_tokens = llm.tokenize(self.keep_sentences_spacy())
         if len(context_tokens) > available_tokens_for_context:
             trimmed_tokens = context_tokens[
                 -available_tokens_for_context:
