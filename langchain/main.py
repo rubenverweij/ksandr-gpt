@@ -439,6 +439,8 @@ def validate_structured_query(request: AskRequest):
     }
     parameters = {"aad_ids": aads, "permissions": user_permissions}
     logging.info(f"Build cypher query: {cypher_to_run} with parameters {parameters}")
+    if len(aads) == 0:
+        return []
     return GRAPH.query(cypher_to_run, params=parameters)
 
 
