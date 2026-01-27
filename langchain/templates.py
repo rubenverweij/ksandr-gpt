@@ -135,7 +135,7 @@ TEMPLATES = {
             - Beschrijf dan kernpunten en hoofdzaken.
             - Voeg geen nieuwe informatie toe.
             - Schrijf in neutrale, begrijpelijke Nederlandse taal.
-            - Als de tekst te kort is voor {words} woorden, geef dan een volledige maar niet-opgevulde samenvatting.
+            - Herhaal niet
             <|im_end|>
 
             <|im_start|>user
