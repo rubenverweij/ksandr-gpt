@@ -191,7 +191,7 @@ def process_ask(request: AskRequest):
     full_answer = ""
     buffer = ""
     sentence_end_re = re.compile(r"[.!?]")
-    seen_sentences = set()
+    seen_sentences = []
     for chunk in stream:
         token = chunk["choices"][0]["text"]
         full_answer += token
@@ -209,12 +209,13 @@ def process_ask(request: AskRequest):
             continue
 
         # We only check the LAST completed sentence
+        last_two_seen = seen_sentences[-2:]
         last_sentence = completed[-1].strip()
         last_sentence_no_digits = re.sub(r"\d+", "", last_sentence)
         if (
             last_sentence_no_digits
             and is_valid_sentence(last_sentence_no_digits)
-            and last_sentence_no_digits in seen_sentences
+            and last_sentence_no_digits in last_two_seen
         ):
             logging.info(f"Detected duplicate sentence: {last_sentence}")
             final_answer = full_answer.replace(last_sentence, "").strip()
@@ -229,7 +230,7 @@ def process_ask(request: AskRequest):
                 "source_documents": reference_docs,
                 "time_stages": time_stages,
             }
-        seen_sentences.add(last_sentence)
+        seen_sentences.add(last_sentence_no_digits)
 
     # Generator klaar, final answer
     final_answer = replace_patterns(full_answer)
