@@ -123,7 +123,28 @@ class RecursiveSummarizer:
             return "De text is te kort om te kunnen samenvatten."
         if isinstance(self.text, str):
             summary = self.summarize_chunk(
-                chunk=self.first_n_words(), summary_length=len_chunk_sum
+                chunk=self.trim_context_to_fit(), summary_length=len_chunk_sum
             )
             return summary
         return "Kan geen samenvatting maken van bestand."
+
+    def count_tokens(self, text: str) -> int:
+        return len(self.llm_manager.get_llm().tokenize(text.encode("utf-8")))
+
+    def trim_context_to_fit(self) -> str:
+        n_ctx = 4096
+        max_tokens = 500
+        # Build a prompt with an empty context just to measure overhead
+        llm = self.llm_manager.get_llm()
+        dummy_prompt = self.template.format(words=max_tokens, tekst="")
+        prompt_overhead_tokens = self.count_tokens(dummy_prompt)
+        available_tokens_for_context = n_ctx - max_tokens - prompt_overhead_tokens
+        context_tokens = llm.tokenize(self.text.encode("utf-8"))
+        if len(context_tokens) > available_tokens_for_context:
+            trimmed_tokens = context_tokens[
+                -available_tokens_for_context:
+            ]  # Keep latest context
+            input_text_summary = llm.detokenize(trimmed_tokens).decode(
+                "utf-8", errors="ignore"
+            )
+        return input_text_summary
