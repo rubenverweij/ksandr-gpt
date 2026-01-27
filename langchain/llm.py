@@ -10,7 +10,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load("nl_core_news_sm")
 
 
 class LLMManager:
