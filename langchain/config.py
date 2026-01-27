@@ -106,6 +106,8 @@ COLUMN_MAPPING_FAALVORM = {
     "component": ["c.component_id:naam_component"],
     "repareer": ["c.niet_repareerbaar:niet_repareerbaar"],
     "incidenten": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
+    "komt vaak voor": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
+    "komt meest voor": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
     "meest voorkomende": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
     "asset": ["c.component_id:naam_component"],
     "gevolg": ["f.MogelijkGevolg:mogelijk_gevolg"],
