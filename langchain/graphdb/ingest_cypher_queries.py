@@ -174,6 +174,7 @@ predefined_queries = [
             ["welke", "het", "meeste"],
             ["component", "het", "meeste"],
             ["hoeveel", "hebben"],
+            ["hoeveel", "heeft"],
             ["geef", "aantallen"],
             ["aantal", "installaties"],
             ["hoeveel", "van"],
