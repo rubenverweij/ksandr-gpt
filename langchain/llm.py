@@ -72,7 +72,7 @@ class RecursiveSummarizer:
         logging.info(
             f"LLM loaded and prompt formatted for chunk {len(chunk)} with summary len {summary_length}"
         )
-        response = llm.invoke(prompt)
+        response = llm.invoke(prompt, stream=False)
         logging.info(f"The text is: {chunk}")
         logging.info(f"The summary is: {response}")
         if isinstance(response, dict):
