@@ -96,7 +96,7 @@ def create_component_faalvorm(
             "faalcurve": faalvorm_data.get("Faalcurve"),
             "faaltempo": faalvorm_data.get("Faaltempo"),
             "gemiddeld_aantal_incidenten": faalvorm_data.get(
-                "Gemiddeld aantal incidenten"
+                "Gemiddeld aantal incidenten", faalvorm_data.get("Aantal incidenten")
             ),
             "bestandspad": file_path,
         },
