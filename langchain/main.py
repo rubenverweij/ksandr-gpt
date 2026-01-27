@@ -230,7 +230,7 @@ def process_ask(request: AskRequest):
                 "source_documents": reference_docs,
                 "time_stages": time_stages,
             }
-        seen_sentences.add(last_sentence_no_digits)
+        seen_sentences.append(last_sentence_no_digits)
 
     # Generator klaar, final answer
     final_answer = replace_patterns(full_answer)
