@@ -129,13 +129,13 @@ class RecursiveSummarizer:
         return "Kan geen samenvatting maken van bestand."
 
     def count_tokens(self, text: str) -> int:
-        return len(self.llm_manager.get_llm().tokenize(text.encode("utf-8")))
+        return len(self.llm_manager.get_llm().client.tokenize(text.encode("utf-8")))
 
     def trim_context_to_fit(self) -> str:
         n_ctx = 4096
         max_tokens = 500
         # Build a prompt with an empty context just to measure overhead
-        llm = self.llm_manager.get_llm()
+        llm = self.llm_manager.get_llm().client
         dummy_prompt = self.template.format(words=max_tokens, tekst="")
         prompt_overhead_tokens = self.count_tokens(dummy_prompt)
         available_tokens_for_context = n_ctx - max_tokens - prompt_overhead_tokens
