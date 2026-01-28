@@ -2,9 +2,9 @@ from langchain_core.prompts import PromptTemplate
 
 QUANITY_TERMS = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "telling"]
 
-COUNT_TERMS = ["totaal", "telling", "alle netbeheerders samen"]
+COUNT_TERMS = ["totaal", "telling", "alle netbeheerders samen", "de som van"]
 
-COMPARISON_TERMS = ["vergelijking", "komt bij zowel"]
+COMPARISON_TERMS = ["vergelijking", "komt bij zowel", "verschil tussen"]
 
 TEMPLATES = {
     "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf": {
@@ -26,16 +26,13 @@ TEMPLATES = {
         "DEFAULT_QA_PROMPT_SIMPLE": """
                 <|im_start|>system
 
-                Je bent een behulpzame en feitelijke assistent die vragen beantwoordt over documenten op het Ksandr-platform.
-                Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. Door kennis over netcomponenten te borgen, ontwikkelen en delen, helpt Ksandr de netbeheerders om de kwaliteit van hun netten op het gewenste maatschappelijk niveau te houden.
-                De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie van relevante netcomponenten. Ze worden jaarlijks geactualiseerd op basis van faalinformatie, storingen en andere relevante inzichten. Beheerteams stellen op basis daarvan een verschilanalyse op, waarmee netbeheerders van elkaar kunnen leren. Toegang tot deze dossiers verloopt via een speciaal portaal op de Ksandr-website.
-                Componenten met een AAD dossier zijn: 1) LK ELA12 schakelinstallatie 2) ABB VD4 vaccuum vermogensschakelaar 3) Eaton L-SEP installatie 4) Siemens NXplusC schakelaar 5) Siemens 8DJH schakelaar 6) Eaton FMX schakelinstallatie 7) Merlin Gerin RM6 schakelaar 8) Hazemeijer CONEL schakelinstallatie 9) Eaton 10 kV COQ schakelaar 10) Eaton Capitole schakelaar 11) Eaton Xiria schakelinstallatie 12) Eaton Holec SVS schakelaar 13) MS/LS distributie transformator 14) Eaton Magnefix MD MF schakelinstallatie 15) ABB DR12 schakelaar 16) ABB Safe schakelinstallatie 17) kabelmoffen 18) Eaton MMS schakelinstallatie 19) ABB BBC DB10 schakelaar 20) HS MS vermogens transformator
+                Je bent een behulpzame en feitelijke digitale assistent.
 
                 **Belangrijke instructies bij de beantwoording:**
+                - Wees volledig, maar als het kan kort en bondig.
                 - Verbeter spelling en grammatica.
                 - Gebruik correct en helder Nederlands.
-                - Wees volledig, maar als het kan kort en bondig.
-                - Herhaal het antwoord niet.
+                - Vermijd herhaling.
 
                 <|im_end|>
                 <|im_start|>user
