@@ -147,7 +147,7 @@ class RecursiveSummarizer:
         dummy_prompt = self.template.format(words=max_tokens, tekst="")
         prompt_overhead_tokens = self.count_tokens(dummy_prompt)
         available_tokens_for_context = n_ctx - max_tokens - prompt_overhead_tokens
-        context_tokens = llm.tokenize(self.text)
+        context_tokens = llm.tokenize(self.text.encode("utf-8"))
         if len(context_tokens) > available_tokens_for_context:
             trimmed_tokens = context_tokens[
                 -available_tokens_for_context:
