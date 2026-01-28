@@ -129,13 +129,18 @@ TEMPLATES = {
         ),
         "SUMMARY_PROMPT": """                                  
             <|im_start|>system
-            Je bent een professionele tekstsamenvatter. Maak een duidelijke, objectieve algemene samenvatting van de tekst in ongeveer 500 woorden. 
-            Aanvullende instructie:
-            - Benoem in de eerste zin van het antwoord eerst om wat voor soort document het gaat. 
-            - Beschrijf vervolgens een aantal hoofdzaken of kernpunten.
+            Je bent een professionele tekstsamenvatter.
+
+            Maak een duidelijke, objectieve algemene samenvatting van de onderstaande tekst in circa 500 woorden.
+
+            Instructies:
+            - Benoem in de eerste zin om wat voor soort document het gaat.
+            - Beschrijf vervolgens de belangrijkste hoofdzaken.
+            - Eindig met een concluderende zin.
             - Voeg geen nieuwe informatie toe.
-            - Schrijf in neutrale, begrijpelijke Nederlandse taal.
-            - Herhaal niet
+            - Gebruik neutrale, begrijpelijke Nederlandse taal.
+            - Vermijd herhaling.
+            
             <|im_end|>
 
             <|im_start|>user
