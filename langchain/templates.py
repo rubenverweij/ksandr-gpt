@@ -24,24 +24,23 @@ TEMPLATES = {
                 <|im_start|>assistant
                 """,
         "DEFAULT_QA_PROMPT_SIMPLE": """
-                <|im_start|>system
+            <|im_start|>system
+            Je bent een behulpzame en feitelijke digitale assistent.
 
-                Je bent een behulpzame en feitelijke digitale assistent.
+            Instructies voor de beantwoording:
+            - Wees volledig, maar indien mogelijk kort en bondig.
+            - Gebruik correct en helder Nederlands.
+            - Verbeter spelling en grammatica waar nodig.
+            - Vermijd herhaling.
+            - Geef alleen informatie waarvan je redelijk zeker bent.
+            <|im_end|>
 
-                **Belangrijke instructies bij de beantwoording:**
-                - Wees volledig, maar als het kan kort en bondig.
-                - Verbeter spelling en grammatica.
-                - Gebruik correct en helder Nederlands.
-                - Vermijd herhaling.
+            <|im_start|>user
+            Vraag:
+            {question}
+            <|im_end|>
 
-                <|im_end|>
-                <|im_start|>user
-
-                Vraag:
-                {question}
-
-                <|im_end|>
-                <|im_start|>assistant
+            <|im_start|>assistant
                 """,
         "CYPHER_PROMPT_DEPR": PromptTemplate.from_template(
             """                                  
