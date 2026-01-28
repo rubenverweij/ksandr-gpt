@@ -143,16 +143,16 @@ class RecursiveSummarizer:
         n_ctx = 4096
         max_tokens = 500
         # Build a prompt with an empty context just to measure overhead
-        llm = self.llm_manager.get_llm()
+        llm = self.llm_manager.get_llm().client
         dummy_prompt = self.template.format(words=max_tokens, tekst="")
         prompt_overhead_tokens = self.count_tokens(dummy_prompt)
         available_tokens_for_context = n_ctx - max_tokens - prompt_overhead_tokens
-        context_tokens = llm.client.tokenize(self.keep_sentences_spacy())
+        context_tokens = llm.tokenize(self.text)
         if len(context_tokens) > available_tokens_for_context:
             trimmed_tokens = context_tokens[
                 -available_tokens_for_context:
             ]  # Keep latest context
-            input_text_summary = llm.client.detokenize(trimmed_tokens).decode(
+            input_text_summary = llm.detokenize(trimmed_tokens).decode(
                 "utf-8", errors="ignore"
             )
         return input_text_summary
