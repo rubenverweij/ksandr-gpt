@@ -425,9 +425,7 @@ def build_prompt_template(request: AskRequest, chroma_filter: Optional[Dict | No
                     retrieve_answer_from_vector_store(request.prompt, chroma_filter)
                 )
     else:
-        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(
-            system_prompt=SYSTEM_PROMPT, question=request.prompt
-        )
+        prompt_with_template = DEFAULT_QA_PROMPT_SIMPLE.format(question=request.prompt)
     return prompt_with_template, reference_documents, time_stages
 
 
