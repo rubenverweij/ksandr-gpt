@@ -72,7 +72,7 @@ class RecursiveSummarizer:
 
     def summarize_chunk(self, chunk: str, summary_length: int) -> str:
         llm = self.llm_manager.get_llm()
-        prompt = self.template.format(words=summary_length, tekst=chunk)
+        prompt = self.template.format(tekst=chunk)
         logging.info(
             f"LLM loaded and prompt formatted for chunk {len(chunk)} with summary len {summary_length}"
         )
@@ -143,6 +143,7 @@ class RecursiveSummarizer:
         n_ctx = 4096
         max_tokens = 500
         # Build a prompt with an empty context just to measure overhead
+        input_text_summary = self.text
         llm = self.llm_manager.get_llm().client
         dummy_prompt = self.template.format(words=max_tokens, tekst="")
         prompt_overhead_tokens = self.count_tokens(dummy_prompt)
