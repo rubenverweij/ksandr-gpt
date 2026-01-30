@@ -127,7 +127,7 @@ TEMPLATES = {
             <|im_start|>system
             Je bent een professionele tekstsamenvatter.
 
-            Maak een duidelijke, objectieve algemene samenvatting van de onderstaande tekst in circa 500 woorden.
+            Maak een puntsgewijze samenvatting van de onderstaande tekst in circa 500 woorden.
 
             Instructies:
             - Benoem in de eerste zin om wat voor soort document het gaat.
@@ -145,10 +145,11 @@ TEMPLATES = {
             <|im_end|>
             <|im_start|>assistant
                 """,
-        "SUMMARY_PROMPT": """
+        "SUMMARY_PROMPT": """                                  
+            <|im_start|>system
             Je bent een professionele tekstsamenvatter.
 
-            Vat de onderstaande tekst samen in het Nederlands volgens exact deze structuur:
+            Gebruik altijd de volgende structuur:
 
             Documenttype:
             - Eén korte zin waarin je aangeeft om wat voor soort document het gaat.
@@ -160,9 +161,14 @@ TEMPLATES = {
 
             Conclusie:
             - Eén concluderende zin die de kern samenvat.
+            
+            <|im_end|>
 
-            Tekst:
+            <|im_start|>user
+            Vat de gegeven tekst samen in het Nederlands:
             {tekst}
+            <|im_end|>
+            <|im_start|>assistant
             """,
         "LOCATION_QA_PROMPT": PromptTemplate.from_template(
             """                                  
