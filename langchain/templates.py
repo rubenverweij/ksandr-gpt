@@ -123,7 +123,7 @@ TEMPLATES = {
             <|im_start|>assistant
                 """
         ),
-        "SUMMARY_PROMPT": """                                  
+        "SUMMARY_PROMPT_DEPR": """                                  
             <|im_start|>system
             Je bent een professionele tekstsamenvatter.
 
@@ -145,6 +145,25 @@ TEMPLATES = {
             <|im_end|>
             <|im_start|>assistant
                 """,
+        "SUMMARY_PROMPT": """
+            Je bent een professionele tekstsamenvatter.
+
+            Vat de onderstaande tekst samen in het Nederlands volgens exact deze structuur:
+
+            Documenttype:
+            - Eén korte zin waarin je aangeeft om wat voor soort document het gaat.
+
+            Samenvatting:
+            - 3 tot 7 duidelijke bulletpoints met de belangrijkste hoofdzaken.
+            - Gebruik neutrale, begrijpelijke taal.
+            - Vermijd herhaling en interpretaties.
+
+            Conclusie:
+            - Eén concluderende zin die de kern samenvat.
+
+            Tekst:
+            {tekst}
+            """,
         "LOCATION_QA_PROMPT": PromptTemplate.from_template(
             """                                  
                 <|im_start|>system

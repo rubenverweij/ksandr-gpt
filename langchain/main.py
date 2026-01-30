@@ -8,9 +8,6 @@ import logging
 from datetime import datetime
 from fastapi import FastAPI
 
-# from datetime import timezone
-# from fastapi import Request
-
 from pathlib import Path
 from templates import TEMPLATES, SYSTEM_PROMPT, dynamische_prompt_elementen
 from llm import LLMManager, RecursiveSummarizer
@@ -129,23 +126,6 @@ class StreamingResponseCallback(BaseCallbackHandler):
             request_responses[self.request_id]["partial_response"] = (
                 self.partial_response
             )
-
-
-# @app.middleware("http")
-# async def log_request_timing(request: Request, call_next):
-#     start_time = time.time()
-#     request_time = datetime.now(timezone.utc)
-#     response = await call_next(request)
-#     duration = time.time() - start_time
-#     logging.info(
-#         "method=%s path=%s request_time=%s duration=%.3fs status=%s",
-#         request.method,
-#         request.url.path,
-#         request_time.isoformat(),
-#         duration,
-#         response.status_code,
-#     )
-#     return response
 
 
 async def async_stream_generator(sync_gen):
