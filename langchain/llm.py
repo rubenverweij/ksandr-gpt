@@ -151,7 +151,7 @@ class RecursiveSummarizer:
         context_tokens = llm.tokenize(self.text.encode("utf-8"))
         if len(context_tokens) > available_tokens_for_context:
             trimmed_tokens = context_tokens[
-                -available_tokens_for_context:
+                :available_tokens_for_context
             ]  # Keep latest context
             input_text_summary = llm.detokenize(trimmed_tokens).decode(
                 "utf-8", errors="ignore"
