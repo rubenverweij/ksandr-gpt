@@ -149,23 +149,20 @@ TEMPLATES = {
             <|im_start|>system
             Je bent een professionele tekstsamenvatter.
 
-            Gebruik altijd de volgende structuur:
+            Maak een puntsgewijze samenvatting van de onderstaande tekst in circa 500 woorden.
 
-            Documenttype:
-            - Eén korte zin waarin je aangeeft om wat voor soort document het gaat.
-
-            Samenvatting:
-            - 3 tot 7 duidelijke bulletpoints met de belangrijkste hoofdzaken.
-            - Gebruik neutrale, begrijpelijke taal.
-            - Vermijd herhaling en interpretaties.
-
-            Conclusie:
-            - Eén concluderende zin die de kern samenvat.
+            Instructies:
+            - Benoem in de eerste zin om wat voor soort document het gaat.
+            - Beschrijf vervolgens de belangrijkste hoofdzaken.
+            - Eindig met een concluderende zin.
+            - Voeg geen nieuwe informatie toe.
+            - Gebruik neutrale, begrijpelijke Nederlandse taal.
+            - Vermijd herhaling.
             
             <|im_end|>
 
             <|im_start|>user
-            Vat de gegeven tekst samen in het Nederlands:
+            Maak een samenvatting van deze tekst:
             {tekst}
             <|im_end|>
             <|im_start|>assistant
