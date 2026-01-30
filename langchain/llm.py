@@ -140,7 +140,7 @@ class RecursiveSummarizer:
         return len(self.llm_manager.get_llm().client.tokenize(text.encode("utf-8")))
 
     def trim_context_to_fit(self) -> str:
-        n_ctx = 4096
+        n_ctx = 3000
         max_tokens = 500
         # Build a prompt with an empty context just to measure overhead
         input_text_summary = self.text
