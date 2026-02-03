@@ -261,11 +261,16 @@ def process_summarize(request: FileRequest):
     logging.info(
         f"Done reading text file {request.file_path} with metrics {metrics}, extraction valid={valid_extraction}"
     )
-    summarizer = RecursiveSummarizer(
-        llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
-    )
-    summary = summarizer.summarize_simple(len_chunk_sum=request.summary_length)
-    summary_cleaned = clean_text_with_dup_detection(summary)
+    if valid_extraction:
+        summarizer = RecursiveSummarizer(
+            llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
+        )
+        summary = summarizer.summarize_simple(len_chunk_sum=request.summary_length)
+        summary_cleaned = clean_text_with_dup_detection(summary)
+    else:
+        summary_cleaned = "Er kan geen samenvatting worden gemaakt omdat de tekst extractie uit de PDF van onvoldoende kwaliteit is: {metrics}"
+        summary = summary_cleaned
+
     return {
         "status": "completed",
         "summary_cleaned": summary_cleaned,
