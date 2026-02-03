@@ -29,6 +29,8 @@ from helpers import (
     summary_request,
     get_summary,
     build_links,
+    is_llm_appropiate,
+    text_quality_metrics,
     AskRequest,
     ContextRequest,
     LLMRequest,
@@ -253,8 +255,12 @@ def process_summarize(request: FileRequest):
             status_code=400,
             detail="No content or file_path provided for summarization",
         )
+    metrics = text_quality_metrics(text)
+    valid_extraction = is_llm_appropiate(metrics)
 
-    logging.info(f"Done reading text file {request.file_path}")
+    logging.info(
+        f"Done reading text file {request.file_path} with metrics {metrics}, extraction valid={valid_extraction}"
+    )
     summarizer = RecursiveSummarizer(
         llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
     )

@@ -4,7 +4,7 @@ import torch
 import pickle
 import json
 import os
-from typing import Dict, Optional, Union, List, Any
+from typing import Dict, Optional, Union, List, Any, Set
 import string
 import time
 import spacy
@@ -622,6 +622,105 @@ def get_summary(question):
         return data.get("summary_cleaned")
     except OSError:
         return f"Samenvatting van document {number} kan niet worden gevonden"
+
+
+def text_quality_metrics(
+    text: str,
+    dictionary: Set[str] | None = None,
+) -> Dict[str, float]:
+    """
+    Bereken kwaliteitsmetrics voor PDF/OCR textextractie.
+
+    Metrics:
+    - avg_word_length
+    - short_word_ratio (woorden met lengte 1-2)
+    - dictionary_hit_ratio
+    - avg_chars_per_line
+    - whitespace_ratio
+
+    Parameters
+    ----------
+    text : str
+        Geëxtraheerde tekst
+    dictionary : set[str], optional
+        Set met geldige woorden (lowercase). Indien None, wordt
+        dictionary_hit_ratio = NaN.
+
+    Returns
+    -------
+    dict
+        Metrics als floats
+    """
+
+    if not text.strip():
+        return {
+            "avg_word_length": 0.0,
+            "short_word_ratio": 1.0,
+            "dictionary_hit_ratio": float("nan"),
+            "avg_chars_per_line": 0.0,
+            "whitespace_ratio": 0.0,
+        }
+
+    # --- Basis ---
+    chars = len(text)
+    whitespace_chars = sum(1 for c in text if c.isspace())
+
+    lines = [line for line in text.splitlines() if line.strip()]
+    avg_chars_per_line = chars / max(len(lines), 1)
+
+    # --- Woorden ---
+    words = re.findall(r"[A-Za-zÀ-ÿ]+", text)
+    total_words = len(words)
+
+    if total_words == 0:
+        avg_word_length = 0.0
+        short_word_ratio = 1.0
+        dictionary_hit_ratio = float("nan")
+    else:
+        word_lengths = [len(w) for w in words]
+        avg_word_length = sum(word_lengths) / total_words
+
+        short_words = sum(1 for w in words if len(w) <= 2)
+        short_word_ratio = short_words / total_words
+
+        if dictionary is not None:
+            valid_words = sum(1 for w in words if w.lower() in dictionary)
+            dictionary_hit_ratio = valid_words / total_words
+        else:
+            dictionary_hit_ratio = float("nan")
+
+    whitespace_ratio = whitespace_chars / chars
+
+    return {
+        "avg_word_length": round(avg_word_length, 3),
+        "short_word_ratio": round(short_word_ratio, 3),
+        "dictionary_hit_ratio": (
+            round(dictionary_hit_ratio, 3) if dictionary is not None else float("nan")
+        ),
+        "avg_chars_per_line": round(avg_chars_per_line, 1),
+        "whitespace_ratio": round(whitespace_ratio, 3),
+    }
+
+
+def is_llm_appropiate(metrics: Dict[str, float]) -> bool:
+    """Verify that the extraction is appropiate
+
+    Args:
+        metrics (Dict[str, float]): _description_
+
+    Returns:
+        bool: _description_
+    """
+    return not (
+        metrics["avg_word_length"] < 3.0
+        or metrics["short_word_ratio"] > 0.4
+        or metrics["avg_chars_per_line"] < 30
+        or metrics["whitespace_ratio"] > 0.30
+        or (
+            not isinstance(metrics["dictionary_hit_ratio"], float)
+            or metrics["dictionary_hit_ratio"] < 0.6
+        )
+    )
 
 
 if __name__ == "__main__":
