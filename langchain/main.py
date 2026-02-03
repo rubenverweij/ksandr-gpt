@@ -268,7 +268,7 @@ def process_summarize(request: FileRequest):
         summary = summarizer.summarize_simple(len_chunk_sum=request.summary_length)
         summary_cleaned = clean_text_with_dup_detection(summary)
     else:
-        summary_cleaned = "Er kan geen samenvatting worden gemaakt omdat de tekst extractie uit de PDF van onvoldoende kwaliteit is: {metrics}"
+        summary_cleaned = f"Er kan geen samenvatting worden gemaakt omdat de tekst extractie uit de PDF van onvoldoende kwaliteit is: {metrics}"
         summary = summary_cleaned
 
     return {
