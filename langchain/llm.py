@@ -105,6 +105,8 @@ class RecursiveSummarizer:
 
         # If there are multiple chunks
         if len(chunks) > 1:
+            # We keep the first 2 and last 2
+            chunks = list(dict.fromkeys(chunks[:2] + chunks[-2:]))
             summaries = [self.summarize_chunk(chunk, multiple=True) for chunk in chunks]
 
             # Start creating final summary:
