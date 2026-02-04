@@ -69,7 +69,7 @@ class RecursiveSummarizer:
 
     def summarize_chunk(self, text: str, multiple: bool = False) -> str:
         llm = self.llm_manager.get_llm()
-        summary_len_partial = 200
+        summary_len_partial = 500
         summary_len_full = 500
         if multiple:
             prompt = self.template_partial.format(text=text, words=summary_len_partial)
