@@ -34,6 +34,7 @@ apt install docker.io
 
 1. Wanneer `docker build -t ksandr-gpt-langchain:0.XX .` niet lukt omdat packages niet gevonden kunnen worden kan een herstart van docker noodzakelijk zijn: `sudo service docker restart`
 2. Wanneer een container geen response geeft `docker stop <container_id>`. Het `container_id` is te vinden met `docker ps`. Daarna `docker start` of start een nieuwe container `docker run --network host -d --gpus=all --cap-add SYS_RESOURCE -e USE_MLOCK=0 -v /home/ubuntu/onprem_data:/root/onprem_data -v /home/ubuntu/ksandr_files:/root/ksandr_files ksandr-gpt:<versie>`
+3. Wanneer de kernel driver een update nodig heeft? `nvidia-smi` geeft in dat geval een version mismatch. Oplossing: `sudo apt install --reinstall nvidia-driver-580` en vervolgens `sudo reboot`
 
 Vervolgens kunnen documenten worden geupload:
 
@@ -44,7 +45,23 @@ Voorbeeld requests:
 curl -X GET http://localhost:8080/metadata
 
 # Ophalen status request
-curl -X GET http://localhost:8080/status//d7951cdd-3817-448f-973a-1e0881adc169
+curl -X GET http://localhost:8080/status/f846e504-9731-4a08-b9f2-29f13a2d1329
+
+# Model herstarten met andere context
+curl -X POST http://localhost:8080/set-context \
+  -H "Content-Type: application/json" \
+  -d '{
+    "n_ctx": "2048"
+  }'
+
+# samenvatting maken
+curl -X POST http://localhost:8080/summarize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_path": "/root/ksandr_files/aads/10540/cat-1/documents/13834.txt",
+    "summary_length": 600
+  }'
+
 
 # Voorbeeld context vraag
 curl -X POST http://localhost:8080/context \
@@ -54,23 +71,35 @@ curl -X POST http://localhost:8080/context \
   }'
 
 
-curl -X POST http://localhost:8080/neo \
+curl -X POST http://localhost:8080/ask \
 -H "Content-Type: application/json" \
 -d '{
-  "prompt": "Hoeveel faalvormen zijn er van de LK ELA12?"
+  "prompt": "Geef de faalvormen van de DB10?"
 }'
 
 
 curl -X POST http://localhost:8080/ask \
 -H "Content-Type: application/json" \
 -d '{
-  "prompt": "Welke nederlandse netbeheerders hebben een LK ELA12 schakelinstallatie?"
+  "prompt": "Geef de populatiegegevens per netbeheerder van de XIria",
+  "permission": {
+    "aads": {
+      "cat-1": [
+        318, 655, 1555, 1556, 1557, 1558, 2059, 2061, 2963,
+        8825, 8827, 9026, 9027, 9028, 10535, 10536, 10540,
+        10542, 10545, 10546, 10547, 10548, 10551, 10552,
+        10553, 10554, 10555, 10556, 10557
+      ],
+      "cat-2": [10884]
+    }
+  }
 }'
+
 
 curl -X POST http://localhost:8080/ask \
 -H "Content-Type: application/json" \
 -d '{
-  "prompt": "Bij welke component is er een faalvorm m.b.t. de compensatiecilinder bekend?",
+  "prompt": "Geef een overzicht van de AAD dossiers?",
   "permission": {
     "aads": {
       "cat-1": [

@@ -34,7 +34,7 @@ INCLUDE_KEYWORDS = int(os.getenv("INCLUDE_KEYWORDS", 0))  # standaard 0
 Om de container te starten (laat de parameters wat ze zijn):
 
 ```shell
-image="ksandr-gpt-langchain:0.44"
+image="ksandr-gpt-langchain:0.49"
 
 docker run --network host -d --gpus=all --cap-add SYS_RESOURCE \
 -e USE_MLOCK=0 \
@@ -46,7 +46,7 @@ docker run --network host -d --gpus=all --cap-add SYS_RESOURCE \
 -e INCLUDE_SUMMARY=0 \
 -e INCLUDE_KEYWORDS=0 \
 -e MAX_CTX=4096 \
--e INCLUDE_PERMISSION=0 \
+-e INCLUDE_PERMISSION=1 \
 -e IMAGE_NAME=$image \
 -v /home/ubuntu/nltk_data:/root/nltk_data \
 -v /home/ubuntu/huggingface:/root/huggingface \
