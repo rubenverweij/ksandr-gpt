@@ -4,8 +4,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.llms import LlamaCpp
 from typing import List
 import spacy
-import re
 import logging
+from helpers import clean_text_with_dup_detection
 
 logging.basicConfig(level=logging.INFO)
 
@@ -55,92 +55,103 @@ class LLMManager:
 
 
 class RecursiveSummarizer:
-    def __init__(self, llm_manager, text, template):
+    def __init__(self, llm_manager, text, template_partial, template_full):
         self.llm_manager = llm_manager
         self.text = text
-        self.template = template
-
-    def count_words(self, text: str) -> int:
-        return len(re.findall(r"\b[\w’'-]+\b", text, flags=re.UNICODE))
+        self.template_partial = template_partial
+        self.template_full = template_full
 
     def chunk_text(self, text: str) -> List[str]:
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=max(self.llm_manager.current_ctx // 2, 5000),
+            chunk_size=max(self.llm_manager.current_ctx // 2, 12_000),
             chunk_overlap=50,
         )
         return splitter.split_text(text)
 
-    def summarize_chunk(self, chunk: str, summary_length: int) -> str:
+    def summarize_chunk(self, text: str, multiple: bool = False) -> str:
         llm = self.llm_manager.get_llm()
-        prompt = self.template.format(tekst=chunk)
-        logging.info(
-            f"LLM loaded and prompt formatted for chunk {len(chunk)} with summary len {summary_length}"
-        )
+        summary_len_partial = 200
+        summary_len_full = 500
+        if multiple:
+            prompt = self.template_partial.format(text=text, words=summary_len_partial)
+            logging.info(
+                f"LLM loaded and prompt formatted for chunk {len(text)} with summary len {summary_len_partial} and n_ctx {llm.current_ctx}"
+            )
+        else:
+            prompt = self.template_full.format(text=text, words=summary_len_full)
+
         response = llm.invoke(prompt, stream=False)
-        logging.info(f"The text is: {chunk}")
-        logging.info(f"The summary is: {response}")
+        logging.info(f"The chunk summary is: {response}")
         if isinstance(response, dict):
             if "choices" in response:
                 return response["choices"][0].get("text", "").strip()
             elif "content" in response:
                 return response["content"].strip()
-        return str(response).strip()
+        return clean_text_with_dup_detection(str(response).strip())
 
-    def calculate_chunk_summary_length(
-        self, chunks: List[str], final_words: int
-    ) -> List[int]:
-        total_words = sum(self.count_words(c) for c in chunks)
-        return [
-            max(1, int(self.count_words(c) / total_words * final_words)) for c in chunks
-        ]
+    def summarize(self) -> str:
+        """Make a summary of the document.
 
-    def keep_sentences_spacy(self) -> str:
-        doc = nlp(self.text)
-        return " ".join(sent.text.strip() for sent in doc.sents)
+        Args:
+            len_chunk_sum (int, optional): _description_. Defaults to 400.
+            len_final_sum (int, optional): _description_. Defaults to 200.
 
-    def first_n_words(self, n=4000):
-        matches = list(re.finditer(r"\S+", self.text))
-        if len(matches) <= n:
-            return self.text
-        return self.text[: matches[n - 1].end()]
+        Returns:
+            str: _description_
+        """
 
-    def summarize(self, len_chunk_sum: int = 400, len_final_sum: int = 200) -> str:
         chunks = self.chunk_text(self.text)
-        chunk_lengths = self.calculate_chunk_summary_length(chunks[:2], len_chunk_sum)
-        summaries = [
-            self.summarize_chunk(chunk, length)
-            for chunk, length in zip(chunks[:1], chunk_lengths)
-        ]
-        # Finalize the summary
-        # llm = self.llm_manager.get_llm()
-        final_summary = ". ".join(summaries)
-        # response = llm.invoke(
-        #     self.template.format(words=len_final_sum, tekst=final_summary)
-        # )
-        # logging.info(f"The complete summarised text is: {final_summary}")
-        # logging.info(f"The summary is: {response}")
-        # if isinstance(response, dict):
-        #     if "choices" in response:
-        #         return response["choices"][0].get("text", "").strip()
-        #     elif "content" in response:
-        #         return response["content"].strip()
-        return final_summary
+        logging.info(f"Starting summarizing {len(chunks)}")
 
-    def summarize_simple(self, len_chunk_sum: int = 500) -> str:
+        # If there are multiple chunks
+        if len(chunks) > 1:
+            summaries = [self.summarize_chunk(chunk, multiple=True) for chunk in chunks]
+
+            # Start creating final summary:
+            final_text = ". ".join(summaries)
+            response = self.summarize_chunk(final_text, multiple=False)
+        else:
+            # In case there is only one chunk
+            response = self.summarize_chunk(chunks[0], multiple=False)
+
+        logging.info(f"The final summary is: {response}")
+        return response
+
+    def summarize_simple(self) -> str:
+        """
+        Summarize the document using a simplified approach.
+
+        Returns:
+            str: The generated summary, or an error message if summarization is not possible.
+        """
         if len(self.text) < 1000:
             return "De text is te kort om te kunnen samenvatten."
         if isinstance(self.text, str):
-            summary = self.summarize_chunk(
-                chunk=self.trim_context_to_fit(), summary_length=len_chunk_sum
-            )
+            summary = self.summarize_chunk(text=self.trim_context_to_fit())
             return summary
         return "Kan geen samenvatting maken van bestand."
 
     def count_tokens(self, text: str) -> int:
+        """
+        Count the number of tokens in the given text using the language model's tokenizer.
+
+        Args:
+            text (str): The input text to be tokenized.
+
+        Returns:
+            int: The number of tokens in the input text.
+        """
         return len(self.llm_manager.get_llm().client.tokenize(text.encode("utf-8")))
 
     def trim_context_to_fit(self) -> str:
-        n_ctx = 3000
+        """
+        Trims the input text to ensure it fits within the model's context window,
+        accounting for the prompt template and a specified number of output tokens.
+
+        Returns:
+            str: The input text, trimmed if necessary to fit within the allowed token budget.
+        """
+        n_ctx = 4000
         max_tokens = 500
         # Build a prompt with an empty context just to measure overhead
         input_text_summary = self.text

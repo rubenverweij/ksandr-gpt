@@ -25,7 +25,6 @@ from helpers import (
     detect_location,
     source_document_dummy,
     is_valid_sentence,
-    clean_text_with_dup_detection,
     summary_request,
     get_summary,
     build_links,
@@ -91,6 +90,7 @@ DEFAULT_QA_PROMPT = TEMPLATES[model]["DEFAULT_QA_PROMPT"]
 CYPHER_PROMPT = TEMPLATES[model]["CYPHER_PROMPT"]
 DEFAULT_QA_PROMPT_SIMPLE = TEMPLATES[model]["DEFAULT_QA_PROMPT_SIMPLE"]
 LOCATION_QA_PROMPT = TEMPLATES[model]["LOCATION_QA_PROMPT"]
+SUMMARY_PROMPT_PARTIAL = TEMPLATES[model]["SUMMARY_PROMPT_PARTIAL"]
 SUMMARY_PROMPT = TEMPLATES[model]["SUMMARY_PROMPT"]
 
 # Initialisatie van het taalmodel
@@ -263,10 +263,14 @@ def process_summarize(request: FileRequest):
     )
     if valid_extraction:
         summarizer = RecursiveSummarizer(
-            llm_manager=LLM_MANAGER, template=SUMMARY_PROMPT, text=text
+            llm_manager=LLM_MANAGER,
+            template_partial=SUMMARY_PROMPT_PARTIAL,
+            template_full=SUMMARY_PROMPT,
+            text=text,
         )
-        summary = summarizer.summarize_simple(len_chunk_sum=request.summary_length)
-        summary_cleaned = clean_text_with_dup_detection(summary)
+        summary = summarizer.summarize()
+        # summary = summarizer.summarize_simple(len_chunk_sum=request.summary_length)
+        # summary_cleaned = clean_text_with_dup_detection(summary)
     else:
         summary_cleaned = f"""Er kan geen samenvatting worden gemaakt omdat de tekst extractie uit de PDF van onvoldoende kwaliteit is. 
         Misschien oogt het document van voldoende kwaliteit, maar de kans is aanzienlijk dat de onderliggende structuur van de PDF beschadigd 
@@ -276,9 +280,9 @@ def process_summarize(request: FileRequest):
 
     return {
         "status": "completed",
-        "summary_cleaned": summary_cleaned,
+        "summary_cleaned": summary,
         "summary_raw": summary,
-        "summary_length": len(summary_cleaned.split()),
+        "summary_length": len(summary.split()),
     }
 
 
