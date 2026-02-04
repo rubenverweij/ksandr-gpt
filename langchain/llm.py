@@ -75,7 +75,7 @@ class RecursiveSummarizer:
         if multiple:
             prompt = self.template_partial.format(text=text, words=summary_len_partial)
             logging.info(
-                f"LLM loaded and prompt formatted for chunk {len(text)} with summary len {summary_len_partial} and n_ctx {llm.current_ctx}"
+                f"LLM loaded and prompt formatted for chunk {len(text)} with summary len {summary_len_partial}"
             )
         else:
             prompt = self.template_full.format(text=text, words=summary_len_full)
