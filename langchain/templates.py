@@ -149,11 +149,11 @@ TEMPLATES = {
             <|im_start|>system
             Je bent een professionele tekstsamenvatter die een deel van een document samenvat in ongeveer {words} woorden.
 
-            Maak een feitelijke samenvatting van de onderstaande tekst in het Nederlands.
-
             Instructies:
-            - Beschrijf de belangrijkste hoofdzaken en details.
-            - Geef alleen de feitelijke informatie.
+            - Maak een feitelijke samenvatting in het Nederlands.
+            - Benoem het doel van de tekst
+            - Beschrijf de hoofdzaken in bulletpoints
+            - Benoem belangrijke details zoals datums en namen.
             
             <|im_end|>
 

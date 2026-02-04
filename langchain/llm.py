@@ -72,6 +72,7 @@ class RecursiveSummarizer:
         summary_len_partial = 500
         summary_len_full = 500
         if multiple:
+            logging.info(f"The text to be summarized is: {text}")
             prompt = self.template_partial.format(text=text, words=summary_len_partial)
             logging.info(
                 f"LLM loaded and prompt formatted for chunk {len(text)} with summary len {summary_len_partial}"
