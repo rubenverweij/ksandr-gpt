@@ -127,7 +127,7 @@ TEMPLATES = {
             <|im_start|>system
             Je bent een professionele tekstsamenvatter.
 
-            Maak een puntsgewijze samenvatting van de onderstaande tekst in circa 500 woorden.
+            Maak een puntsgewijze samenvatting van de onderstaande tekst in circa {words} woorden.
 
             Instructies:
             - Benoem in de eerste zin om wat voor soort document het gaat.
@@ -144,12 +144,12 @@ TEMPLATES = {
             {tekst}
             <|im_end|>
             <|im_start|>assistant
-                """,
+            """,
         "SUMMARY_PROMPT": """                                  
             <|im_start|>system
             Je bent een professionele tekstsamenvatter.
 
-            Maak een puntsgewijze samenvatting van de onderstaande tekst in circa 500 woorden.
+            Maak een puntsgewijze samenvatting van de onderstaande tekst in circa {words} woorden.
 
             Instructies:
             - Benoem in de eerste zin om wat voor soort document het gaat.
