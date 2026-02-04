@@ -145,6 +145,24 @@ TEMPLATES = {
             <|im_end|>
             <|im_start|>assistant
             """,
+        "SUMMARY_PROMPT_PARTIAL": """                                  
+            <|im_start|>system
+            Je bent een professionele tekstsamenvatter die een deel van een document samenvat in ongeveer {words} woorden.
+
+            Maak een feitelijke samenvatting van de onderstaande tekst in het Nederlands.
+
+            Instructies:
+            - Beschrijf de belangrijkste hoofdzaken en details.
+            - Geef alleen de feitelijke informatie.
+            
+            <|im_end|>
+
+            <|im_start|>user
+            Maak een samenvatting van deze tekst:
+            {text}
+            <|im_end|>
+            <|im_start|>assistant
+            """,
         "SUMMARY_PROMPT": """                                  
             <|im_start|>system
             Je bent een professionele tekstsamenvatter.
@@ -153,7 +171,7 @@ TEMPLATES = {
 
             Instructies:
             - Benoem in de eerste zin om wat voor soort document het gaat.
-            - Beschrijf vervolgens de belangrijkste hoofdzaken.
+            - Beschrijf vervolgens de hoofdzaken.
             - Eindig met een concluderende zin.
             - Voeg geen nieuwe informatie toe.
             - Gebruik neutrale, begrijpelijke Nederlandse taal.
@@ -163,7 +181,7 @@ TEMPLATES = {
 
             <|im_start|>user
             Maak een samenvatting van deze tekst:
-            {tekst}
+            {text}
             <|im_end|>
             <|im_start|>assistant
             """,
