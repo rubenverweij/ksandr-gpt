@@ -5,7 +5,6 @@ from langchain_community.llms import LlamaCpp
 from typing import List
 import spacy
 import logging
-from helpers import clean_text_with_dup_detection
 
 logging.basicConfig(level=logging.INFO)
 
@@ -87,7 +86,8 @@ class RecursiveSummarizer:
                 return response["choices"][0].get("text", "").strip()
             elif "content" in response:
                 return response["content"].strip()
-        return clean_text_with_dup_detection(str(response).strip())
+        # return clean_text_with_dup_detection(str(response).strip())
+        return str(response).strip()
 
     def summarize(self) -> str:
         """Make a summary of the document.
