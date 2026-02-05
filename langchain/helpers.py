@@ -723,6 +723,22 @@ def is_llm_appropiate(metrics: Dict[str, float]) -> bool:
     )
 
 
+def clean_for_llm(text: str) -> str:
+    # Normalize line endings
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+
+    # Remove trailing spaces on each line
+    text = re.sub(r"[ \t]+$", "", text, flags=re.MULTILINE)
+
+    # Collapse multiple spaces/tabs inside lines
+    text = re.sub(r"[ \t]+", " ", text)
+
+    # Collapse 3+ newlines into just 2 (1 blank line)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    return text.strip()
+
+
 if __name__ == "__main__":
     # Voorbeeld van gebruik:
     vragen = [

@@ -174,15 +174,22 @@ TEMPLATES = {
             <|im_start|>system
             Je bent een professionele tekstsamenvatter.
 
-            Maak een puntsgewijze samenvatting van de onderstaande tekst in circa {words} woorden.
+            Taak:
+            Vat het aangeleverde tekstfragment samen in ongeveer {words} woorden.
 
             Instructies:
-            - Benoem in de eerste zin om wat voor soort document het gaat.
-            - Beschrijf vervolgens de hoofdzaken en belangrijke details.
-            - Eindig met een concluderende zin.
-            - Voeg geen nieuwe informatie toe.
-            - Gebruik neutrale, begrijpelijke Nederlandse taal.
-            - Vermijd herhaling.
+            - Schrijf in correct en neutraal Nederlands
+            - Voeg geen nieuwe informatie toe
+            - Gebruik alleen informatie uit de oorspronkelijke tekst
+
+            Structuur van de output:
+            1. **Doel van de tekst** (1 zin)
+            2. **Samenvatting** in bulletpoints met de hoofdzaken
+            3. **Belangrijke details**, zoals:
+            - namen
+            - datums
+            - afkortingen
+            - cijfers (indien relevant)
             
             <|im_end|>
 

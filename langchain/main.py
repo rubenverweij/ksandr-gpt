@@ -29,6 +29,7 @@ from helpers import (
     get_summary,
     build_links,
     is_llm_appropiate,
+    clean_for_llm,
     text_quality_metrics,
     AskRequest,
     ContextRequest,
@@ -539,6 +540,7 @@ async def summarize_pdf(file: UploadFile = File(...)):
             extracted = page.extract_text()
             if extracted:
                 text += extracted + "\n"
+        text = clean_for_llm(text)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fout bij lezen PDF: {e}")
 
