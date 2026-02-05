@@ -154,12 +154,13 @@ TEMPLATES = {
             - Gebruik alleen informatie uit de oorspronkelijke tekst
 
             Structuur van de output:
-            1. **Doel van de tekst** (1 zin)
+            1. **Doel van de tekst** (2 zinnen)
             2. **Samenvatting** in bulletpoints met de hoofdzaken
-            3. **Belangrijke details**, zoals:
+            3. **Belangrijke details**, wanneer relevant zoals:
             - namen
+            - componenten
             - datums
-            - afkortingen
+            - afkortingen en technische termen
             - cijfers (indien relevant)
             
             <|im_end|>
@@ -183,12 +184,13 @@ TEMPLATES = {
             - Gebruik alleen informatie uit de oorspronkelijke tekst
 
             Structuur van de output:
-            1. **Doel van de tekst** (1 zin)
+            1. **Doel van de tekst** (2 zinnen)
             2. **Samenvatting** in bulletpoints met de hoofdzaken
-            3. **Belangrijke details**, zoals:
+            3. **Belangrijke details**, wanneer relevant zoals:
             - namen
+            - componenten
             - datums
-            - afkortingen
+            - afkortingen en technische termen
             - cijfers (indien relevant)
             
             <|im_end|>
