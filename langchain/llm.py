@@ -62,15 +62,15 @@ class RecursiveSummarizer:
 
     def chunk_text(self, text: str) -> List[str]:
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=max(self.llm_manager.current_ctx // 2, 12_000),
+            chunk_size=max(self.llm_manager.current_ctx // 2, 9_000),
             chunk_overlap=50,
         )
         return splitter.split_text(text)
 
     def summarize_chunk(self, text: str, multiple: bool = False) -> str:
         llm = self.llm_manager.get_llm()
-        summary_len_partial = 500
-        summary_len_full = 500
+        summary_len_partial = 300
+        summary_len_full = 300
         if multiple:
             logging.info(f"The text to be summarized is: {text}")
             prompt = self.template_partial.format(text=text, words=summary_len_partial)

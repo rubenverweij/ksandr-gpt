@@ -175,7 +175,7 @@ TEMPLATES = {
             Je bent een professionele tekstsamenvatter.
 
             Taak:
-            Vat het aangeleverde tekstfragment samen in ongeveer {words} woorden.
+            Vat de aangeleverde tekst samen in ongeveer {words} woorden.
 
             Instructies:
             - Schrijf in correct en neutraal Nederlands
