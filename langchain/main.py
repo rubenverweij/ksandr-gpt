@@ -279,7 +279,7 @@ def process_summarize(request: FileRequest):
         )
         summary = summarizer.summarize()
     else:
-        summary_cleaned = """## Samenvatting maken is helaas niet mogelijk
+        summary_cleaned = """#### Samenvatting maken is helaas niet mogelijk
 
         Er kan geen samenvatting worden gemaakt omdat de tekst extractie uit de PDF van onvoldoende kwaliteit is.
 
@@ -288,7 +288,7 @@ def process_summarize(request: FileRequest):
         U kunt proberen een nieuwe PDF van het document te maken via bijvoorbeeld **Microsoft Word** en deze opnieuw te uploaden.
         
         
-        *Tips:*
+        #### Tips
         - Kies een gangbaar lettertype zoals Arial, Calibri of Times New Roman
         - Ga naar Bestand → Opslaan als
         - Kies bij Opslaan als type: PDF (*.pdf)
