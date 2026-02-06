@@ -287,15 +287,17 @@ def process_summarize(request: FileRequest):
 
         U kunt proberen een nieuwe PDF van het document te maken via bijvoorbeeld **Microsoft Word** en deze opnieuw te uploaden.
         
+        
         *Tips:*
         - Kies een gangbaar lettertype zoals Arial, Calibri of Times New Roman
         - Ga naar Bestand → Opslaan als
         - Kies bij Opslaan als type: PDF (*.pdf)
         - Klik op Opties…
             Kies:
-            - ✅ Standaard (publicatie online en afdrukken) → beste kwaliteit
-            - ❌ Niet Minimale grootte
+            ✅ Standaard (publicatie online en afdrukken) → beste kwaliteit
+            ❌ Niet Minimale grootte
         - Opslaan 
+        
         """
         summary = summary_cleaned
 
