@@ -95,6 +95,7 @@ SUMMARY_PROMPT_INITIAL = TEMPLATES[model]["SUMMARY_PROMPT_INITIAL"]
 SUMMARY_PROMPT_PARTIAL = TEMPLATES[model]["SUMMARY_PROMPT_PARTIAL"]
 SUMMARY_PROMPT_CONCLUDE = TEMPLATES[model]["SUMMARY_PROMPT_CONCLUDE"]
 SUMMARY_PROMPT_CORRECTION = TEMPLATES[model]["SUMMARY_PROMPT_CORRECTION"]
+SUMMARY_PROMPT_SINGLE = TEMPLATES[model]["SUMMARY_PROMPT_SINGLE"]
 SUMMARY_PROMPT = TEMPLATES[model]["SUMMARY_PROMPT"]
 
 # Initialisatie van het taalmodel
@@ -273,11 +274,10 @@ def process_summarize(request: FileRequest):
             template_conclude=SUMMARY_PROMPT_CONCLUDE,
             template_correction=SUMMARY_PROMPT_CORRECTION,
             template_full=SUMMARY_PROMPT,
+            template_single=SUMMARY_PROMPT_SINGLE,
             text=text,
         )
         summary = summarizer.summarize()
-        # summary = summarizer.summarize_simple(len_chunk_sum=request.summary_length)
-        # summary_cleaned = clean_text_with_dup_detection(summary)
     else:
         summary_cleaned = """## Samenvatting maken is helaas niet mogelijk
 

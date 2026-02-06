@@ -224,7 +224,7 @@ TEMPLATES = {
             <|im_end|>
             <|im_start|>assistant
             """,
-        "SUMMARY_PROMPT": """                                  
+        "SUMMARY_PROMPT_SINGLE": """                                  
             <|im_start|>system
             Je bent een professionele tekstsamenvatter.
 
@@ -254,6 +254,32 @@ TEMPLATES = {
             <|im_end|>
             <|im_start|>assistant
             """,
+        "SUMMARY_PROMPT": """                                  
+            <|im_start|>system
+            Je bent een professionele tekstsamensteller.
+
+            Taak:
+            Combineer de tekst tot een vloeiend logische verhaal.
+
+            Instructies:
+            - Behoudt zoveel mogelijk tekst en informatie
+            - Schrijf in correct en neutraal Nederlands
+            - Voeg geen nieuwe informatie toe
+            - Gebruik alleen informatie uit de oorspronkelijke tekst
+
+            Structuur van de output:
+            1. **Aanleiding en doel van de tekst** (3 zinnen)
+            2. **Samenvatting** in minimaal 5 bulletpoints met de hoofdzaken
+            3. **Belangrijke details**
+            
+            <|im_end|>
+
+            <|im_start|>user
+            Maak een samenvatting van deze tekst:
+            {text}
+            <|im_end|>
+            <|im_start|>assistant
+            """,
         "SUMMARY_PROMPT_CORRECTION": """                                  
             <|im_start|>system
             Je bent een taalexpert.
@@ -264,10 +290,9 @@ TEMPLATES = {
             Instructies:
             - Controleer de tekst op correct Nederlands en maak aanpassingen wanneer nodig.
             - Voeg geen nieuwe informatie toe
-            - Houd de structuur en inhoud van de text hetzelfde
+            - Houdt de structuur en de inhoud van de text hetzelfde
             - Verwijder herhalingen uit de tekst.
             - Gebruik alleen informatie uit de oorspronkelijke tekst
-
             
             <|im_end|>
 

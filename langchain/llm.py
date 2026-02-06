@@ -60,6 +60,7 @@ class RecursiveSummarizer:
         template_conclude,
         template_correction,
         template_full,
+        template_single,
     ):
         self.llm_manager = llm_manager
         self.text = text
@@ -68,6 +69,7 @@ class RecursiveSummarizer:
         self.template_conclude = template_conclude
         self.template_correction = template_correction
         self.template_full = template_full
+        self.template_single = template_single
 
     def chunk_text(self, text: str) -> List[str]:
         splitter = RecursiveCharacterTextSplitter(
@@ -79,17 +81,14 @@ class RecursiveSummarizer:
     def summarize_chunk(self, text: str, template: str) -> str:
         llm = self.llm_manager.get_llm()
         summary_len = 300
-
         prompt = template.format(text=text, words=summary_len)
-
         response = llm.invoke(prompt, stream=False)
-        logging.info(f"The chunk summary is: {response}")
+        logging.info(f"The summary is: {response}")
         if isinstance(response, dict):
             if "choices" in response:
                 return response["choices"][0].get("text", "").strip()
             elif "content" in response:
                 return response["content"].strip()
-        # return clean_text_with_dup_detection(str(response).strip())
         return str(response).strip()
 
     def summarize(self) -> str:
@@ -134,7 +133,7 @@ class RecursiveSummarizer:
 
         else:
             # In case there is only one chunk
-            response = self.summarize_chunk(chunks[0], template=self.template_full)
+            response = self.summarize_chunk(chunks[0], template=self.template_single)
 
         logging.info(f"The final summary is: {response}")
 
