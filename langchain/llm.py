@@ -80,7 +80,7 @@ class RecursiveSummarizer:
 
     def summarize_chunk(self, text: str, template: str) -> str:
         llm = self.llm_manager.get_llm()
-        summary_len = 300
+        summary_len = 400
         prompt = template.format(text=text, words=summary_len)
         response = llm.invoke(prompt, stream=False)
         logging.info(f"The summary is: {response}")
