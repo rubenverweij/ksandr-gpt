@@ -141,7 +141,7 @@ TEMPLATES = {
             <|im_end|>
             <|im_start|>assistant
             """,
-        "SUMMARY_PROMPT_PARTIAL": """                                  
+        "SUMMARY_PROMPT_INITIAL": """                                  
             <|im_start|>system
             Je bent een professionele tekstsamenvatter.
 
@@ -154,14 +154,67 @@ TEMPLATES = {
             - Gebruik alleen informatie uit de oorspronkelijke tekst
 
             Structuur van de output:
-            1. **Doel van de tekst** (2 zinnen)
-            2. **Samenvatting** in bulletpoints met de hoofdzaken
+            1. **Aanleiding en doel van de tekst** (3 zinnen)
+            2. **Samenvatting** in minimaal 4 bulletpoints met de hoofdzaken
             3. **Belangrijke details**, wanneer relevant zoals:
             - namen
             - componenten
             - datums
             - afkortingen en technische termen
             - cijfers (indien relevant)
+            
+            <|im_end|>
+
+            <|im_start|>user
+            Maak een samenvatting van deze tekst:
+            {text}
+            <|im_end|>
+            <|im_start|>assistant
+            """,
+        "SUMMARY_PROMPT_PARTIAL": """                                  
+            <|im_start|>system
+            Je bent een expert in het vinden van hoofd en bijzaken.
+
+            Taak:
+            Vind de belangrijkste hoofdzaken in het tekstfragment in {words} woorden.
+
+            Instructies:
+            - Schrijf in correct en neutraal Nederlands
+            - Voeg geen nieuwe informatie toe
+            - Gebruik alleen informatie uit de oorspronkelijke tekst
+
+            Structuur van de output:
+            1. **Hoofdzaken** in minimaal 3 bulletpoints met de hoofdzaken
+            2. **Details**, noem de belangrijkste details
+            
+            <|im_end|>
+
+            <|im_start|>user
+            Maak een samenvatting van deze tekst:
+            {text}
+            <|im_end|>
+            <|im_start|>assistant
+            """,
+        "SUMMARY_PROMPT_CONCLUDE": """                                  
+            <|im_start|>system
+            Je bent een professionele tekstsamenvatter.
+
+            Taak:
+            Geef de belangrijkste resultaten of conclusies uit de tekst in {words} woorden.
+
+            Instructies:
+            - Schrijf in correct en neutraal Nederlands
+            - Voeg geen nieuwe informatie toe
+            - Gebruik alleen informatie uit de oorspronkelijke tekst
+
+            Structuur van de output:
+            1. **Resultaat of conclusies** in minimaal 3 bulletpoints met de hoofdzaken
+            2. **Details**, (alleen benoemen wanneer relevant) zoals:
+            - namen
+            - componenten
+            - datums
+            - afkortingen en technische termen
+            - cijfers 
             
             <|im_end|>
 
@@ -184,14 +237,37 @@ TEMPLATES = {
             - Gebruik alleen informatie uit de oorspronkelijke tekst
 
             Structuur van de output:
-            1. **Doel van de tekst** (2 zinnen)
-            2. **Samenvatting** in bulletpoints met de hoofdzaken
-            3. **Belangrijke details**, wanneer relevant zoals:
+            1. **Aanleiding en doel van de tekst** (3 zinnen)
+            2. **Samenvatting** in minimaal 5 bulletpoints met de hoofdzaken
+            5. **Belangrijke details**, wanneer relevant zoals:
             - namen
             - componenten
             - datums
             - afkortingen en technische termen
             - cijfers (indien relevant)
+            
+            <|im_end|>
+
+            <|im_start|>user
+            Maak een samenvatting van deze tekst:
+            {text}
+            <|im_end|>
+            <|im_start|>assistant
+            """,
+        "SUMMARY_PROMPT_CORRECTION": """                                  
+            <|im_start|>system
+            Je bent een taalexpert.
+
+            Taak:
+            Controleer de samenvatting op vloeiende taal en grammatica en maak waar nodig correcties. 
+
+            Instructies:
+            - Controleer de tekst op correct Nederlands en maak aanpassingen wanneer nodig.
+            - Voeg geen nieuwe informatie toe
+            - Houd de structuur en inhoud van de text hetzelfde
+            - Verwijder herhalingen uit de tekst.
+            - Gebruik alleen informatie uit de oorspronkelijke tekst
+
             
             <|im_end|>
 

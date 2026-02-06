@@ -3,13 +3,10 @@ import threading
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.llms import LlamaCpp
 from typing import List
-import spacy
 import logging
+from helpers import detect_concluding_chunk, verwijder_onafgeronde_zinnen
 
 logging.basicConfig(level=logging.INFO)
-
-
-nlp = spacy.load("nl_core_news_sm")
 
 
 class LLMManager:
@@ -54,10 +51,22 @@ class LLMManager:
 
 
 class RecursiveSummarizer:
-    def __init__(self, llm_manager, text, template_partial, template_full):
+    def __init__(
+        self,
+        llm_manager,
+        text,
+        template_initial,
+        template_partial,
+        template_conclude,
+        template_correction,
+        template_full,
+    ):
         self.llm_manager = llm_manager
         self.text = text
+        self.template_initial = template_initial
         self.template_partial = template_partial
+        self.template_conclude = template_conclude
+        self.template_correction = template_correction
         self.template_full = template_full
 
     def chunk_text(self, text: str) -> List[str]:
@@ -67,18 +76,11 @@ class RecursiveSummarizer:
         )
         return splitter.split_text(text)
 
-    def summarize_chunk(self, text: str, multiple: bool = False) -> str:
+    def summarize_chunk(self, text: str, template: str) -> str:
         llm = self.llm_manager.get_llm()
-        summary_len_partial = 300
-        summary_len_full = 300
-        if multiple:
-            logging.info(f"The text to be summarized is: {text}")
-            prompt = self.template_partial.format(text=text, words=summary_len_partial)
-            logging.info(
-                f"LLM loaded and prompt formatted for chunk {len(text)} with summary len {summary_len_partial}"
-            )
-        else:
-            prompt = self.template_full.format(text=text, words=summary_len_full)
+        summary_len = 300
+
+        prompt = template.format(text=text, words=summary_len)
 
         response = llm.invoke(prompt, stream=False)
         logging.info(f"The chunk summary is: {response}")
@@ -105,20 +107,41 @@ class RecursiveSummarizer:
         logging.info(f"Starting summarizing {len(chunks)}")
 
         # If there are multiple chunks
+        summaries = []
         if len(chunks) > 1:
-            # We keep the first 2 and last 2
-            chunks = list(dict.fromkeys(chunks[:2] + chunks[-2:]))
-            summaries = [self.summarize_chunk(chunk, multiple=True) for chunk in chunks]
+            summaries.append(
+                self.summarize_chunk(chunks[0], template=self.template_initial)
+            )
+
+            # Check for summary chunk
+            chunks_with_conclusions = detect_concluding_chunk(chunks)
+            if len(chunks_with_conclusions) == 0:
+                chunks = list(dict.fromkeys(chunks[:1] + chunks[-1:]))
+                summaries.append(
+                    self.summarize_chunk(chunks[1], template=self.template_partial)
+                )
+            else:
+                logging.info("Found chunk with conclusions")
+                summaries.append(
+                    self.summarize_chunk(
+                        chunks_with_conclusions[0], template=self.template_conclude
+                    )
+                )
 
             # Start creating final summary:
             final_text = ". ".join(summaries)
-            response = self.summarize_chunk(final_text, multiple=False)
+            response = self.summarize_chunk(final_text, template=self.template_full)
+
         else:
             # In case there is only one chunk
-            response = self.summarize_chunk(chunks[0], multiple=False)
+            response = self.summarize_chunk(chunks[0], template=self.template_full)
 
         logging.info(f"The final summary is: {response}")
-        return response
+
+        response = self.summarize_chunk(response, template=self.template_correction)
+
+        logging.info(f"The corrected summary is: {response}")
+        return verwijder_onafgeronde_zinnen(response)
 
     def summarize_simple(self) -> str:
         """

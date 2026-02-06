@@ -91,7 +91,10 @@ DEFAULT_QA_PROMPT = TEMPLATES[model]["DEFAULT_QA_PROMPT"]
 CYPHER_PROMPT = TEMPLATES[model]["CYPHER_PROMPT"]
 DEFAULT_QA_PROMPT_SIMPLE = TEMPLATES[model]["DEFAULT_QA_PROMPT_SIMPLE"]
 LOCATION_QA_PROMPT = TEMPLATES[model]["LOCATION_QA_PROMPT"]
+SUMMARY_PROMPT_INITIAL = TEMPLATES[model]["SUMMARY_PROMPT_INITIAL"]
 SUMMARY_PROMPT_PARTIAL = TEMPLATES[model]["SUMMARY_PROMPT_PARTIAL"]
+SUMMARY_PROMPT_CONCLUDE = TEMPLATES[model]["SUMMARY_PROMPT_CONCLUDE"]
+SUMMARY_PROMPT_CORRECTION = TEMPLATES[model]["SUMMARY_PROMPT_CORRECTION"]
 SUMMARY_PROMPT = TEMPLATES[model]["SUMMARY_PROMPT"]
 
 # Initialisatie van het taalmodel
@@ -265,7 +268,10 @@ def process_summarize(request: FileRequest):
     if valid_extraction:
         summarizer = RecursiveSummarizer(
             llm_manager=LLM_MANAGER,
+            template_initial=SUMMARY_PROMPT_INITIAL,
             template_partial=SUMMARY_PROMPT_PARTIAL,
+            template_conclude=SUMMARY_PROMPT_CONCLUDE,
+            template_correction=SUMMARY_PROMPT_CORRECTION,
             template_full=SUMMARY_PROMPT,
             text=text,
         )
@@ -273,10 +279,10 @@ def process_summarize(request: FileRequest):
         # summary = summarizer.summarize_simple(len_chunk_sum=request.summary_length)
         # summary_cleaned = clean_text_with_dup_detection(summary)
     else:
-        summary_cleaned = f"""Er kan geen samenvatting worden gemaakt omdat de tekst extractie uit de PDF van onvoldoende kwaliteit is. 
-        Misschien oogt het document van voldoende kwaliteit, maar de kans is aanzienlijk dat de onderliggende structuur van de PDF beschadigd 
-        is of dat er vervormde karakters in de tekst staan. U kunt proberen een nieuwe PDF van het document te maken en deze opnieuw te uploaden. 
-        De kwaliteitsmetrics zijn: {metrics}"""
+        summary_cleaned = """##Samenvatting niet mogelijk\nEr kan geen samenvatting worden gemaakt omdat de tekst extractie uit de PDF van onvoldoende kwaliteit is.
+        \nMisschien oogt het document van voldoende kwaliteit, maar de kans is aanzienlijk dat de onderliggende structuur van de PDF beschadigd 
+        is of dat er vervormde karakters in de tekst staan. \nU kunt proberen een nieuwe PDF van het document te maken en deze opnieuw te uploaden. 
+        """
         summary = summary_cleaned
 
     return {

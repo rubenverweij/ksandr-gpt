@@ -739,6 +739,23 @@ def clean_for_llm(text: str) -> str:
     return text.strip()
 
 
+def detect_concluding_chunk(chunks: list[str]):
+    """
+    Detect chunks (strings) that appear to contain conclusions, advice, or results.
+
+    Args:
+        chunks (list[str]): List of text chunks (strings) to be inspected.
+
+    Returns:
+        list[str]: List of chunks which contain words indicating conclusions or results (case-insensitive),
+                   specifically those containing "conclusie", "advies", or "resultaat".
+    """
+    patterns = ["conclusie", "advies", "resultaat"]
+    regex = re.compile(r"|".join(patterns), re.IGNORECASE)
+    matching_chunks = [chunk for chunk in chunks if regex.search(chunk)]
+    return matching_chunks
+
+
 if __name__ == "__main__":
     # Voorbeeld van gebruik:
     vragen = [
