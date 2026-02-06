@@ -286,6 +286,16 @@ def process_summarize(request: FileRequest):
         Misschien oogt het document van voldoende kwaliteit, maar de kans is aanzienlijk dat de onderliggende structuur van de PDF beschadigd is of dat er vervormde karakters in de tekst staan.
 
         U kunt proberen een nieuwe PDF van het document te maken via bijvoorbeeld **Microsoft Word** en deze opnieuw te uploaden.
+        
+        *Tips:*
+        - Kies een gangbaar lettertype zoals Arial, Calibri of Times New Roman
+        - Ga naar Bestand → Opslaan als
+        - Kies bij Opslaan als type: PDF (*.pdf)
+        - Klik op Opties…
+            Kies:
+            - ✅ Standaard (publicatie online en afdrukken) → beste kwaliteit
+            - ❌ Niet Minimale grootte
+        - Opslaan 
         """
         summary = summary_cleaned
 
