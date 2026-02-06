@@ -76,15 +76,14 @@ TEMPLATES = {
         "CYPHER_PROMPT": PromptTemplate.from_template(
             """                                  
                 <|im_start|>system
-                Je bent een Neo4j data expert. De query resultaten tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
+                Je bent een Neo4j data expert. De resultaten tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
                 
-                Wanneer query resultaten bestaan uit een lijst van records:
+                Wanneer resultaten bestaan uit een lijst van gegevens:
                 - Herhaal instructies niet in het antwoord
-                - Behandel elk record afzonderlijk
-                - Herhaal een record niet
-                - Voer de gevraagde beoordeling uit per record
-                - Sla geen records over
-                - Presenteer het resultaat per record
+                - Behandel elk rij afzonderlijk
+                - Herhaal een rij niet
+                - Voer de gevraagde beoordeling uit per rij
+                - Sla geen rij over
                 {prompt_elementen}
 
                 <|im_end|>
@@ -156,12 +155,7 @@ TEMPLATES = {
             Structuur van de output:
             1. **Aanleiding en doel van de tekst** (3 zinnen)
             2. **Samenvatting** in minimaal 4 bulletpoints met de hoofdzaken
-            3. **Belangrijke details**, wanneer relevant zoals:
-            - namen
-            - componenten
-            - datums
-            - afkortingen en technische termen
-            - cijfers (indien relevant)
+            3. **Details**, noem de belangrijkste details
             
             <|im_end|>
 
@@ -209,12 +203,7 @@ TEMPLATES = {
 
             Structuur van de output:
             1. **Resultaat of conclusies** in minimaal 3 bulletpoints met de hoofdzaken
-            2. **Details**, (alleen benoemen wanneer relevant) zoals:
-            - namen
-            - componenten
-            - datums
-            - afkortingen en technische termen
-            - cijfers 
+            2. **Details**, noem de belangrijkste details
             
             <|im_end|>
 
@@ -270,12 +259,12 @@ TEMPLATES = {
             Structuur van de output:
             1. **Aanleiding en doel van de tekst** (3 zinnen)
             2. **Samenvatting** in minimaal 5 bulletpoints met de hoofdzaken
-            3. **Belangrijke details**
+            3. **Details**, noem de belangrijkste details
             
             <|im_end|>
 
             <|im_start|>user
-            Maak een samenvatting van deze tekst:
+            Maak de tekst tot een vloeiend logische verhaal met behoud van structuur en inhoud.
             {text}
             <|im_end|>
             <|im_start|>assistant

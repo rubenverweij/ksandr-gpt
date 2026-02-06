@@ -176,6 +176,8 @@ predefined_queries = [
         "tags": "populatiegegevens;meeste;populatie;aantal velden;hoeveel;het aantal",
         "tags_list": [
             ["populatiegegevens"],
+            ["asset", "populatie"],
+            ["populatie", "assets"],
             ["asset", "het", "meeste"],
             ["welke", "het", "meeste"],
             ["component", "het", "meeste"],
