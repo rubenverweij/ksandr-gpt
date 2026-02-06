@@ -83,6 +83,7 @@ def match_query_by_tags(question: str, query: dict) -> bool:
 
     for combi in tag_combinaties:
         if match_tag_combi(question, combi):
+            logging.info(f"Matched on taglist: {combi}")
             return True
 
     return False

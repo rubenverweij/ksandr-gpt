@@ -469,13 +469,14 @@ def validate_structured_query_embedding(request: AskRequest):
     aads = get_aad_based_on_question(request.prompt)
     nbs = check_for_nbs(request.prompt)
     results = db_cypher.similarity_search_with_relevance_scores(request.prompt, k=20)
-    # NOTE: doc[0] = actual query info and doc[1] = sim score
+    # NOTE: doc[0] = actual query info and doc[1] = similarity score
     tag_filtered_results = [
         doc
         for doc in results
         if match_query_by_tags(question=request.prompt, query=doc[0].metadata)
         and doc[1] > doc[0].metadata["threshold"]
     ]
+    logging.info(f"Number of available querys {len(tag_filtered_results)}")
     if len(tag_filtered_results) > 0:
         top_doc, score = tag_filtered_results[0]
         cypher_to_run = top_doc.metadata["cypher"]

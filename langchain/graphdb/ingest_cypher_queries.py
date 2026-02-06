@@ -63,7 +63,11 @@ predefined_queries = [
         """,
         "example_questions": ["Geef productbeschrijving van component A"],
         "tags": "productbeschrijving",
-        "tags_list": [["productbeschrijving"], ["omschrijving", "component"]],
+        "tags_list": [
+            ["productbeschrijving"],
+            ["omschrijving", "component"],
+            ["omschrijving", "installatie"],
+        ],
     },
     {
         "cypher": """
@@ -114,7 +118,7 @@ predefined_queries = [
         """,
         "example_questions": ["Geef de materiaal omschrijving van de X"],
         "tags": "materiaal omschrijving",
-        "tags_list": [["materiaal", "omschrijving"]],
+        "tags_list": [["materiaal", "omschrijving"], ["omschrijving", "materiaal"]],
     },
     {
         "cypher": """
@@ -165,6 +169,8 @@ predefined_queries = [
             "Geef een opsomming van de populatiegegevens van Stedin",
             "Geef de populatie componenten van Stedin",
             "Hoeveel installaties heeft netbeheerder per component?",
+            "Hoeveel installaties heeft Stedin",
+            "Hoeveel heeft Liander",
             "Geef het aantal componenten per netbeheerder",
         ],
         "tags": "populatiegegevens;meeste;populatie;aantal velden;hoeveel;het aantal",
@@ -211,6 +217,39 @@ predefined_queries = [
             ["hoeveel", "totaal"],
             ["hebben", "in", "totaal"],
             ["geef", "het", "totaal"],
+        ],
+    },
+    {
+        "cypher": """
+        WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs, $permissions AS permissions
+        UNWIND keys(permissions) AS category
+        UNWIND permissions[category] AS allowed_dossier_id
+        MATCH (d:dossier {aad_id: allowed_dossier_id})-[:HEEFT_COMPONENT]->(c:component)
+        WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
+        MATCH (nb:netbeheerder)
+        WHERE size(nbs) = 0 OR ANY(t IN nbs WHERE toLower(nb.naam) CONTAINS toLower(t))
+        MATCH (nb)-[:heeft_populatie]->(p:populatie)
+        MATCH (d)-[:heeft_populatie]->(p)
+        MATCH (p)-[:HAS_PERMISSION]->(:permission {category: category})
+        WITH 
+            c.component_id AS naam_component,
+            SUM(p.aantal_velden) AS totaal_aantal_velden
+        RETURN
+            naam_component,
+            totaal_aantal_velden
+        ORDER BY totaal_aantal_velden DESC;
+        """,
+        "example_questions": [
+            "Hoeveel velden van x hebben de netbeheerders in totaal",
+            "Hoeveel velden hebben de netbeheerders samen",
+        ],
+        "tags": "populatiegegevens;meeste;populatie;aantal velden;hoeveel;het aantal",
+        "tags_list": [
+            ["geef", "de", "som", "velden"],
+            ["hoeveel", "velden", "hebben", "samen"],
+            ["hoeveel", "velden", "totaal"],
+            ["velden", "hebben", "in", "totaal"],
+            ["geef", "het", "totaal", "velden"],
         ],
     },
     {
