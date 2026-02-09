@@ -40,6 +40,9 @@ class LLMManager:
                 top_p=self.top_p,
                 streaming=False,
                 verbose=False,
+                top_k=40,
+                repetition_penalty=1.2,
+                stop=["\n\n", "###"],
             )
 
             self.current_ctx = n_ctx
