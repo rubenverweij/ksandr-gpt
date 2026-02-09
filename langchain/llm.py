@@ -42,7 +42,7 @@ class LLMManager:
                 verbose=False,
                 top_k=40,
                 repetition_penalty=1.2,
-                stop=["\n\n", "###"],
+                # stop=["\n\n", "###"],
             )
 
             self.current_ctx = n_ctx

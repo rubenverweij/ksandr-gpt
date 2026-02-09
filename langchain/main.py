@@ -225,6 +225,15 @@ def process_ask(request: AskRequest):
     # TODO
     # Nacontrole
 
+    # In case there is no source
+    if request.rag:
+        if len(reference_docs) == 0:
+            final_answer = """Er is geen informatie gevonden die gebruikt kan worden bij de beantwoording.
+                        
+            Mogelijk heeft u geen toegang tot de gewenste informatie of is deze informatie niet beschikbaar.
+            
+            """
+
     return {
         "question": request.prompt,
         "answer": final_answer,
@@ -413,7 +422,7 @@ def retrieve_weblocation_template(question: str):
 
 
 def build_prompt_template(request: AskRequest, chroma_filter: Optional[Dict | None]):
-    reference_documents = None
+    reference_documents = []
     time_stages = {}
     if request.rag:
         if detect_location(request.prompt):
