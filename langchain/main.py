@@ -1,3 +1,14 @@
+"""
+Main entry point for the Ksandr platform API and LLM services.
+
+This module initializes the FastAPI application, sets up the LLMManager,
+imports core utilities, and integrates document processing, graph-based querying,
+and dynamic prompt templating for the Dutch Ksandr infrastructure platform.
+
+APIs include question-answering endpoints, summarization, metadata retrieval, and file upload handlers.
+Utilities for reference linking, context trimming, and query construction are available.
+"""
+
 import asyncio
 import time
 import uuid
@@ -14,11 +25,11 @@ from llm import LLMManager, RecursiveSummarizer
 from refs import replace_patterns
 from graph import build_cypher_query, check_for_nbs, match_query_by_tags
 from helpers import (
-    maak_metadata_filter,
+    create_metadata_filter,
     COMPONENTS,
     get_embedding_function,
-    vind_relevante_context,
-    maak_chroma_filter,
+    find_relevant_sources,
+    create_chroma_filter,
     trim_context_to_fit,
     get_aad_based_on_question,
     detect_aad,
@@ -64,13 +75,13 @@ request_responses = {}
 
 # Configuratievariabelen
 CONFIG = {
-    "TEMPERATURE": float(os.getenv("TEMPERATURE", 0.2)),
-    "SOURCE_MAX": int(os.getenv("SOURCE_MAX", 10)),
+    "TEMPERATURE": float(os.getenv("TEMPERATURE", 0.7)),
+    "SOURCE_MAX": int(os.getenv("SOURCE_MAX", 5)),
     "SOURCE_MAX_RERANKER": int(os.getenv("SOURCE_MAX_RERANKER", 0)),
     "SCORE_THRESHOLD": float(os.getenv("SCORE_THRESHOLD", 1.1)),
     "INCLUDE_FILTER": int(os.getenv("INCLUDE_FILTER", 1)),
     "MAX_TOKENS": int(os.getenv("MAX_TOKENS", 750)),
-    "MAX_CTX": int(os.getenv("MAX_CTX", 8000)),
+    "MAX_CTX": int(os.getenv("MAX_CTX", 4096)),
     "INCLUDE_SUMMARY": int(os.getenv("INCLUDE_SUMMARY", 0)),
     "INCLUDE_KEYWORDS": int(os.getenv("INCLUDE_KEYWORDS", 0)),
     "DEFAULT_MODEL_PATH": str(
@@ -159,7 +170,7 @@ def process_ask(request: AskRequest):
         }
 
     database_filter = (
-        maak_metadata_filter(request, COMPONENTS, CONFIG["INCLUDE_PERMISSION"])
+        create_metadata_filter(request, COMPONENTS, CONFIG["INCLUDE_PERMISSION"])
         if CONFIG["INCLUDE_FILTER"]
         else None
     )
@@ -355,14 +366,14 @@ def retrieve_answer_from_vector_store(
     prompt: str, chroma_filter: Optional[Dict | None]
 ):
     time_start = time.time()
-    document_search = maak_chroma_filter(
+    document_search = create_chroma_filter(
         question=prompt, include_nouns=CONFIG["INCLUDE_KEYWORDS"]
     )
     time_doc_search = time.time()
     neo_context_text = None
     time_stages = {}
     if not neo_context_text:
-        context_text, results, time_stages = vind_relevante_context(
+        context_text, results, time_stages = find_relevant_sources(
             prompt=prompt,
             filter_chroma=chroma_filter,
             db=db,

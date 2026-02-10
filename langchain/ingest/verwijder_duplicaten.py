@@ -1,3 +1,19 @@
+"""
+This script provides functionality to remove duplicate documents from a Chroma vectorstore
+by hashing the document text, identifying duplicates, and compiling their metadata.
+
+It connects to a specified Chroma database, computes MD5 hashes for normalization,
+and detects duplicate entries (documents with identical text).
+Metadata for duplicates is saved to a JSON file for further review or processing.
+
+Functions:
+- hash_doc: Generates an MD5 hash of stripped document text for deduplication.
+- dedup_docs_in_chroma: Main routine to process Chroma, find duplicates, and save their metadata.
+
+Example usage:
+    python verwijder_duplicaten.py
+"""
+
 import hashlib
 import json
 from langchain_chroma import Chroma

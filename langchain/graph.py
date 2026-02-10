@@ -1,3 +1,23 @@
+"""
+This module defines utilities, constants, and Cypher query templates
+for interacting with and querying the Ksandr knowledge graph (Neo4j)
+within the context of ageing asset dossiers and their failure modes.
+
+Core features:
+- Construction of Cypher queries for dossiers, components, and failure modes,
+  supporting permission-based filtering and component metadata access.
+- Tokenization and fuzzy matching logic for NL text queries, including
+  Levenshtein-based typo resilience and stopword filtering.
+- Logging setup for module-internal diagnostics.
+
+Imports configuration settings and constants for field mapping,
+stopword exclusion, and lemmatized query analysis, as well as
+third-party utilities for text processing.
+
+Used by ingestion, permission, and LLM modules to enable
+secure, semantic, and permission-aware retrieval from the Ksandr graph.
+"""
+
 import re
 import json
 import Levenshtein

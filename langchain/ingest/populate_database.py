@@ -1,3 +1,22 @@
+"""
+This script populates the Chroma vector database with documents for retrieval-augmented generation and search.
+
+Key functionalities:
+- Loads and splits documents (primarily JSON files) from a specified directory.
+- Cleans, prepares, and enriches document chunks with metadata.
+- Inserts processed documents into the Chroma persistent vectorstore using a specified embedding function.
+- Includes helper routines for file parsing, validity checks, and chunk formatting.
+
+Typical usage:
+    python populate_database.py --directory /path/to/data --chroma_path /path/to/chroma
+
+Dependencies:
+- langchain libraries for document splitting and Chroma vectorstore management
+- Local helpers for file extraction, cleaning, and embeddings
+
+Intended for ingestion pipeline automation in the Ksandr platform.
+"""
+
 import argparse
 import json
 import re

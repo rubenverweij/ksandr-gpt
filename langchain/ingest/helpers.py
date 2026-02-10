@@ -1,3 +1,14 @@
+"""
+This module provides helper functions for the ingestion pipeline of the Ksandr platform.
+
+Key functionalities include:
+- Basic text cleaning and structure analysis for use with vectorstores.
+- Extraction of document metadata such as type, permissions, and file details from paths.
+- Utilities for HTML content cleaning and safe parsing.
+
+These helpers are intended to be imported in ingestion and database population scripts such as `populate_database.py` and `verwijder_duplicaten.py`.
+"""
+
 import os
 import re
 from typing import Dict, Union

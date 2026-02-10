@@ -1,22 +1,60 @@
+"""
+This module defines the LLMManager class for managing the lifecycle, loading,
+and configuration of Large Language Models (LLMs) via llama.cpp.
+
+It provides thread-safe routines for model loading, context management, and
+LLM access, enabling integration with the Ksandr API for Dutch infrastructure
+question answering, summarization, and prompt-based workflows.
+
+Core functionality includes:
+- Loading and unloading llama.cpp models with dynamic context sizes (n_ctx)
+- Parameterized instantiation of models (temperature, top_p, etc)
+- Locking for concurrent safe access
+- Utilities for returning configured LLM objects
+
+Dependencies: langchain_community.llms (LlamaCpp), helpers (text post-processing functions), threading, gc
+"""
+
 import gc
 import threading
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.llms import LlamaCpp
 from typing import List
 import logging
-from helpers import detect_concluding_chunk, verwijder_onafgeronde_zinnen
+from helpers import detect_concluding_chunk, remove_unfinished_sentences
 
 logging.basicConfig(level=logging.INFO)
 
 
 class LLMManager:
+    """
+    LLMManager is responsible for managing the lifecycle and configuration of Large Language Models (LLMs)
+    instantiated via llama.cpp within the Ksandr project.
+
+    Key features:
+    - Thread-safe loading and reloading of models, supporting dynamic changes in context window (`n_ctx`)
+    - Safe access to the active LLM via internal locking mechanism
+    - Parameterization for temperature, top_p, GPU usage, and inference settings
+    - Unloading of previous models with explicit garbage collection to conserve memory
+
+    Usage:
+      - Initialize with model parameters (path, max_tokens, temperature, etc.)
+      - Call `load_llm(n_ctx)` to (re)load the model with a specified context size
+      - Use `get_llm()` to retrieve the current loaded model for inference tasks
+
+    Exceptions:
+      - Raises RuntimeError if inference is attempted before a model is loaded
+
+    This class enables resource-efficient management of LLMs in production APIs requiring low latency,
+    high concurrency, and rapid context swapping.
+    """
+
     def __init__(self, model_path, max_tokens, temperature, top_p, n_gpu_layers):
         self.model_path = model_path
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.top_p = top_p
         self.n_gpu_layers = n_gpu_layers
-
         self.lock = threading.Lock()
         self.llm = None
         self.current_ctx = None
@@ -54,6 +92,30 @@ class LLMManager:
 
 
 class RecursiveSummarizer:
+    """
+    Class for recursively summarizing long documents by chunking text and aggregating partial summaries.
+
+    This class provides utilities to:
+        - Split long texts into manageable chunks using a recursive text splitter.
+        - Generate concise summaries of each chunk using a provided LLMManager and prompt templates.
+        - Aggregate and refine these partial summaries into a final, summarized output.
+
+    Args:
+        llm_manager: The LLMManager instance used to invoke the LLM.
+        text (str): The text to be summarized.
+        template_initial (str): Prompt template for the initial summary chunk(s).
+        template_partial (str): Prompt template for iterative (partial) summaries.
+        template_conclude (str): Prompt template for concluding the summary.
+        template_correction (str): Prompt template for correcting summaries.
+        template_full (str): Prompt template for full summary generation.
+        template_single (str): Prompt template for summarizing a single chunk.
+
+    Methods:
+        chunk_text(text): Splits the input text into chunks suitable for the LLM context window.
+        summarize_chunk(text, template): Returns a summary of the input text chunk using the LLM and a specified template.
+        summarize(): Produces a complete summary of the input text, suitable for use in downstream applications or as a user-facing result.
+    """
+
     def __init__(
         self,
         llm_manager,
@@ -143,7 +205,7 @@ class RecursiveSummarizer:
         response = self.summarize_chunk(response, template=self.template_correction)
 
         logging.info(f"The corrected summary is: {response}")
-        return verwijder_onafgeronde_zinnen(response)
+        return remove_unfinished_sentences(response)
 
     def summarize_simple(self) -> str:
         """

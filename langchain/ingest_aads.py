@@ -1,3 +1,10 @@
+"""
+This module provides functions for ingesting Ageing Asset Dossiers (AADs) into a Neo4j graph database.
+It includes utilities to clean and normalize HTML data, extract relevant information such as component numbers,
+and create corresponding nodes and relationships in the database. The ingestion pipeline is tailored for
+the Ksandr platform and processes component, dossier, and failure mode (faalvorm) records based on extracted information.
+"""
+
 from neo4j import GraphDatabase
 import json
 import os

@@ -1,3 +1,20 @@
+"""
+This module defines Cypher query templates and utilities for querying a Neo4j graph database
+related to AAD dossiers, components, and associated failure modes (faalvormen).
+
+Key components:
+- Cypher query templates for retrieving all faalvormen per component and dossier.
+- Utility function `run_cypher` for executing Cypher queries via a Neo4j driver session.
+- High-level helper `query_neo4j` to process user prompts and Chroma filter objects,
+  converting them into query parameters for information retrieval.
+
+Intended usage:
+- Select or adapt query templates as needed for fetching graph data.
+- Use utility functions in downstream pipelines, chatbots, or API endpoints serving graph-powered Q&A.
+
+Assumes an active Neo4j instance accessible via `bolt://localhost:7687`.
+"""
+
 from neo4j import GraphDatabase
 import textwrap
 

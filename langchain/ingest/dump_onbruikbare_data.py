@@ -1,3 +1,22 @@
+"""
+This script scans all .txt files in the specified directory, segments their content into chunks,
+and collects examples of "onbruikbare" (unusable) text chunks—those not considered useful for
+vector database ingestion based on heuristic filters. These examples are dumped to a JSON file
+for inspection, analysis, or further refinement of ingestion criteria.
+
+Main functionalities:
+- Recursively loads .txt files from a directory (up to 200 files for sampling).
+- Chunkifies each file's content using RecursiveCharacterTextSplitter.
+- Applies `looks_like_clean_text` to identify unusable (onbruikbare) chunks.
+- Stores examples (with file path, filename, chunk index, and chunk content) in a JSON output.
+
+Intended usage:
+    python dump_onbruikbare_data.py
+
+This helps data engineers spot, inspect, and tune preprocessing for irrelevant or malformed text
+before inclusion in the Ksandr vector retrieval pipeline.
+"""
+
 from helpers import prepare_text_for_vector_store, looks_like_clean_text
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter

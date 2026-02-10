@@ -1,3 +1,19 @@
+"""
+This module defines and provides common Cypher queries for ingesting and retrieving
+dossier and component data from a Neo4j graph database.
+
+- Contains parameterized/query templates (BASE_DOSSIER_QUERY, BASE_DOSSIER_QUERY_BASIC).
+- Supplies a list of predefined Cypher queries (`predefined_queries`) with sample
+  user questions and tag metadata, for use in automated graph question answering and
+  NL-to-Cypher translation systems.
+
+Typical usage:
+    - Import `predefined_queries` for query selection or LLM prompt templates.
+    - Use as a reference or base for populating and querying graph DBs in the Ksandr platform.
+
+Intended for configuration/code sharing in ingestion pipelines and retrieval systems.
+"""
+
 import argparse
 from embeddings import get_embedding_function
 from typing import List, Dict
