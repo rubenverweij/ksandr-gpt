@@ -1,4 +1,13 @@
-# Dummy references
+"""
+This module provides reference mappings and a utility function for replacing specific keywords
+in a given text with corresponding formatted links. The REFS dictionary maps common equipment names
+or abbreviations to markdown-style links, and the replace_patterns function performs case-insensitive
+replacement of these keywords in input strings with their respective references.
+
+Usage:
+    Call replace_patterns(your_text) to substitute known keywords in your text with their reference links.
+"""
+
 import re
 
 REFS = {
