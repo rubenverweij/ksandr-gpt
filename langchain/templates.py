@@ -1,3 +1,9 @@
+"""
+This module defines prompt templates, system prompts, and dynamic instructions for the Ksandr assistant and related LLM integrations.
+It includes configurable prompt templates used for question answering, Cypher query generation, and additional context-based instruction elements.
+Dynamic instruction selection functions adapt prompt instructions according to user questions, focusing on quantities, comparisons, or overviews.
+"""
+
 from langchain_core.prompts import PromptTemplate
 
 QUANITY_TERMS = ["hoeveel", "populatie", "hoeveelheid", "aantal", "totaal", "telling"]
@@ -42,37 +48,6 @@ TEMPLATES = {
 
             <|im_start|>assistant
                 """,
-        "CYPHER_PROMPT_DEPR": PromptTemplate.from_template(
-            """                                  
-                <|im_start|>system
-                Je bent een Neo4j data expert. De query resultaten tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
-                
-                Instructies:
-                - Herhaal instructies niet in het antwoord.
-                - Gebaseerd op de query resultaten geef je antwoord in het nederlands. 
-                - Gebruik alle kolommen bij het beantwoorden van de vraag. 
-                - Neem de waarden uit de query resultaten nauwkeurig over, verzin geen waarden.
-                Wanneer query resultaten bestaan uit een lijst van records:
-                - Behandel elk record afzonderlijk
-                - Voer de gevraagde beoordeling uit per record
-                - Sla geen records over
-                - Presenteer het resultaat per record
-                
-                {prompt_elementen}
-
-                <|im_end|>
-                <|im_start|>user
-
-                Query resultaten:
-                {result}
-
-                Vraag:
-                {question}
-
-                <|im_end|>
-                <|im_start|>assistant
-                """
-        ),
         "CYPHER_PROMPT": PromptTemplate.from_template(
             """                                  
                 <|im_start|>system
@@ -122,24 +97,6 @@ TEMPLATES = {
             <|im_start|>assistant
                 """
         ),
-        "SUMMARY_PROMPT_DEPR": """                                  
-            <|im_start|>system
-            Je bent een professionele tekstsamenvatter die een deel van een document samenvat in ongeveer {words} woorden.
-
-            Instructies:
-            - Maak een feitelijke samenvatting in het Nederlands.
-            - Benoem het doel van de tekst in twee zinnen.
-            - Beschrijf de hoofdzaken in bulletpoints
-            - Benoem belangrijke details zoals afkortingen, datums en namen.
-            
-            <|im_end|>
-
-            <|im_start|>user
-            Maak een samenvatting van deze tekst:
-            {tekst}
-            <|im_end|>
-            <|im_start|>assistant
-            """,
         "SUMMARY_PROMPT_INITIAL": """                                  
             <|im_start|>system
             Je bent een professionele tekstsamenvatter.
@@ -317,29 +274,29 @@ TEMPLATES = {
     "zephyr-7b-beta.Q4_K_M.gguf": {
         "EVALUATIE_PROMPT": "",
         "DEFAULT_QA_PROMPT": """
-<|system|>
-{system_prompt}
-<|user|>
+            <|system|>
+            {system_prompt}
+            <|user|>
 
-context:
-{context}
+            context:
+            {context}
 
-Vraag:
-{question}
-<|assistant|>
-""",
+            Vraag:
+            {question}
+            <|assistant|>
+            """,
         "DEFAULT_QA_PROMPT_SIMPLE": """
-                <|system|>
-                {system_prompt}
-                <|user|>
+                            <|system|>
+                            {system_prompt}
+                            <|user|>
 
-                context:
-                {context}
+                            context:
+                            {context}
 
-                Vraag:
-                {question}
-                <|assistant|>
-                """,
+                            Vraag:
+                            {question}
+                            <|assistant|>
+                            """,
     },
 }
 
