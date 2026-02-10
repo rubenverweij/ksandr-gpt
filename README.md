@@ -45,7 +45,7 @@ Voorbeeld requests:
 curl -X GET http://localhost:8080/metadata
 
 # Ophalen status request
-curl -X GET http://localhost:8080/status/f846e504-9731-4a08-b9f2-29f13a2d1329
+curl -X GET http://localhost:8080/status/706b26bf-9351-4c08-a0d5-a1df087af6d3
 
 # Model herstarten met andere context
 curl -X POST http://localhost:8080/set-context \
