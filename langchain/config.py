@@ -1,3 +1,15 @@
+"""
+This module contains configuration constants for the Ksandr platform.
+
+These constants include:
+- Lists of component types requiring specific handling (LIJST_SPECIFIEKE_COMPONENTEN)
+- Mappings between utility companies/netbeheerder organizations and their common name variants (NETBEHEERDERS, NETBEHEERDERS_LOWER)
+- Lemma and stopword exclusion lists for NL text processing (LEMMA_EXCLUDE)
+- Other config settings used across ingestion, graph, and helper modules.
+
+All configuration is intended to be imported where necessary throughout the LangChain-based Ksandr application.
+"""
+
 LIJST_SPECIFIEKE_COMPONENTEN = [
     "db10",
     "dr12",
@@ -67,9 +79,6 @@ LEMMA_EXCLUDE = (
     + [variant for variants in NETBEHEERDERS.values() for variant in variants]
 )
 
-LEMMA_INCLUDE = []
-
-
 # Definieer de componenten
 COMPONENTS = {
     "10535": "LK ELA12 schakelinstallatie",
@@ -95,14 +104,9 @@ COMPONENTS = {
     "9028": "HS MS vermogens transformator",
 }
 
-# Cypher config
 COLUMN_MAPPING_FAALVORM = {
     "oorzaak": ["f.OorzaakGeneriek:oorzaak_generiek"],
     "oorzaken": ["f.OorzaakGeneriek:oorzaak_generiek"],
-    # "lijst": ["f.faalvorm_id:nummer_faalvorm"],
-    # "opsomming": ["f.faalvorm_id:nummer_faalvorm"],
-    # "nummer": ["f.faalvorm_id:nummer_faalvorm"],
-    # "id": ["f.faalvorm_id:nummer_faalvorm"],
     "component": ["c.component_id:naam_component"],
     "repareer": ["c.niet_repareerbaar:niet_repareerbaar"],
     "incidenten": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
@@ -128,7 +132,6 @@ LOCATION_QUESTIONS = [
     ["waar", "staat", "het"],
     ["waar", "staat", "de"],
 ]
-
 
 WEBLOCATION_TEMPLATE = [
     "- [link to='/aad/{id}/dossier']Dossierinformatie[/link]",
