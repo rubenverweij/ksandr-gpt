@@ -16,7 +16,23 @@ driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"
 
 
 def clean_html(value):
-    """Maak HTML-schoon en verwijder tags/lege velden."""
+    """
+    Cleans a given input value by removing HTML tags, unnecessary whitespace, and specific unwanted fields.
+
+    This function is designed to recursively process and normalize text, dictionaries, and lists,
+    to return sanitized data suitable for storage or further processing. Specifically:
+      - For string inputs, all HTML tags are stripped, and excessive whitespace is collapsed.
+      - For dictionary inputs, the 'tags' key is removed (if present), and all key/values are recursively processed.
+      - For list inputs, all items are recursively cleaned, and empty results are pruned.
+      - None, empty strings, empty lists, and empty dictionaries are returned as None.
+      - For other datatypes, the value is returned unchanged.
+
+    Args:
+        value (Any): The input (string, dict, list, etc.) to be cleaned.
+
+    Returns:
+        Any: The cleaned version of the input, with HTML and noise removed.
+    """
     if value in (None, "", [], {}):
         return None
     if isinstance(value, str):
@@ -33,8 +49,24 @@ def clean_html(value):
     return value
 
 
-def extract_nummer_info(nummer_str):
-    """Extraheer het volledige nummer en het numerieke deel uit iets als 'MAG-1'."""
+def extract_nummer_info(nummer_str: str) -> tuple[str, None | int]:
+    """
+    Extracts the full string prefix and the numerical part from a component number string, such as 'MAG-1'.
+
+    Args:
+        nummer_str (str): The input string containing the component number.
+
+    Returns:
+        tuple: A tuple (prefix, nummer_int) where:
+            - prefix (str): The string prefix of the number (e.g., 'MAG').
+            - nummer_int (int or None): The numeric portion as an integer if present, otherwise None.
+
+    Example:
+        >>> extract_nummer_info("MAG-13")
+        ('MAG', 13)
+        >>> extract_nummer_info("COMPONENT")
+        ('COMPONENT', None)
+    """
     if not nummer_str:
         return None, None
     match = re.match(r"([A-Za-z\-]+)-?(\d+)?", nummer_str.strip())
@@ -48,6 +80,36 @@ def extract_nummer_info(nummer_str):
 def create_component_faalvorm(
     session, aad_id, component_id, faalvorm_data, file_path, permission
 ):
+    """
+    Inserts or merges a 'faalvorm' (failure mode) node associated with a specific component and dossier into the Neo4j database,
+    and establishes relationships to related nodes, including permissions.
+
+    Args:
+        session: Neo4j database session for executing queries.
+        aad_id: Identifier of the dossier associated with this component.
+        component_id: Identifier of the component to which this faalvorm belongs.
+        faalvorm_data: Dictionary containing the properties and attributes of the faalvorm (failure mode).
+        file_path: Path to the associated file or document (used for setting Bestandspad).
+        permission: String indicating the category of permission granted to this faalvorm.
+
+    Returns:
+        None. This function executes a database transaction, but does not return a value.
+
+    Side Effects:
+        - Creates or merges nodes in the Neo4j database.
+        - Sets node properties based on input data.
+        - Creates relationships between dossier, component, faalvorm, and permission nodes.
+
+    Example:
+        create_component_faalvorm(
+            session,
+            aad_id="AAD-123",
+            component_id="C-108",
+            faalvorm_data={"Naam": "Scheurvorming", ...},
+            file_path="/files/fm1.pdf",
+            permission="read"
+        )
+    """
     nummer_str = faalvorm_data.get("Nummer")
     prefix, nummer_int = extract_nummer_info(nummer_str)
     # NOTE: f.columns in the json extract should exist
@@ -110,16 +172,59 @@ def create_component_faalvorm(
     )
 
 
-def clean_key(key):
+def clean_key(key: str) -> str:
+    """
+    Cleans and normalizes a dictionary key to a standardized format.
+
+    This function takes a string `key`, converts it to lowercase, replaces spaces
+    and forward slashes ('/') with underscores ('_'), making it suitable for use
+    as a consistent property or key in code and databases.
+
+    Args:
+        key (str): The key string to be cleaned.
+
+    Returns:
+        str: The cleaned, normalized key.
+    """
     return key.lower().replace(" ", "_").replace("/", "_")
 
 
-def optional(obj, key, default=None):
-    """Veilig een key ophalen als deze bestaat."""
+def optional(obj: dict, key: str, default=None):
+    """
+    Safely retrieve a value from an object if the key exists.
+
+    This function checks if the given `obj` is a dictionary, and if so,
+    returns the value for `key` if present, or a `default` value otherwise.
+    If `obj` is not a dictionary, it returns the `default`.
+
+    Args:
+        obj (dict): The dictionary to retrieve the value from.
+        key: The key to look for.
+        default: The value to return if the key is not found. Defaults to None.
+
+    Returns:
+        The value corresponding to `key` in the dictionary, or the default value.
+    """
     return obj.get(key, default) if isinstance(obj, dict) else default
 
 
-def merge_node(tx, label, key, props):
+def merge_node(tx: GraphDatabase, label: str, key: str, props: dict):
+    """
+    Merges a node into the database if it does not already exist, and updates its properties.
+
+    This function constructs and executes a Cypher MERGE query using the provided transaction, label,
+    unique key, and property dictionary. If a node with the given label and key exists, it is matched; if not,
+    a new node is created. The node's properties are then updated or set according to the provided dict.
+
+    Args:
+        tx: The Neo4j transaction object.
+        label (str): The label to assign to the node.
+        key (str): The property key to uniquely identify the node.
+        props (dict): A dictionary of properties to set on the node.
+
+    Side Effects:
+        Modifies the database by inserting or updating the specified node.
+    """
     query = f"""
     MERGE (n:{label} {{{key}: $keyval}})
     SET n += $props
@@ -127,7 +232,36 @@ def merge_node(tx, label, key, props):
     tx.run(query, keyval=props[key], props=props)
 
 
-def merge_relation(tx, a_label, a_key, a_val, rel, b_label, b_key, b_val):
+def merge_relation(
+    tx: GraphDatabase,
+    a_label: str,
+    a_key: str,
+    a_val: str,
+    rel: str,
+    b_label: str,
+    b_key: str,
+    b_val: str,
+):
+    """
+    Merges a relationship between two nodes if it does not already exist in the database.
+
+    This function constructs and executes a Cypher MERGE query using the provided transaction and node details.
+    It matches two nodes based on their label and unique key/value pairs, then creates a directed relationship
+    of the specified type from node 'a' to node 'b' if it does not already exist.
+
+    Args:
+        tx: The Neo4j transaction object.
+        a_label (str): The label of the source node.
+        a_key (str): The property key to identify the source node.
+        a_val: The value of the property key for the source node.
+        rel (str): The type/name of the relationship to merge.
+        b_label (str): The label of the target node.
+        b_key (str): The property key to identify the target node.
+        b_val: The value of the property key for the target node.
+
+    Side Effects:
+        Modifies the database by creating or ensuring the existence of the specified relationship between nodes.
+    """
     query = f"""
     MATCH (a:{a_label} {{{a_key}: $a_val}})
     MATCH (b:{b_label} {{{b_key}: $b_val}})
@@ -137,7 +271,18 @@ def merge_relation(tx, a_label, a_key, a_val, rel, b_label, b_key, b_val):
 
 
 def create_permission_constraint(driver: GraphDatabase):
-    """Create permission constraint."""
+    """
+    Creates a uniqueness constraint on the 'category' property of 'permission' nodes in the Neo4j database.
+
+    This function ensures that each 'permission' node in the database has a unique 'category' property.
+    If the uniqueness constraint already exists, the function leaves it unchanged.
+
+    Args:
+        driver (GraphDatabase): The Neo4j database driver.
+
+    Side Effects:
+        Modifies the database schema by creating a uniqueness constraint if it does not exist.
+    """
     with driver.session() as session:
         session.run(
             """
@@ -149,13 +294,45 @@ def create_permission_constraint(driver: GraphDatabase):
 
 
 def create_permission_nodes(driver: GraphDatabase, permission: str):
-    """Create permission nodes."""
+    """
+    Creates a 'permission' node in the Neo4j database with the specified category.
+
+    This function writes a 'permission' node, identified by its 'category' property, to the database.
+    If a node with the given category already exists, it leaves the existing node unchanged (merge semantics).
+
+    Args:
+        driver (GraphDatabase): The Neo4j database driver.
+        permission (str): The unique category of the permission to create.
+
+    Side Effects:
+        Modifies the database by creating or merging a 'permission' node.
+    """
     with driver.session() as session:
         permission_props = {"category": permission}
         session.execute_write(merge_node, "permission", "category", permission_props)
 
 
-def ingest_dossier(driver: GraphDatabase, data, aad_id, component_id, permission):
+def ingest_dossier(
+    driver: GraphDatabase, data: dict, aad_id: str, component_id: str, permission: str
+):
+    """
+    Ingests dossier data into the Neo4j graph database by creating and connecting relevant nodes and relationships.
+
+    This function takes raw dossier data, parses essential attributes, and writes them as nodes and relationships
+    into the database. It ensures that 'dossier', 'persoon', and 'permission' nodes are created as needed, and
+    that the defined relationships such as permissions and management team memberships are properly established.
+
+    Args:
+        driver (GraphDatabase): The Neo4j database driver.
+        data (dict): The dossier data loaded from an external source (typically parsed JSON).
+        aad_id (str): The unique identifier for the dossier (AAD).
+        component_id (str): The unique identifier for the component related to the dossier.
+        permission (str): The category of permission to assign.
+
+    Side Effects:
+        Modifies the Neo4j database by creating and merging nodes and relationships representing the dossier and
+        its associated permissions and participants.
+    """
     with driver.session() as session:
         dossier_json = data.get("Dossier", {}).get("Dossier", {})
         dossier_props = {
@@ -534,49 +711,50 @@ def ingest_dossier(driver: GraphDatabase, data, aad_id, component_id, permission
                     )
 
 
-with driver.session() as session:
-    session.run("MATCH (n) DETACH DELETE n")
+if __name__ == "__main__":
+    with driver.session() as session:
+        session.run("MATCH (n) DETACH DELETE n")
 
-print("Database deleted.")
+    print("Database deleted.")
 
-with driver.session() as session:
-    permissions = ["cat-1", "cat-2"]
-    for permission in permissions:
-        create_permission_nodes(driver, permission)
-    create_permission_constraint(driver)
-    for aad_id, component_id in COMPONENTS.items():
+    with driver.session() as session:
+        permissions = ["cat-1", "cat-2"]
         for permission in permissions:
-            json_folder = (
-                f"/home/ubuntu/ksandr_files/aads/{aad_id}/{permission}/fail-types/"
-            )
-            # process faalvormen
-            for root, dirs, files in os.walk(json_folder):
-                for filename in files:
-                    if filename.endswith(".json"):
-                        file_path = os.path.join(root, filename)
-                        with open(file_path, "r", encoding="utf-8") as f:
-                            data = json.load(f)
-                            faalvorm_data = data.get("Beschrijving")
-                        if faalvorm_data:
-                            print(
-                                f"Processing {file_path}... for component {component_id}"
-                            )
-                            create_component_faalvorm(
-                                session,
-                                aad_id,
-                                component_id,
-                                faalvorm_data,
-                                file_path,
-                                permission,
-                            )
-            # Process ageing asset dossier
-            json_file = (
-                f"/home/ubuntu/ksandr_files/aads/{aad_id}/{permission}/main.json"
-            )
-            print(f"Ingesting: {json_file}")
-            with open(json_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                data = clean_html(data)
-            ingest_dossier(driver, data, aad_id, component_id, permission)
+            create_permission_nodes(driver, permission)
+        create_permission_constraint(driver)
+        for aad_id, component_id in COMPONENTS.items():
+            for permission in permissions:
+                json_folder = (
+                    f"/home/ubuntu/ksandr_files/aads/{aad_id}/{permission}/fail-types/"
+                )
+                # process faalvormen
+                for root, dirs, files in os.walk(json_folder):
+                    for filename in files:
+                        if filename.endswith(".json"):
+                            file_path = os.path.join(root, filename)
+                            with open(file_path, "r", encoding="utf-8") as f:
+                                data = json.load(f)
+                                faalvorm_data = data.get("Beschrijving")
+                            if faalvorm_data:
+                                print(
+                                    f"Processing {file_path}... for component {component_id}"
+                                )
+                                create_component_faalvorm(
+                                    session,
+                                    aad_id,
+                                    component_id,
+                                    faalvorm_data,
+                                    file_path,
+                                    permission,
+                                )
+                # Process ageing asset dossier
+                json_file = (
+                    f"/home/ubuntu/ksandr_files/aads/{aad_id}/{permission}/main.json"
+                )
+                print(f"Ingesting: {json_file}")
+                with open(json_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    data = clean_html(data)
+                ingest_dossier(driver, data, aad_id, component_id, permission)
 
-driver.close()
+    driver.close()

@@ -23,7 +23,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 import json
 
 
-def dump_onbruikbare_data(directory: Path):
+def dump_unused_data(directory: Path):
     output_json = "/home/ubuntu/onprem_data/voorbeelden_onbruikbare_teksten.json"
     examples = []
     splitter = RecursiveCharacterTextSplitter(
@@ -53,4 +53,4 @@ def dump_onbruikbare_data(directory: Path):
 
 if __name__ == "__main__":
     dir = Path("/home/ubuntu/ksandr_files/")
-    dump_onbruikbare_data(dir)
+    dump_unused_data(dir)

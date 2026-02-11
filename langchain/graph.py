@@ -18,13 +18,11 @@ Used by ingestion, permission, and LLM modules to enable
 secure, semantic, and permission-aware retrieval from the Ksandr graph.
 """
 
-import re
 import json
 import Levenshtein
 from config import (
     COLUMN_MAPPING_FAALVORM,
     NETBEHEERDERS_LOWER,
-    STOPWORDS,
     QUANTITY_TERMS,
 )
 import logging
@@ -44,40 +42,23 @@ WHERE size(dossier_ids) = 0 OR d.aad_id IN dossier_ids
 """
 
 
-def tokenize(text):
-    text = text.lower()
-    text = re.sub(r"[^\w\s]", "", text)  # verwijder leestekens
-    tokens = text.split()
-    tokens = [t for t in tokens if t not in STOPWORDS]
-    return set(tokens)
-
-
-def match_query_by_tags_deprecated(question: str, query: dict) -> bool:
+def match_tag_combi(question: str, combi: list[str], max_afstand=1) -> bool:
     """
-    Returns True if any tag from query["tags"] is found in the question text,
-    allowing for up to 1 character typo (Levenshtein distance <= 1).
-    Tags must be separated by ';'.
+    Checks whether a question contains an ordered sequence of target words (a tag combination),
+    allowing for minor typos (Levenshtein distance <= max_afstand) with order sensitivity.
+
+    For each word in the target combination (`combi`), scans through the question words (starting from the last
+    matched position), and tries to match it with typo tolerance. All target words must be matched in order
+    (but not necessarily consecutively). If any is not found in order, returns False.
+
+    Args:
+        question (str): The user's question as a string.
+        combi (list[str]): A list of target words representing a tag combination.
+        max_afstand (int, optional): Maximum allowed Levenshtein distance for typo tolerance (default 1).
+
+    Returns:
+        bool: True if all target words are found in order within the question (with typo tolerance); False otherwise.
     """
-    if "tags" not in query or not query["tags"]:
-        return False
-
-    # Split tags on ';'
-    tags = [tag.strip().lower() for tag in query["tags"].split(";")]
-
-    # Normalize question
-    q_words = question.lower().split()
-
-    # Check each tag against each word in the question
-    for tag in tags:
-        for word in q_words:
-            if Levenshtein.distance(tag, word) <= 1:
-                return True
-        if tag in question:
-            return True
-    return False
-
-
-def match_tag_combi(question, combi, max_afstand=1):
     woorden = question.lower().split()
     idx = 0
     for target in combi:
@@ -93,6 +74,21 @@ def match_tag_combi(question, combi, max_afstand=1):
 
 
 def match_query_by_tags(question: str, query: dict) -> bool:
+    """
+    Determines if a user's question matches a query based on tag combinations.
+
+    This function checks whether any of the tag combinations (from the 'tags_list' field of the query dictionary)
+    approximately matches the question text, allowing for minor spelling variations (typo tolerance with Levenshtein distance).
+    Each tag combination is a sequence of keywords; the matching is order-sensitive within each combination and considers
+    typos within a defined threshold.
+
+    Args:
+        question (str): The input question text from the user.
+        query (dict): The query dictionary containing a 'tags_list' field (JSON-encoded list of tag combinations).
+
+    Returns:
+        bool: True if at least one tag combination is matched in order within the question text; False otherwise.
+    """
     if "tags_list" not in query or not query["tags_list"]:
         return True
 
@@ -119,81 +115,17 @@ def build_cypher_query(request: str) -> str:
     Returns:
         str: cypher query
     """
-
     quantity = QUANTITY_TERMS
     base_query = BASE_QUERY_SPEC
-    # base_query = """
-    # MATCH (d:dossier)-[:HEEFT_COMPONENT]->(c:component)-[:HEEFT_FAALVORM]->(f:faalvorm)
-    # {where_clause}
-    # {return_clause}
-    # """
-
     q_lower = request.lower()
-    # --------------------------------------------------------
-    # 1. Start WHERE clauses with user-supplied base clause
-    # --------------------------------------------------------
-    # where_clauses = []
-    # if clause:
-    #     where_clauses.append(clause)  # e.g. "WHERE a.aad_id IN $aad_ids"
-
-    # --------------------------------------------------------
-    # 2. Detect quantity (count?)
-    # --------------------------------------------------------
     wants_quantity = any(term in q_lower for term in quantity)
 
-    # --------------------------------------------------------
-    # 3. Detect requested columns
-    # --------------------------------------------------------
+    # Find requested columns
     selected_fields = set()
     for key, fields in COLUMN_MAPPING_FAALVORM.items():
         if key in q_lower:
             selected_fields.update(fields)
     selected_fields = list(selected_fields)
-
-    # --------------------------------------------------------
-    # 4. Detect “contains” / “bevat” patterns
-    # --------------------------------------------------------
-    # contains_patterns = ["bevat de term", "m.b.t.", "bevat:"]
-    # contains_term = None
-
-    # for pat in contains_patterns:
-    #     if pat in q_lower:
-    #         match = re.search(pat + r"\s+(.*)", q_lower)
-    #         if match:
-    #             contains_term = match.group(1).strip()
-    #             break
-
-    # If contains detected, build WHERE contains clause
-    # if contains_term:
-    #     target_columns = []
-    #     # Prefer explicit description-related keywords
-    #     for key in ["beschrijving", "omschrijving", "oorzaak"]:
-    #         if key in q_lower:
-    #             target_columns = COLUMN_MAPPING_FAALVORM[key]
-    #     # fallback → search description
-    #     if not target_columns:
-    #         target_columns = ["f.Beschrijving"]
-    #     for col in target_columns:
-    #         where_clauses.append(f'toLower({col}) CONTAINS toLower("{contains_term}")')
-
-    # --------------------------------------------------------
-    # 5. Build WHERE clause output
-    # --------------------------------------------------------
-    # if where_clauses:
-    #     # If the first clause already begins with WHERE, don’t repeat it
-    #     if where_clauses[0].strip().upper().startswith("WHERE"):
-    #         where_clause = where_clauses[0]
-    #         extra_filters = where_clauses[1:]
-    #         if extra_filters:
-    #             where_clause += " AND " + " AND ".join(extra_filters)
-    #     else:
-    #         where_clause = "WHERE " + " AND ".join(where_clauses)
-    # else:
-    #     where_clause = ""
-
-    # --------------------------------------------------------
-    # 6. Build RETURN clause
-    # --------------------------------------------------------
     return_parts = []
     if not wants_quantity:
         return_parts.extend(
@@ -210,10 +142,6 @@ def build_cypher_query(request: str) -> str:
     if wants_quantity:
         return_parts.append("COUNT(f) AS aantalFaalvorm")
     return_clause = "RETURN " + ", ".join(return_parts)
-
-    # --------------------------------------------------------
-    # 7. Assemble final cypher
-    # --------------------------------------------------------
     query = base_query.format(return_clause=return_clause)
     if wants_quantity:
         query += "\nORDER BY aantalFaalvorm DESC"
@@ -222,8 +150,16 @@ def build_cypher_query(request: str) -> str:
     return query.strip()
 
 
-def check_for_nbs(question):
-    """Check if netbeheerders are present."""
+def check_for_nbs(question: str) -> list[str]:
+    """
+    Checks if any known netbeheerders (network operators) are mentioned in the question.
+
+    Args:
+        question (str): The input string or question to check for netbeheerder names.
+
+    Returns:
+        list: A list of matched netbeheerder variants found within the question (case-insensitive).
+    """
     lijst_nb = NETBEHEERDERS_LOWER
     question_lower = question.lower()
     matched_variants = []
