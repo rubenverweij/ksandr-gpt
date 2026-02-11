@@ -1,6 +1,6 @@
-# KSANDR GPT
+# Digitale Assistent van KSANDR
 
-De repository bevat code voor het hosten van taalmodellen voor het bevragen van documenten. Eerst moeten de benodigde software worden geinstaleerd.
+De repository bevat code voor het hosten van taalmodellen voor het bevragen van documenten. Voordat de containers gedployed kunnen worden moet eerst de benodigde software worden geinstaleerd.
 
 1. Docker version 28.2.2, build 28.2.2-0ubuntu1~22.04.1
 2. Cuda toolkit (wanneer nodig)
@@ -9,7 +9,7 @@ De repository bevat code voor het hosten van taalmodellen voor het bevragen van 
 ## Installatie dependencies
 
 ```shell
-# Controleer of de cuda toolkit al aanwezig is
+# Controleer of de cuda toolkit al aanwezig is (momenteel: 13.0)
 nvidia-smi | grep -P -o "CUDA Version: \d+(\.\d+)+" | grep -P -o "\d+(\.\d+)+"
 
 # Instaleer cuda
@@ -18,7 +18,7 @@ lspci | grep -i nvidia
 # Controleer de host 
 hostnamectl
 
-# Controleer of gcc geinstalleerd is
+# Controleer of gcc geinstalleerd is (momenteel gcc (Ubuntu 11.4.0-1ubuntu1~22.04.2) 11.4.0)
 gcc --version
 
 # Installeer docker
@@ -39,8 +39,6 @@ apt install docker.io
 Vervolgens kunnen documenten worden geupload:
 
 ```shell
-Voorbeeld requests:
-
 # Ophalen metadata
 curl -X GET http://localhost:8080/metadata
 
@@ -167,7 +165,7 @@ watch -n 0.5 nvidia-smi
 
 ## Installatie linux host
 
-Opzetten omgeving taalmodel voor Ubuntu 24.04.
+Opzetten omgeving taalmodel voor Ubuntu 24.04. Let op dit hoeft niet worden uitgevoerd op de GPU server aangezien het taalmodel wordt gedraaid via een Docker container.
 
 ```shell
 sudo apt-get update
@@ -205,4 +203,3 @@ pip install onprem
 sudo apt install code_1.99.3-1744761595_amd64.deb
 pip install chromadb langchain_chroma
 ```
-

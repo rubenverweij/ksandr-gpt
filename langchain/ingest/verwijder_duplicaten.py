@@ -77,13 +77,13 @@ def dedup_docs_in_chroma(
     # Filter alleen duplicaten (meer dan 1 keer voorgekomen)
     hash_to_metadata = {k: v for k, v in hash_to_metadata.items() if len(v) >= 2}
 
-    # Stap 4: Sla duplicaten-metadata op in JSON
+    # Sla duplicaten-metadata op in JSON
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(hash_to_metadata, f, ensure_ascii=False, indent=2)
 
-    print(f"💾 Duplicaten-metadata opgeslagen in: {output_json_path}")
+    print(f"Duplicaten-metadata opgeslagen in: {output_json_path}")
 
-    # Stap 5: Verwijder duplicaten uit Chroma database
+    # Verwijder duplicaten uit Chroma database
     if to_delete:
         print(f"🗑️  {len(to_delete)} duplicaten gevonden. Verwijderen...")
         db.delete(ids=to_delete)

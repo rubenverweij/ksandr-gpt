@@ -3,8 +3,9 @@
 Acties zijn:
 
 1. Starten en stoppen van de `ksandr-gpt-langchain` container
-2. Vernieuwen van de data uit de Chroma vectorstore
+2. Updaten van de Chroma vectorstore
 3. Updaten van de Neo4j database.
+4. Het uitvoeren van tests
 
 ## Het starten van de `ksandr-gpt-langchain` container
 
@@ -53,7 +54,7 @@ $image
 
 ```
 
-## Vernieuwen van de data uit de Chroma vectorstore
+## Updaten van de Chroma vectorstore
 
 Documenten in de vectorstore vernieuwen:
 
@@ -64,7 +65,7 @@ docker exec -it <id> /bin/bash # start terminal in de container
 python3 api/ingest/populate_database.py -chroma /root/onprem_data/chroma/ -source /root/ksandr_files -min_chunk_size_json 400 -min_chunk_size_text 600
 ```
 
-## Updaten van de Neo4j database 
+## Updaten van de Neo4j database
 
 We gebruiken [Neo4j](https://neo4j.com/) als een graph database.
 Gebruik het volgende commando voor het starten van de container:
@@ -88,4 +89,16 @@ Voor het ingesten van de neo4j data:
 source ./venv/bin/activate # activeer virtuele omgeving gebaseerd op requirements.txt
 python3 langchain/graphdb/ingest_cypher_queries.py -chroma /home/ubuntu/onprem_data/chroma_cypher
 python3 ingest_aads.py
+```
+
+## Het uitvoeren van tests
+
+Testvragen toevoegen aan `langchain\tests\testvragen.csv` of locatie.
+
+Test script draaien en analyseren resultaten:
+
+```shell
+source ./venv/bin/activate # activeer de virtuele omgeving
+python3 langchain/tests/test_model.py --file langchain/tests/testvragen.csv # analyseer de antwoorden
+python3 langchain/tests/report.py # controleer de resultaten
 ```
