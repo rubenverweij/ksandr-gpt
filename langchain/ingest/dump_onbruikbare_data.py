@@ -22,9 +22,11 @@ from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import json
 
+LOCAL_DIR = "/home/ubuntu"
+
 
 def dump_unused_data(directory: Path):
-    output_json = "/home/ubuntu/onprem_data/voorbeelden_onbruikbare_teksten.json"
+    output_json = f"{LOCAL_DIR}/onprem_data/voorbeelden_onbruikbare_teksten.json"
     examples = []
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,
@@ -52,5 +54,5 @@ def dump_unused_data(directory: Path):
 
 
 if __name__ == "__main__":
-    dir = Path("/home/ubuntu/ksandr_files/")
+    dir = Path(f"{LOCAL_DIR}/ksandr_files/")
     dump_unused_data(dir)

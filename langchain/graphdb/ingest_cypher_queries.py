@@ -15,7 +15,7 @@ Intended for configuration/code sharing in ingestion pipelines and retrieval sys
 """
 
 import argparse
-from embeddings import get_embedding_function
+from embeddings.embeddings import get_embedding_function
 from typing import List, Dict
 from pathlib import Path
 import json
