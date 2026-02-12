@@ -6,6 +6,7 @@ Acties zijn:
 2. Updaten van de Chroma vectorstore
 3. Updaten van de Neo4j database.
 4. Het uitvoeren van tests
+5. Beheren van configuratiebestanden
 
 ## Het starten van de `ksandr-gpt-langchain` container
 
@@ -103,3 +104,11 @@ source ./venv/bin/activate # activeer virtuele omgeving gebaseerd op requirement
 python3 langchain/tests/test_model.py --file langchain/tests/testvragen.csv # analyseer de antwoorden
 python3 langchain/tests/report.py # controleer de resultaten
 ```
+
+## Beheren van configuratiebestanden
+
+De volgende configuratiebestanden moeten beheerd worden:
+
+1. langchain/refs.py
+2. langchain/config.py
+3. 

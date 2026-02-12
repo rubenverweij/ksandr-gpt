@@ -43,7 +43,7 @@ Vervolgens kunnen documenten worden geupload:
 curl -X GET http://localhost:8080/metadata
 
 # Ophalen status request
-curl -X GET http://localhost:8080/status/706b26bf-9351-4c08-a0d5-a1df087af6d3
+curl -X GET http://localhost:8080/status/77721cb9-dfa7-41d6-8470-aa4b2f2bc715
 
 # Model herstarten met andere context
 curl -X POST http://localhost:8080/set-context \

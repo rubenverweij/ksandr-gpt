@@ -20,7 +20,7 @@ Voor het ingesten van de neo4j data:
 
 ```shell
 source ./venv/bin/activate # activeer virtuele omgeving gebaseerd op requirements.txt
-python3 langchain/graphdb/ingest_cypher_queries.py -chroma /home/ubuntu/onprem_data/chroma_cypher
+python3 -m ksandr.graphdb.ingest_cypher_queries -chroma /home/ubuntu/onprem_data/chroma_cypher
 python3 ingest_aads.py
 ```
 
