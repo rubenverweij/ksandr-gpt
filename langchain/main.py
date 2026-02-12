@@ -14,6 +14,7 @@ import time
 import uuid
 import os
 import re
+import json
 
 import logging
 from datetime import datetime
@@ -65,7 +66,15 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
-GRAPH = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="password")
+
+with open("creds.json") as f:
+    credenitals = json.load(f)
+
+GRAPH = Neo4jGraph(
+    url="bolt://localhost:7687",
+    username=credenitals.get("neo4j"),
+    password=credenitals.get("password"),
+)
 
 # Configuratie voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
