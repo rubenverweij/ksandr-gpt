@@ -10,9 +10,12 @@ import json
 import os
 from bs4 import BeautifulSoup
 import re
-from config import COMPONENTS
+from config import COMPONENTS, SECRETS
 
-driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
+driver = GraphDatabase.driver(
+    "bolt://localhost:7687",
+    auth=(SECRETS.get("username"), SECRETS.get("password")),
+)
 
 
 def clean_html(value):

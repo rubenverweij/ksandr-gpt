@@ -14,7 +14,6 @@ import time
 import uuid
 import os
 import re
-import json
 
 import logging
 from datetime import datetime
@@ -25,6 +24,7 @@ from templates import TEMPLATES, SYSTEM_PROMPT, dynamische_prompt_elementen
 from llm import LLMManager, RecursiveSummarizer
 from refs import replace_patterns
 from graph import build_cypher_query, check_for_nbs, match_query_by_tags
+from config import SECRETS
 from helpers import (
     create_metadata_filter,
     COMPONENTS,
@@ -67,13 +67,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-with open("api/creds.json") as f:
-    credenitals = json.load(f)
 
 GRAPH = Neo4jGraph(
     url="bolt://localhost:7687",
-    username=credenitals.get("neo4j"),
-    password=credenitals.get("password"),
+    username=SECRETS.get("username"),
+    password=SECRETS.get("password"),
 )
 
 # Configuratie voor gelijktijdige verwerking van verzoeken

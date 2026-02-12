@@ -10,6 +10,8 @@ These constants include:
 All configuration is intended to be imported where necessary throughout the LangChain-based Ksandr application.
 """
 
+import json
+
 LIJST_SPECIFIEKE_COMPONENTEN = [
     "db10",
     "dr12",
@@ -144,3 +146,7 @@ WEBLOCATION_TEMPLATE = [
     "- [link to='/aad/search']Zoeken[/link]",
     "- [link to='/aad/info']Informatie[/link]",
 ]
+
+
+with open("api/creds.json") as f:
+    SECRETS = json.load(f)
