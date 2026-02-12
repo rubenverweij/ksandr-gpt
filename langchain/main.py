@@ -67,7 +67,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-with open("creds.json") as f:
+with open("api/creds.json") as f:
     credenitals = json.load(f)
 
 GRAPH = Neo4jGraph(
