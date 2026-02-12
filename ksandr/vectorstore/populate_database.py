@@ -29,14 +29,14 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveJsonSplitter
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from helpers import (
+from ksandr.vectorstore.helpers import (
     extract_file_data,
     looks_like_clean_text,
     prepare_text_for_vector_store,
     clean_html,
 )
 from ksandr.embeddings.embeddings import get_embedding_function
-from config import (
+from ksandr.vectorstore.config import (
     CHROMA_DB_PATH,
     RAW_DATA_SOURCES,
 )
