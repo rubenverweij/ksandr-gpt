@@ -84,12 +84,12 @@ docker run \
 Voor het ingesten van de neo4j data:
     - Login the GPU server
     - Ga naar `/home/ubuntu/ksandr-gpt`
+    - Activeer de virtuele Python omgeving `source ./venv/bin/activate`
     - Voer de volgende commando's uit:
 
 ```shell
-source ./venv/bin/activate # activeer virtuele omgeving gebaseerd op requirements.txt
 python3 langchain/graphdb/ingest_cypher_queries.py -chroma /home/ubuntu/onprem_data/chroma_cypher
-python3 ingest_aads.py
+python3 langchain/ingest_aads.py
 ```
 
 ## Het uitvoeren van tests
