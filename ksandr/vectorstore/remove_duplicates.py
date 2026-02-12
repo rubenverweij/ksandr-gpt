@@ -1,64 +1,68 @@
 """
-This script provides functionality to remove duplicate documents from a Chroma vectorstore
-by hashing the document text, identifying duplicates, and compiling their metadata.
+Remove duplicate documents from a Chroma vectorstore by hashing document text, identifying duplicates,
+removing them from the database, and saving their metadata for further review.
 
-It connects to a specified Chroma database, computes MD5 hashes for normalization,
-and detects duplicate entries (documents with identical text).
-Metadata for duplicates is saved to a JSON file for further review or processing.
+This script connects to a Chroma database, computes MD5 hashes of stripped document texts to normalize content,
+detects duplicate entries (i.e., documents with identical text), removes duplicates from the collection,
+and writes details of all identified duplicates (with relevant metadata and text snippets) to a JSON file.
 
 Functions:
-- hash_doc: Generates an MD5 hash of stripped document text for deduplication.
-- dedup_docs_in_chroma: Main routine to process Chroma, find duplicates, and save their metadata.
+- hash_doc: Computes an MD5 hash of document text for efficient deduplication.
+- dedup_docs_in_chroma: Main process to scan Chroma for duplicates, remove them, and log metadata.
 
 Example usage:
-    python verwijder_duplicaten.py --env staging
+    python remove_duplicates.py --env staging
 """
 
 import hashlib
 import json
 import argparse
+import logging
 from langchain_chroma import Chroma
 from ksandr.embeddings.embeddings import get_embedding_function
-from config import CHROMA_DB_PATH, DUPLICATES_DATA_PATH
+from ksandr.vectorstore.config import CHROMA_DB_PATH, DUPLICATES_DATA_PATH
 
 
 def hash_doc(text: str) -> str:
     """
-    Generate an MD5 hash of the provided text after stripping leading and trailing whitespace.
+    Compute an MD5 hash of the provided text after stripping leading/trailing whitespace.
 
     Args:
-        text (str): The text string to be hashed.
+        text (str): The text string to hash.
 
     Returns:
-        str: The resulting MD5 hash as a hexadecimal string.
+        str: Hexadecimal MD5 hash of the normalized text.
     """
     return hashlib.md5(text.strip().encode("utf-8")).hexdigest()
 
 
 def dedup_docs_in_chroma(chroma_path: str, output_json_path: str):
     """
-    Identify duplicate documents in a Chroma vectorstore and store their metadata in a JSON file.
+    Detect duplicate documents in a Chroma vectorstore by content hash, remove duplicates,
+    and log their metadata to a JSON file.
 
-    Connects to the Chroma database at the given path, loads all documents,
-    computes a hash of each document's content, and identifies duplicates
-    (documents with the same text hash). For each set of duplicates, a summary
-    of relevant metadata and a text snippet is stored. The complete dictionary
-    of duplicates' metadata is written to the provided output JSON file.
+    Process:
+        1. Connect to the Chroma database at the provided path.
+        2. Retrieve all documents, compute a hash of document text.
+        3. Identify duplicates (documents sharing a hash).
+        4. For each set of duplicates, collect relevant metadata and a text snippet.
+        5. Remove duplicate documents from the database, keeping only the first occurrence.
+        6. Write metadata of all duplicate groups (groups with >=2 documents) to the output JSON file.
 
     Args:
         chroma_path (str): Path to the Chroma database directory.
         output_json_path (str): Path to save the JSON file with duplicate metadata.
 
     Side effects:
-        - Writes a JSON file containing metadata about duplicate documents found in the vectorstore.
-        - Optionally (if extended), removes duplicates from the database.
+        - Removes duplicate documents from Chroma vectorstore.
+        - Writes a JSON file with duplicate documents' metadata for inspection.
     """
     embedding_function = get_embedding_function()
     db = Chroma(persist_directory=chroma_path, embedding_function=embedding_function)
     results = db.get()
-    seen_hashes = {}  # Hou bij welke hashes we al hebben gezien
-    to_delete = []  # Verzamel ID's van duplicaten om te verwijderen
-    hash_to_metadata = {}  # Verzamel metadata van duplicaten
+    seen_hashes = {}  # Tracks which hashes have already been encountered; maps hash to first doc id
+    to_delete = []  # Stores document IDs of duplicates to be removed
+    hash_to_metadata = {}  # Collects metadata summaries of each set of duplicates
 
     for i, (doc, doc_id, metadata) in enumerate(
         zip(results["documents"], results["ids"], results["metadatas"])
@@ -68,37 +72,41 @@ def dedup_docs_in_chroma(chroma_path: str, output_json_path: str):
         subset = {k: metadata[k] for k in keys_to_extract if k in metadata}
         subset["text"] = doc[:20] + " ... " + doc[-20:]
         if doc_hash not in seen_hashes:
-            seen_hashes[doc_hash] = doc_id  # Bewaar eerste document met deze hash
+            seen_hashes[doc_hash] = doc_id  # First document with this hash is kept
             hash_to_metadata[doc_hash] = [subset]
         else:
-            to_delete.append(doc_id)  # Markeer duplicaat voor verwijdering
+            to_delete.append(doc_id)  # Mark duplicate for deletion
             hash_to_metadata[doc_hash].append(subset)
+
         if i % 1000 == 0:
-            print(
-                f"➡️  Gecontroleerd: {i} documenten... {len(to_delete)} duplicaten gevonden"
+            logging.info(
+                f"➡️  Checked: {i} documents... {len(to_delete)} duplicates found"
             )
-    # Filter alleen duplicaten (meer dan 1 keer voorgekomen)
+    # Retain only hash groups with >=2 documents (i.e., actual duplicates)
     hash_to_metadata = {k: v for k, v in hash_to_metadata.items() if len(v) >= 2}
 
-    # Sla duplicaten-metadata op in JSON
+    # Write duplicate metadata summaries to JSON
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(hash_to_metadata, f, ensure_ascii=False, indent=2)
 
-    print(f"Duplicaten-metadata opgeslagen in: {output_json_path}")
+    logging.info(f"Duplicate metadata saved to: {output_json_path}")
 
-    # Verwijder duplicaten uit Chroma database
+    # Remove duplicate documents from Chroma
     if to_delete:
-        print(f"{len(to_delete)} duplicaten gevonden. Verwijderen...")
+        logging.info(f"{len(to_delete)} duplicates found. Removing...")
         db.delete(ids=to_delete)
     else:
-        print("✅ Geen duplicaten gevonden.")
+        logging.info("✅ No duplicates found.")
 
-    print("✅ Deduplicatie voltooid.")
+    logging.info("✅ Deduplication complete.")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     parser = argparse.ArgumentParser(
-        description="Deduplicate documents from the Chroma vectorstore."
+        description="Remove duplicate documents from the Chroma vectorstore and log their metadata."
     )
     parser.add_argument(
         "--env",
