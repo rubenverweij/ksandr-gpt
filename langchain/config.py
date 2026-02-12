@@ -12,6 +12,8 @@ All configuration is intended to be imported where necessary throughout the Lang
 
 import json
 
+LOCAL_DIR = "/home/ubuntu"
+
 LIJST_SPECIFIEKE_COMPONENTEN = [
     "db10",
     "dr12",
@@ -147,6 +149,9 @@ WEBLOCATION_TEMPLATE = [
     "- [link to='/aad/info']Informatie[/link]",
 ]
 
-
-with open("api/creds.json") as f:
-    SECRETS = json.load(f)
+try:
+    with open("api/creds.json") as f:
+        SECRETS = json.load(f)
+except FileNotFoundError:
+    with open(f"{LOCAL_DIR}/config/creds.json") as f:
+        SECRETS = json.load(f)
