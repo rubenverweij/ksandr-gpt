@@ -18,7 +18,7 @@ import hashlib
 import json
 from langchain_chroma import Chroma
 from embeddings import get_embedding_function
-from config import CHROMA_PATH, OUTPUT_JSON_PATH
+from config import CHROMA_DB_PATH, DUPLICATES_DATA_PATH
 
 
 def hash_doc(text: str) -> str:
@@ -35,7 +35,7 @@ def hash_doc(text: str) -> str:
 
 
 def dedup_docs_in_chroma(
-    chroma_path: str = CHROMA_PATH, output_json_path: str = OUTPUT_JSON_PATH
+    chroma_path: str = CHROMA_DB_PATH, output_json_path: str = DUPLICATES_DATA_PATH
 ):
     """
     Identify duplicate documents in a Chroma vectorstore and store their metadata in a JSON file.

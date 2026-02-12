@@ -1,23 +1,38 @@
 """
-Configuration settings and constants for the Ksandr vectorstore pipeline.
+Ksandr Vectorstore Configuration
 
-This module defines shared paths, valid permission categories, and
-other global options for ingestion and database processing scripts.
+Defines global constants and path mappings for use throughout
+the Ksandr vectorstore ingestion and data management scripts.
 
 Constants:
-    LOCAL_DIR (str): Base local directory for data.
-    INVALID_DATA_LOCATION (str): Path to file containing unusable text examples.
-    VALID_PERMISSIONS (set): Accepted permission categories for tracked documents.
-    CHROMA_PATH (str): Default persistent directory for Chroma vector store.
-    OUTPUT_JSON_PATH (str): Output file path for duplicate document metadata.
+    - LOCAL_DIR_GPU_SERVER (str): Root directory for persistent storage on the GPU server.
+    - INVALID_DATA_FILE_LOCATION (dict): Paths (by environment) for JSON files recording unusable/invalid document chunks.
+    - VALID_PERMISSIONS (set): Permitted permission categories for document filtering.
+    - CHROMA_DB_PATH (dict): Chroma vectorstore database directory (by environment).
+    - DUPLICATES_DATA_PATH (dict): File locations (by environment) for duplicate metadata JSON.
+    - RAW_DATA_SOURCES (dict): Document data source root directories (by environment).
 
-Intended usage:
-    Import these constants in scripts such as `populate_database.py`,
-    `verwijder_duplicaten.py`, and `dump_onbruikbare_data.py` for centralized configuration.
+Usage:
+    Import these constants directly to ensure consistent file paths, directory structure,
+    and category values across scripts (e.g., populate_database.py, verwijder_duplicaten.py,
+    dump_onbruikbare_data.py).
 """
 
 LOCAL_DIR_GPU_SERVER = "/home/ubuntu"
-INVALID_DATA_LOCATION = "onprem_data/voorbeelden_onbruikbare_teksten.json"
+INVALID_DATA_FILE_LOCATION = {
+    "production": f"/{LOCAL_DIR_GPU_SERVER}/da_data/production/invalid_docs.json",
+    "staging": f"/{LOCAL_DIR_GPU_SERVER}/da_data/staging/invalid_docs.json",
+}
 VALID_PERMISSIONS = {"cat-1", "cat-2"}
-CHROMA_PATH = "/home/ubuntu/onprem_data/chroma"
-OUTPUT_JSON_PATH = "/home/ubuntu/onprem_data/duplicates.json"
+CHROMA_DB_PATH = {
+    "production": f"/{LOCAL_DIR_GPU_SERVER}/da_data/production/chroma",
+    "staging": f"/{LOCAL_DIR_GPU_SERVER}/da_data/staging/chroma",
+}
+DUPLICATES_DATA_PATH = {
+    "production": f"/{LOCAL_DIR_GPU_SERVER}/da_data/production/duplicates.json",
+    "staging": f"/{LOCAL_DIR_GPU_SERVER}/da_data/staging/duplicates.json",
+}
+RAW_DATA_SOURCES = {
+    "production": f"/{LOCAL_DIR_GPU_SERVER}/ksandr_files_production/",
+    "staging": f"/{LOCAL_DIR_GPU_SERVER}/ksandr_files_staging",
+}

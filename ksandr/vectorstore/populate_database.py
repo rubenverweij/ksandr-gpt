@@ -21,6 +21,7 @@ import argparse
 import json
 import re
 import shutil
+import logging
 from pathlib import Path
 from typing import List
 
@@ -35,9 +36,23 @@ from helpers import (
     clean_html,
 )
 from ksandr.embeddings.embeddings import get_embedding_function
+from config import (
+    CHROMA_DB_PATH,
+    RAW_DATA_SOURCES,
+)
 
 
-def load_terms(terms, file_path):
+def load_terms(terms: list, file_path: Path):
+    """
+    Convert question-answer pairs from a terms.json file into Document objects for vectorstore ingestion.
+
+    Args:
+        terms (list): List of dicts with "instruction" and "output" keys, typically loaded from 'terms.json'.
+        file_path (Path): Path to the JSON file for metadata.
+
+    Returns:
+        List[Document]: LangChain Document objects with content and enriched metadata for each Q&A pair.
+    """
     terms_list = []
     for idx, question in enumerate(terms):
         if len(question["instruction"]) < 15:
@@ -63,16 +78,37 @@ def load_terms(terms, file_path):
     return terms_list
 
 
-def load_documents(directory: Path) -> List[Document]:
-    """Laad alle JSON-documenten uit een map, splits ze op en verrijk met metadata."""
+def load_documents(env: str) -> List[Document]:
+    """
+    Load and process all JSON documents for a given environment, splitting them into meaningful, metadata-rich chunks for vectorstore ingestion.
+
+    This function recursively searches the data source directory for JSON files.
+    For each discovered file:
+        - If the filename is 'terms.json', it extracts question-answer pairs and converts them to Document objects designed for Q&A retrieval tasks.
+        - For other JSON files, HTML tags are cleaned, and the file is split into smaller JSON-like text chunks using RecursiveJsonSplitter.
+        - Each chunk is cleaned and filtered using heuristics for text quality.
+        - Rich metadata is added, including file path, chunk position, source type, character length, and inferred document group or permissions.
+
+    Args:
+        env (str): Environment identifier to select which DATA_SOURCE directory to process (e.g., 'production' or 'staging').
+
+    Returns:
+        List[Document]: List of LangChain Document objects, each containing chunk content and associated metadata, suitable for vectorstore ingestion.
+    """
+    include_text = 1
     documenten: List[Document] = []
+    directory = Path(RAW_DATA_SOURCES.get(env))
+
+    if not directory.exists():
+        logging.error(f"Directory does not exist: {directory}")
+
     for file_path in directory.rglob("*.json"):
         try:
             with file_path.open("r", encoding="utf-8") as f:
                 content = json.load(f)
                 content = clean_html(content)
                 if file_path.name == "terms.json":
-                    print("Ingesting terms")
+                    logging.info("Ingesting terms")
                     documenten = documenten + load_terms(content, file_path)
                 else:
                     splitter = RecursiveJsonSplitter(min_chunk_size=MIN_CHUNK_SIZE_JSON)
@@ -112,11 +148,11 @@ def load_documents(directory: Path) -> List[Document]:
                             )
                         )
         except json.JSONDecodeError:
-            print(f"❌ Ongeldig JSON-bestand: {file_path}")
+            logging.error(f"❌ Ongeldig JSON-bestand: {file_path}")
         except Exception as e:
-            print(f"❌ Fout bij lezen van {file_path}: {e}")
+            logging.error(f"❌ Fout bij lezen van {file_path}: {e}")
 
-    if INCLUDE_TEXT:
+    if include_text:
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=MIN_CHUNK_SIZE_TEXT,
             chunk_overlap=100,
@@ -152,66 +188,101 @@ def load_documents(directory: Path) -> List[Document]:
                             )
                         )
             except Exception as e:
-                print(f"❌ Error reading {file_path}: {e}")
+                logging.error(f"❌ Error reading {file_path}: {e}")
 
-    print(f"📄 {len(documenten)} stukken geladen.")
+    logging.info(f"📄 {len(documenten)} stukken geladen.")
     return documenten
 
 
 def add_to_chroma(chunks: List[Document]) -> None:
-    """Voeg stukken toe aan ChromaDB in batches."""
+    """
+    Add a list of Document chunks to the Chroma vector store.
+
+    Args:
+        chunks (List[Document]): The list of Document objects (text chunks + metadata) to add.
+
+    This function creates (or loads) a Chroma vector database at the specified persist directory,
+    and adds the provided Document objects to it in batches for efficiency. Each batch is processed
+    and saved. Progress and batch status messages are printed to the console.
+
+    If the input `chunks` list is empty, a message is printed and no action is taken.
+    """
     batch_size = 4000
     db = Chroma(
-        persist_directory=str(CHROMA_PATH),
+        persist_directory=str(CHROMA_DB_PATH),
         embedding_function=get_embedding_function(),
     )
     if chunks:
-        print(
+        logging.info(
             f"👉 Toevoegen van {len(chunks)} documenten in batches van {batch_size}..."
         )
         for i in range(0, len(chunks), batch_size):
             batch = chunks[i : i + batch_size]
             db.add_documents(batch)
-            print(f"   ✅ Batch {i // batch_size + 1} toegevoegd ({len(batch)} docs)")
-        print("✅ Database bijgewerkt.")
+            logging.info(
+                f"   ✅ Batch {i // batch_size + 1} toegevoegd ({len(batch)} docs)"
+            )
+        logging.info("✅ Database bijgewerkt.")
     else:
-        print("✅ Geen nieuwe documenten om toe te voegen.")
+        logging.info("✅ Geen nieuwe documenten om toe te voegen.")
 
 
-def clear_database() -> None:
-    """Verwijder de ChromaDB-directory en reset de database."""
-    if CHROMA_PATH.exists():
-        shutil.rmtree(CHROMA_PATH)
-        print("🗑️ Database verwijderd.")
+def clear_database(env: str) -> None:
+    """
+    Remove the existing Chroma vector store database by deleting the persist directory.
+
+    This function deletes the directory at CHROMA_PATH (if it exists), effectively clearing all
+    data from the current vector store instance. Use this before re-populating the database,
+    for example to ensure no old or duplicate data remains.
+
+    Side effects:
+        - Deletes all files and subdirectories at CHROMA_PATH.
+        - Prints a confirmation message upon successful removal.
+    """
+    if CHROMA_DB_PATH.get(env).exists():
+        shutil.rmtree(CHROMA_DB_PATH)
+        logging.info("Database verwijderd.")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+
     parser = argparse.ArgumentParser(
-        description="Verwerk JSON-documenten en sla ze op in ChromaDB."
+        description="Process JSON documents and store them in ChromaDB."
     )
-    parser.add_argument(
-        "-chroma",
-        type=str,
-    )
-    parser.add_argument("-source", type=str)
     parser.add_argument(
         "-min_chunk_size_json",
         type=int,
+        default=400,
+        required=False,
     )
     parser.add_argument(
         "-min_chunk_size_text",
         type=int,
+        default=600,
+        required=False,
     )
-    parser.add_argument("-include_text", type=int, default=1)
+    parser.add_argument(
+        "-env",
+        type=str,
+        choices=["production", "staging"],
+        required=False,
+        default="production",
+        help="Kies de omgeving: 'production' of 'staging' (standaard: production)",
+    )
     args = parser.parse_args()
-    CHROMA_PATH = Path(args.chroma)
-    SOURCE_DIR = Path(args.source)
+
     MIN_CHUNK_SIZE_JSON = args.min_chunk_size_json
     MIN_CHUNK_SIZE_TEXT = args.min_chunk_size_text
-    INCLUDE_TEXT = args.include_text
-    clear_database()
-    chunks = load_documents(SOURCE_DIR)
+    env = args.env
+
+    logging.info(f"🛠️ Omgeving geselecteerd: {env}")
+
+    clear_database(env)
+    chunks = load_documents(env)
     if not chunks:
-        print("⚠️ Geen documenten gevonden. Stoppen.")
+        logging.warning("⚠️ Geen documenten gevonden. Stoppen.")
     else:
         add_to_chroma(chunks)

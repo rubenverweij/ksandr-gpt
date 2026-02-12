@@ -20,54 +20,70 @@ before inclusion in the Ksandr vector retrieval pipeline.
 from helpers import prepare_text_for_vector_store, looks_like_clean_text
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from config import LOCAL_DIR_GPU_SERVER, INVALID_DATA_LOCATION
+from config import RAW_DATA_SOURCES, INVALID_DATA_FILE_LOCATION
 import json
 import argparse
+import logging
 
 
-def dump_unused_data(directory: Path):
+def dump_unused_data(directory: Path, output_json: str):
     """
-    Scans all .txt files in a given directory, segments their cleaned content into text chunks,
-    and collects examples of "onbruikbare" (unusable) text—those chunks that do not meet
-    the criteria of `looks_like_clean_text`. The examples are stored as a JSON list with metadata
-    (path, filename, chunk index, content) at the output location.
+    Recursively scans all .txt files within the specified directory, processes their content into cleaned text chunks,
+    and collects examples of "onbruikbare" (unusable) chunks—i.e., chunks not passing the `looks_like_clean_text` check.
+    Each unusable chunk is recorded along with its file path, filename, chunk index, and raw content.
 
     Args:
-        directory (Path): The root directory containing .txt files to scan (recursively).
+        directory (Path): Root directory to recursively scan for .txt files.
 
     Output:
-        Dumps a JSON file (location from config.INVALD_DATA_LOCATION) with selected examples.
+        Writes a JSON file to the path specified by config.INVALID_DATA_LOCATION containing all collected examples.
 
-    Intended for data quality analysis and refining preprocessing rules in the Ksandr ingestion pipeline.
+    Purpose:
+        Facilitates data quality inspection and helps iteratively improve preprocessing/ingestion heuristics
+        used in the Ksandr vectorstore pipeline.
     """
-    output_json = f"{LOCAL_DIR_GPU_SERVER}/{INVALID_DATA_LOCATION}"
     examples = []
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,
         chunk_overlap=100,
     )
+    logging.info(f"Scanning directory for .txt files: {directory}")
+    file_count = 0
     for index, file_path in enumerate(directory.rglob("*.txt")):
         if index < 200:
-            print(f"Start reading nr: {index} filename {file_path}")
-            with file_path.open("r", encoding="utf-8") as f:
-                content = f.read()
-                content_cleaned = prepare_text_for_vector_store(content)
-                chunks = splitter.split_text(content_cleaned)
-                for idx, chunk in enumerate(chunks):
-                    if not looks_like_clean_text(chunk):
-                        examples.append(
-                            {
-                                "Pad": file_path.as_posix(),
-                                "bestand": file_path.name,
-                                "chunk": idx,
-                                "inhoud": chunk,
-                            }
-                        )
-    with open(output_json, "w", encoding="utf-8") as f:
-        json.dump(examples, f, ensure_ascii=False, indent=2)
+            logging.info(f"Reading file {index + 1}: {file_path}")
+            try:
+                with file_path.open("r", encoding="utf-8") as f:
+                    content = f.read()
+                    content_cleaned = prepare_text_for_vector_store(content)
+                    chunks = splitter.split_text(content_cleaned)
+                    for idx, chunk in enumerate(chunks):
+                        if not looks_like_clean_text(chunk):
+                            examples.append(
+                                {
+                                    "Pad": file_path.as_posix(),
+                                    "bestand": file_path.name,
+                                    "chunk": idx,
+                                    "inhoud": chunk,
+                                }
+                            )
+                file_count += 1
+            except Exception as e:
+                logging.error(f"Error reading file {file_path}: {e}")
+    logging.info(f"Scanned {file_count} files. Found {len(examples)} unusable chunks.")
+
+    try:
+        with open(output_json, "w", encoding="utf-8") as f:
+            json.dump(examples, f, ensure_ascii=False, indent=2)
+        logging.info(f"Wrote unusable data examples to {output_json}")
+    except Exception as e:
+        logging.error(f"Failed to write output JSON file: {e}")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     parser = argparse.ArgumentParser(description="Dump onbruikbare data uit directory.")
     parser.add_argument(
         "--env",
@@ -76,13 +92,10 @@ if __name__ == "__main__":
         help="Environment: 'production' or 'staging' (default: production)",
     )
     args = parser.parse_args()
-
-    if args.env == "production":
-        base_dir = f"{LOCAL_DIR_GPU_SERVER}/ksandr_files_production/"
-    elif args.env == "staging":
-        base_dir = f"{LOCAL_DIR_GPU_SERVER}/ksandr_files/"
+    dir = Path(RAW_DATA_SOURCES.get(args.env))
+    output_json_file = Path(INVALID_DATA_FILE_LOCATION.get(args.env))
+    if not dir.exists():
+        logging.error(f"Directory does not exist: {dir}")
     else:
-        raise ValueError("Onbekende omgeving opgegeven.")
-
-    dir = Path(base_dir)
-    dump_unused_data(dir)
+        logging.info(f"Using data source directory: {dir}")
+        dump_unused_data(directory=dir, output_json=output_json_file)
