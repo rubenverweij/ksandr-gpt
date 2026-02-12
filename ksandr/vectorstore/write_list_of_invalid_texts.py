@@ -17,10 +17,13 @@ This helps data engineers spot, inspect, and tune preprocessing for irrelevant o
 before inclusion in the Ksandr vector retrieval pipeline.
 """
 
-from helpers import prepare_text_for_vector_store, looks_like_clean_text
+from ksandr.vectorstore.helpers import (
+    prepare_text_for_vector_store,
+    looks_like_clean_text,
+)
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from config import RAW_DATA_SOURCES, INVALID_DATA_FILE_LOCATION
+from ksandr.vectorstore.config import RAW_DATA_SOURCES, INVALID_DATA_FILE_LOCATION
 import json
 import argparse
 import logging
