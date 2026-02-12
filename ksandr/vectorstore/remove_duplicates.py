@@ -11,13 +11,14 @@ Functions:
 - dedup_docs_in_chroma: Main routine to process Chroma, find duplicates, and save their metadata.
 
 Example usage:
-    python verwijder_duplicaten.py
+    python verwijder_duplicaten.py --env staging
 """
 
 import hashlib
 import json
+import argparse
 from langchain_chroma import Chroma
-from embeddings import get_embedding_function
+from ksandr.embeddings.embeddings import get_embedding_function
 from config import CHROMA_DB_PATH, DUPLICATES_DATA_PATH
 
 
@@ -34,9 +35,7 @@ def hash_doc(text: str) -> str:
     return hashlib.md5(text.strip().encode("utf-8")).hexdigest()
 
 
-def dedup_docs_in_chroma(
-    chroma_path: str = CHROMA_DB_PATH, output_json_path: str = DUPLICATES_DATA_PATH
-):
+def dedup_docs_in_chroma(chroma_path: str, output_json_path: str):
     """
     Identify duplicate documents in a Chroma vectorstore and store their metadata in a JSON file.
 
@@ -98,4 +97,16 @@ def dedup_docs_in_chroma(
 
 
 if __name__ == "__main__":
-    dedup_docs_in_chroma()
+    parser = argparse.ArgumentParser(
+        description="Deduplicate documents from the Chroma vectorstore."
+    )
+    parser.add_argument(
+        "--env",
+        choices=["production", "staging"],
+        default="production",
+        help="Environment: 'production' or 'staging' (default: production)",
+    )
+    args = parser.parse_args()
+    chroma_path = CHROMA_DB_PATH.get(args.env)
+    duplicates_json_path = DUPLICATES_DATA_PATH.get(args.env)
+    dedup_docs_in_chroma(chroma_path=chroma_path, output_json_path=duplicates_json_path)
