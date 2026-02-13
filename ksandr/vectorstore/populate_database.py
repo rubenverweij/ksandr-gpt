@@ -239,9 +239,10 @@ def clear_database(env: str) -> None:
         - Deletes all files and subdirectories at CHROMA_PATH.
         - Prints a confirmation message upon successful removal.
     """
-    if CHROMA_DB_PATH.get(env).exists():
-        shutil.rmtree(CHROMA_DB_PATH)
-        logging.info("Database verwijderd.")
+    path_to_database = Path(CHROMA_DB_PATH.get(env))
+    if path_to_database.exists():
+        shutil.rmtree(path_to_database)
+        logging.info(f"Database {path_to_database.as_posix()} removed.")
 
 
 if __name__ == "__main__":

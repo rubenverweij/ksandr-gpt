@@ -210,4 +210,5 @@ pip install chromadb langchain_chroma
 python -m venv venv
 source venv/bin/activate
 pip install -e .
+python -m pip install --no-cache-dir -r requirements.txt
 ```

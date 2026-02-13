@@ -36,7 +36,7 @@ MAX_CTX = int(os.getenv("MAX_CTX", 4096))  # standaard 4096
 Om de container te starten (laat de parameters wat ze zijn):
 
 ```shell
-image="ksandr-gpt-langchain:0.53"
+image="ksandr-gpt-langchain:0.55"
 
 docker run --network host -d --gpus=all --cap-add SYS_RESOURCE \
 -e USE_MLOCK=0 \
@@ -47,9 +47,9 @@ docker run --network host -d --gpus=all --cap-add SYS_RESOURCE \
 -e SOURCE_MAX=5 \
 -e MAX_CTX=4096 \
 -e IMAGE_NAME=$image \
--v /home/ubuntu/config/creds.json:/ksandr-gpt/api/creds.json:ro \
--v /home/ubuntu/nltk_data:/root/nltk_data \
--v /home/ubuntu/huggingface:/root/huggingface \
+-v /home/ubuntu/da_data/config/creds.json:/ksandr-gpt/ksandr/creds.json:ro \
+-v /home/ubuntu/da_data/nltk_data:/root/nltk_data \
+-v /home/ubuntu/da_data/huggingface:/root/huggingface \
 -v /home/ubuntu/onprem_data:/root/onprem_data \
 -v /home/ubuntu/ksandr_files:/root/ksandr_files \
 $image
