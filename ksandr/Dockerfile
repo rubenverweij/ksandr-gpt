@@ -16,10 +16,10 @@ ENV LLAMA_CUBLAS=1
 
 # Installeer dependencies
 # COPY pyproject.toml /tmp/
-RUN python3 -m pip install --upgrade pip wheel setuptools
+# RUN python3 -m pip install --upgrade pip wheel setuptools
 # RUN pip install /tmp
 
-# RUN python3 -m pip install --upgrade pip wheel setuptools spacy
+RUN python3 -m pip install --upgrade pip wheel setuptools spacy
 RUN python3 -m spacy download nl_core_news_sm
 RUN python3 -m pip install torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/cu128
