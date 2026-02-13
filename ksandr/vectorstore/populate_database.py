@@ -39,6 +39,7 @@ from ksandr.embeddings.embeddings import get_embedding_function
 from ksandr.vectorstore.config import (
     CHROMA_DB_PATH,
     RAW_DATA_SOURCES,
+    running_inside_docker,
 )
 
 
@@ -97,7 +98,7 @@ def load_documents(env: str) -> List[Document]:
     """
     include_text = 1
     documenten: List[Document] = []
-    directory = Path(RAW_DATA_SOURCES.get(env))
+    directory = Path(RAW_DATA_SOURCES.get(env).get(running_inside_docker()))
 
     if not directory.exists():
         logging.error(f"Directory does not exist: {directory}")
@@ -239,7 +240,7 @@ def clear_database(env: str) -> None:
         - Deletes all files and subdirectories at CHROMA_PATH.
         - Prints a confirmation message upon successful removal.
     """
-    path_to_database = Path(CHROMA_DB_PATH.get(env))
+    path_to_database = Path(CHROMA_DB_PATH.get(env).get(running_inside_docker()))
     if path_to_database.exists():
         shutil.rmtree(path_to_database)
         logging.info(f"Database {path_to_database.as_posix()} removed.")
