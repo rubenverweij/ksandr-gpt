@@ -150,7 +150,7 @@ WEBLOCATION_TEMPLATE = [
 ]
 
 try:
-    with open("api/creds.json") as f:
+    with open("ksandr/creds.json") as f:
         SECRETS = json.load(f)
 except FileNotFoundError:
     with open(f"{LOCAL_DIR}/config/creds.json") as f:
