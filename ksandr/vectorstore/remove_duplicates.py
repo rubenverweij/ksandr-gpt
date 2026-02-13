@@ -20,7 +20,11 @@ import argparse
 import logging
 from langchain_chroma import Chroma
 from ksandr.embeddings.embeddings import get_embedding_function
-from ksandr.vectorstore.config import CHROMA_DB_PATH, DUPLICATES_DATA_PATH
+from ksandr.vectorstore.config import (
+    CHROMA_DB_PATH,
+    DUPLICATES_DATA_PATH,
+    running_inside_docker,
+)
 
 
 def hash_doc(text: str) -> str:
@@ -115,6 +119,8 @@ if __name__ == "__main__":
         help="Environment: 'production' or 'staging' (default: production)",
     )
     args = parser.parse_args()
-    chroma_path = CHROMA_DB_PATH.get(args.env)
-    duplicates_json_path = DUPLICATES_DATA_PATH.get(args.env)
+    chroma_path = CHROMA_DB_PATH.get(args.env).get(running_inside_docker())
+    duplicates_json_path = DUPLICATES_DATA_PATH.get(args.env).get(
+        running_inside_docker()
+    )
     dedup_docs_in_chroma(chroma_path=chroma_path, output_json_path=duplicates_json_path)

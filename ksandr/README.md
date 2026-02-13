@@ -50,6 +50,7 @@ docker run --network host -d --gpus=all --cap-add SYS_RESOURCE \
 -v /home/ubuntu/da_data/config/creds.json:/ksandr-gpt/ksandr/creds.json:ro \
 -v /home/ubuntu/da_data/nltk_data:/root/nltk_data \
 -v /home/ubuntu/da_data/huggingface:/root/huggingface \
+-v /home/ubuntu/da_data:/root/da_data \
 -v /home/ubuntu/onprem_data:/root/onprem_data \
 -v /home/ubuntu/ksandr_files:/root/ksandr_files \
 $image

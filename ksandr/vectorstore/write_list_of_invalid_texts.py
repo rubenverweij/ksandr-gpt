@@ -23,7 +23,11 @@ from ksandr.vectorstore.helpers import (
 )
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from ksandr.vectorstore.config import RAW_DATA_SOURCES, INVALID_DATA_FILE_LOCATION
+from ksandr.vectorstore.config import (
+    RAW_DATA_SOURCES,
+    INVALID_DATA_FILE_LOCATION,
+    running_inside_docker,
+)
 import json
 import argparse
 import logging
@@ -95,8 +99,10 @@ if __name__ == "__main__":
         help="Environment: 'production' or 'staging' (default: production)",
     )
     args = parser.parse_args()
-    dir = Path(RAW_DATA_SOURCES.get(args.env))
-    output_json_file = Path(INVALID_DATA_FILE_LOCATION.get(args.env))
+    dir = Path(RAW_DATA_SOURCES.get(args.env).get(running_inside_docker()))
+    output_json_file = Path(
+        INVALID_DATA_FILE_LOCATION.get(args.env).get(running_inside_docker())
+    )
     if not dir.exists():
         logging.error(f"Directory does not exist: {dir}")
     else:
