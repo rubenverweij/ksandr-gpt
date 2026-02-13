@@ -20,16 +20,16 @@ from datetime import datetime
 from fastapi import FastAPI
 
 from pathlib import Path
-from settings.templates import (
+from ksandr.settings.templates import (
     TEMPLATES,
     SYSTEM_PROMPT,
     dynamische_prompt_elementen,
 )
-from support.llm import LLMManager, RecursiveSummarizer
-from settings.refs import replace_patterns
-from support.graph import build_cypher_query, check_for_nbs, match_query_by_tags
-from settings.config import SECRETS
-from support.helpers import (
+from ksandr.support.llm import LLMManager, RecursiveSummarizer
+from ksandr.settings.refs import replace_patterns
+from ksandr.support.graph import build_cypher_query, check_for_nbs, match_query_by_tags
+from ksandr.settings.config import SECRETS
+from ksandr.support.helpers import (
     create_metadata_filter,
     COMPONENTS,
     get_embedding_function,
