@@ -21,7 +21,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.llms import LlamaCpp
 from typing import List
 import logging
-from helpers import detect_concluding_chunk, remove_unfinished_sentences
+from ksandr.support.helpers import detect_concluding_chunk, remove_unfinished_sentences
 
 logging.basicConfig(level=logging.INFO)
 

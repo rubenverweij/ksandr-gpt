@@ -20,12 +20,16 @@ from datetime import datetime
 from fastapi import FastAPI
 
 from pathlib import Path
-from templates import TEMPLATES, SYSTEM_PROMPT, dynamische_prompt_elementen
-from llm import LLMManager, RecursiveSummarizer
-from refs import replace_patterns
-from graph import build_cypher_query, check_for_nbs, match_query_by_tags
-from config import SECRETS
-from helpers import (
+from settings.templates import (
+    TEMPLATES,
+    SYSTEM_PROMPT,
+    dynamische_prompt_elementen,
+)
+from support.llm import LLMManager, RecursiveSummarizer
+from settings.refs import replace_patterns
+from support.graph import build_cypher_query, check_for_nbs, match_query_by_tags
+from settings.config import SECRETS
+from support.helpers import (
     create_metadata_filter,
     COMPONENTS,
     get_embedding_function,

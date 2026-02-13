@@ -15,19 +15,23 @@ ENV CUDA_DOCKER_ARCH=all
 ENV LLAMA_CUBLAS=1
 
 # Installeer dependencies
-RUN python3 -m pip install --upgrade pip wheel setuptools spacy
+COPY pyproject.toml /tmp/
+RUN python3 -m pip install --upgrade pip wheel setuptools
+RUN pip install /tmp
+
+# RUN python3 -m pip install --upgrade pip wheel setuptools spacy
 RUN python3 -m spacy download nl_core_news_sm
 RUN python3 -m pip install torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/cu128
 
 # Installeer llama-cpp-python (met cuda)
 RUN CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python
-RUN python3 -m pip install "langchain>=0.2.14" "langchain-neo4j>=0.1.4" "langchain-community>=0.2.14"
-RUN python3 -m pip install PyPDF2 bs4 redis chromadb langchain_chroma sentence-transformers langchain-huggingface fastapi[standard] neo4j langchain-text-splitters Levenshtein
+# RUN python3 -m pip install "langchain>=0.2.14" "langchain-neo4j>=0.1.4" "langchain-community>=0.2.14"
+# RUN python3 -m pip install PyPDF2 bs4 redis chromadb langchain_chroma sentence-transformers langchain-huggingface fastapi[standard] neo4j langchain-text-splitters Levenshtein
 
-WORKDIR /ksandr-gpt
-COPY ./ /ksandr-gpt/api
+WORKDIR /ksandr-gpt/ksandr
+COPY ./ /ksandr-gpt/ksandr
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONWARNINGS="ignore::UserWarning"
 
-CMD ["fastapi", "run", "api/main.py", "--port", "8080"]
+CMD ["fastapi", "run", "main.py", "--port", "8080"]

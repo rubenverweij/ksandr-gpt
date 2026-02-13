@@ -20,7 +20,7 @@ secure, semantic, and permission-aware retrieval from the Ksandr graph.
 
 import json
 import Levenshtein
-from config import (
+from ksandr.settings.config import (
     COLUMN_MAPPING_FAALVORM,
     NETBEHEERDERS_LOWER,
     QUANTITY_TERMS,

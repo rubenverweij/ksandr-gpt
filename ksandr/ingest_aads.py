@@ -10,7 +10,7 @@ import json
 import os
 from bs4 import BeautifulSoup
 import re
-from config import COMPONENTS, SECRETS
+from ksandr.settings.config import COMPONENTS, SECRETS
 
 driver = GraphDatabase.driver(
     "bolt://localhost:7687",

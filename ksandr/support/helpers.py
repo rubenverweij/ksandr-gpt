@@ -17,7 +17,7 @@ from typing import Dict, Optional, Union, List, Any, Set
 import string
 import time
 import spacy
-from config import (
+from ksandr.settings.config import (
     COMPONENTS,
     LIJST_SPECIFIEKE_COMPONENTEN,
     LEMMA_EXCLUDE,
@@ -27,7 +27,7 @@ from config import (
 )
 from langchain_chroma import Chroma
 from sentence_transformers import CrossEncoder
-from templates import SYSTEM_PROMPT
+from ksandr.settings.templates import SYSTEM_PROMPT
 from pydantic import BaseModel
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

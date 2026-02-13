@@ -203,3 +203,11 @@ pip install onprem
 sudo apt install code_1.99.3-1744761595_amd64.deb
 pip install chromadb langchain_chroma
 ```
+
+## Virtuele omgeving aanmaken
+
+```shell
+python -m venv venv
+source venv/bin/activate
+pip install -e .
+```
