@@ -4,26 +4,14 @@ services:
 
   neo4j-staging:
     image: neo4j
+    container_name: neo4j-staging
     environment:
       - NEO4J_AUTH=none
       - NEO4J_PLUGINS=["apoc"]
-      - NEO4J_dbms_connector_bolt_listen__address=":7687"
     ports:
-      - "7688:7687"
+      - "7688:7687"   # Bolt
     volumes:
       - /home/ubuntu/da_data/staging/neo4j:/data
-
-  # neo4j-staging:
-  #   image: neo4j
-  #   container_name: neo4j-staging
-  #   environment:
-  #     - NEO4J_AUTH=none
-  #     - NEO4J_PLUGINS=["apoc"]
-  #   ports:
-  #     - "7688:7687"   # Bolt
-  #     - "7475:7474"   # Browser
-  #   volumes:
-  #     - /home/ubuntu/da_data/staging/neo4j:/data
 
   neo4j-production:
     image: neo4j
@@ -33,6 +21,5 @@ services:
       - NEO4J_PLUGINS=["apoc"]
     ports:
       - "7687:7687"   # Bolt
-      - "7474:7474"   # Browser
     volumes:
       - /home/ubuntu/da_data/production/neo4j:/data
