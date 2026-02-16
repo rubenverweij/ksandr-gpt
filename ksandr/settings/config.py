@@ -153,5 +153,5 @@ try:
     with open("/ksandr-gpt/ksandr/creds.json") as f:
         SECRETS = json.load(f)
 except FileNotFoundError:
-    with open(f"{LOCAL_DIR}/config/creds.json") as f:
+    with open(f"{LOCAL_DIR}/da_data/config/creds.json") as f:
         SECRETS = json.load(f)
