@@ -52,6 +52,5 @@ RUN python3 -m pip install --upgrade pip wheel setuptools spacy && \
 # ------------------------------------------------------------------------------
 # Set working directory and copy application code
 # ------------------------------------------------------------------------------
-WORKDIR /ksandr-gpt/ksandr
-COPY ./ /ksandr-gpt/ksandr
-
+WORKDIR /ksandr-gpt
+COPY ./ /ksandr-gpt
