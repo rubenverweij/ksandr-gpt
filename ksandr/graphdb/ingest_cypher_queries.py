@@ -590,6 +590,14 @@ if __name__ == "__main__":
         default=None,
         help="Path to the JSON file containing generated queries",
     )
+    parser.add_argument(
+        "-env",
+        type=str,
+        required=False,
+        default="production",
+        choices=["production", "staging"],
+        help="Select the environment to run against (production or staging).",
+    )
     args = parser.parse_args()
     chroma_path = Path(CHROMA_DB_PATH.get(args.env).get(running_inside_docker()))
 

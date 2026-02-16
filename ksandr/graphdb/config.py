@@ -48,6 +48,17 @@ AAD_DATA_PATH = {
     },
 }
 
+AAD_DATA_PATH = {
+    "production": {
+        "server": f"{LOCAL_DIR_GPU_SERVER}/ksandr_files_production/aad",
+        "docker": f"{DOCKER_DIR}/ksandr_files_production/aad",
+    },
+    "staging": {
+        "server": f"{LOCAL_DIR_GPU_SERVER}/ksandr_files_staging/aads",
+        "docker": f"{DOCKER_DIR}/ksandr_files_staging/aads",
+    },
+}
+
 
 def running_inside_docker() -> str:
     """

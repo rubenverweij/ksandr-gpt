@@ -113,7 +113,7 @@ if __name__ == "__main__":
         description="Remove duplicate documents from the Chroma vectorstore and log their metadata."
     )
     parser.add_argument(
-        "--env",
+        "-env",
         choices=["production", "staging"],
         default="production",
         help="Environment: 'production' or 'staging' (default: production)",
