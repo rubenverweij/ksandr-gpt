@@ -17,6 +17,7 @@ services:
       - ${ENV_FILE}
 
     volumes:
+      - ${DA_DATA}:/root/da_data 
       - ${DATA_DIR}:/root/ksandr_files_${APP_ENV}
       - ${HF_DIR}:/root/huggingface
       - ${CREDS_PATH}:/ksandr-gpt/ksandr/creds.json:ro
