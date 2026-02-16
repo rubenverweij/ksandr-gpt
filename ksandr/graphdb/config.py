@@ -48,9 +48,14 @@ AAD_DATA_PATH = {
     },
 }
 
+# NEO4J_CONTAINERS = {
+#     "production": "bolt://neo4j-production:7687",
+#     "staging": "bolt://neo4j-staging:7687",
+# }
+
 NEO4J_CONTAINERS = {
-    "production": "bolt://neo4j-production:7687",
-    "staging": "bolt://neo4j-staging:7687",
+    "production": "bolt://localhost:7687",
+    "staging": "bolt://localhost:7688",
 }
 
 
