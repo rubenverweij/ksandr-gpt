@@ -28,5 +28,7 @@ services:
       - /home/ubuntu/da_data:/root/da_data
       - /home/ubuntu/ksandr_files_staging:/root/ksandr_files_staging
     command: ["fastapi", "run", "ksandr/main.py", "--port", "8080"]
+    ports:
+    - "8080:8080"   # host:container
     stdin_open: true
     tty: true
