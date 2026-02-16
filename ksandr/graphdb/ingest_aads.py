@@ -12,12 +12,7 @@ import argparse
 from bs4 import BeautifulSoup
 import re
 from ksandr.settings.config import COMPONENTS, SECRETS
-from ksandr.graphdb.config import VALID_PERMISSIONS
-
-driver = GraphDatabase.driver(
-    "bolt://localhost:7687",
-    auth=(SECRETS.get("username"), SECRETS.get("password")),
-)
+from ksandr.graphdb.config import VALID_PERMISSIONS, NEO4J_CONTAINERS
 
 
 def clean_html(value):
@@ -731,9 +726,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     env = args.env
 
+    driver = GraphDatabase.driver(
+        NEO4J_CONTAINERS.get(env),
+        auth=(SECRETS.get("username"), SECRETS.get("password")),
+    )
+
     with driver.session() as session:
         session.run("MATCH (n) DETACH DELETE n")
-    print("Database deleted.")
+        print(f"Database {env} deleted.")
 
     with driver.session() as session:
         permissions = VALID_PERMISSIONS

@@ -40,12 +40,17 @@ CHROMA_DB_PATH = {
 AAD_DATA_PATH = {
     "production": {
         "server": f"{LOCAL_DIR_GPU_SERVER}/ksandr_files_production/aad",
-        "docker": f"{DOCKER_DIR}/ksandr_files_production/aad",
+        "docker": f"{DOCKER_DIR}/ksandr_files_production/aads",
     },
     "staging": {
         "server": f"{LOCAL_DIR_GPU_SERVER}/ksandr_files_staging/aads",
         "docker": f"{DOCKER_DIR}/ksandr_files_staging/aads",
     },
+}
+
+NEO4J_CONTAINERS = {
+    "production": "bolt://neo4j-production:7687",
+    "staging": "bolt://neo4j-staging:7687",
 }
 
 
