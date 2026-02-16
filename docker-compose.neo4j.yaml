@@ -3,12 +3,12 @@ version: "3.9"
 services:
 
   neo4j-staging:
-    image: neo4j:5
+    image: neo4j
     environment:
       - NEO4J_AUTH=none
       - NEO4J_PLUGINS=["apoc"]
-      - NEO4J_dbms_connector_bolt_listen__address: ":7687"
-      - NEO4J_dbms_connector_bolt_advertised__address: "neo4j-staging:7687"
+      - NEO4J_dbms_connector_bolt_listen__address=":7687"
+      - NEO4J_dbms_connector_bolt_advertised__address="neo4j-staging:7687"
     ports:
       - "7688:7687"
     volumes:
