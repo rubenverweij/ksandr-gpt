@@ -1,0 +1,22 @@
+services:
+  populate:
+    image: ${IMAGE_NAME}
+    command: python3 -m ksandr.vectorstore.populate_database -env ${APP_ENV}
+    network_mode: host
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+    cap_add:
+      - SYS_RESOURCE
+
+    env_file:
+      - ${ENV_FILE}
+
+    volumes:
+      - ${DATA_DIR}:/root/ksandr_files
+      - ${HF_DIR}:/root/huggingface
+      - ${CREDS_PATH}:/ksandr-gpt/ksandr/creds.json:ro
