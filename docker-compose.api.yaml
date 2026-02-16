@@ -3,13 +3,10 @@ version: "3.9"
 services:
   ksandr-gpt:
     image: ksandr-gpt-langchain:0.57
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    gpus: all
     cap_add:
       - SYS_RESOURCE
+
     environment:
       USE_MLOCK: "0"
       TEMPERATURE: "0.7"
@@ -20,16 +17,21 @@ services:
       MAX_CTX: "4096"
       IMAGE_NAME: "ksandr-gpt-langchain:0.57"
       CHROMA_PATH_CYPHER: "/root/da_data/staging/chroma_cypher"
-      CHROMA_PATH": "/root/da_data/staging/chroma"
+      CHROMA_PATH: "/root/da_data/staging/chroma"
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+
     volumes:
       - /home/ubuntu/da_data/config/creds.json:/ksandr-gpt/ksandr/creds.json:ro
       - /home/ubuntu/da_data/nltk_data:/root/nltk_data
       - /home/ubuntu/da_data/huggingface:/root/huggingface
       - /home/ubuntu/da_data:/root/da_data
       - /home/ubuntu/ksandr_files_staging:/root/ksandr_files_staging
+
     command: ["fastapi", "run", "ksandr/main.py", "--host", "0.0.0.0", "--port", "8080"]
 
     ports:
-    - "8080:8080"   # host:container
+      - "8080:8080"
+
     stdin_open: true
     tty: true
