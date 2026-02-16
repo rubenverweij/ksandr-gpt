@@ -550,10 +550,10 @@ predefined_queries = [
 ]
 
 
-def ingest_cypher_queries(chroma_path, queries: List[Dict]):
+def ingest_cypher_queries(chroma_path: str, queries: List[Dict]):
     documenten = []
     db = Chroma(
-        persist_directory=str(chroma_path),
+        persist_directory=chroma_path,
         embedding_function=get_embedding_function(),
     )
     for query in queries:
@@ -617,4 +617,4 @@ if __name__ == "__main__":
             queries_data = json.load(f)
 
     logging.info(f"Loaded {len(queries_data)} queries from JSON.")
-    ingest_cypher_queries(chroma_path=chroma_path, queries=queries_data)
+    ingest_cypher_queries(chroma_path=chroma_path.as_posix(), queries=queries_data)

@@ -63,29 +63,40 @@ def dedup_docs_in_chroma(chroma_path: str, output_json_path: str):
     """
     embedding_function = get_embedding_function()
     db = Chroma(persist_directory=chroma_path, embedding_function=embedding_function)
-    results = db.get()
     seen_hashes = {}  # Tracks which hashes have already been encountered; maps hash to first doc id
     to_delete = []  # Stores document IDs of duplicates to be removed
     hash_to_metadata = {}  # Collects metadata summaries of each set of duplicates
 
-    for i, (doc, doc_id, metadata) in enumerate(
-        zip(results["documents"], results["ids"], results["metadatas"])
-    ):
-        doc_hash = hash_doc(doc)
-        keys_to_extract = ["source", "chunk"]
-        subset = {k: metadata[k] for k in keys_to_extract if k in metadata}
-        subset["text"] = doc[:20] + " ... " + doc[-20:]
-        if doc_hash not in seen_hashes:
-            seen_hashes[doc_hash] = doc_id  # First document with this hash is kept
-            hash_to_metadata[doc_hash] = [subset]
-        else:
-            to_delete.append(doc_id)  # Mark duplicate for deletion
-            hash_to_metadata[doc_hash].append(subset)
+    # We'll fetch document ids in batches to avoid getting all at once
+    # Get total ids to process
+    all_ids = db.get(include=["ids"])["ids"]
+    batch_size = 2000
+    total_docs = len(all_ids)
+    logging.info(f"Found {total_docs} documents in Chroma DB.")
+    for b_start in range(0, total_docs, batch_size):
+        b_end = min(b_start + batch_size, total_docs)
+        batch_ids = all_ids[b_start:b_end]
+        results = db.get(ids=batch_ids)
+        for i, (doc, doc_id, metadata) in enumerate(
+            zip(results["documents"], results["ids"], results["metadatas"]),
+            start=b_start,
+        ):
+            doc_hash = hash_doc(doc)
+            keys_to_extract = ["source", "chunk"]
+            subset = {k: metadata[k] for k in keys_to_extract if k in metadata}
+            subset["text"] = doc[:20] + " ... " + doc[-20:]
+            if doc_hash not in seen_hashes:
+                seen_hashes[doc_hash] = doc_id  # First document with this hash is kept
+                hash_to_metadata[doc_hash] = [subset]
+            else:
+                to_delete.append(doc_id)  # Mark duplicate for deletion
+                hash_to_metadata[doc_hash].append(subset)
 
-        if i % 1000 == 0:
-            logging.info(
-                f"➡️  Checked: {i} documents... {len(to_delete)} duplicates found"
-            )
+            # Log every 1000 documents processed
+            if (i + 1) % 1000 == 0 or i == total_docs - 1:
+                logging.info(
+                    f"➡️  Checked: {i + 1} documents... {len(to_delete)} duplicates found"
+                )
     # Retain only hash groups with >=2 documents (i.e., actual duplicates)
     hash_to_metadata = {k: v for k, v in hash_to_metadata.items() if len(v) >= 2}
 
