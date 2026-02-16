@@ -24,6 +24,7 @@ import shutil
 import logging
 from pathlib import Path
 from typing import List
+import os
 
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveJsonSplitter
@@ -278,7 +279,9 @@ if __name__ == "__main__":
 
     MIN_CHUNK_SIZE_JSON = args.min_chunk_size_json
     MIN_CHUNK_SIZE_TEXT = args.min_chunk_size_text
-    env = args.env
+
+    # env variable now comes from os.environ, with fallback to argparse default
+    env = os.environ.get("ENV", args.env)
 
     logging.info(f"🛠️ Omgeving geselecteerd: {env}")
 
