@@ -93,7 +93,7 @@ if __name__ == "__main__":
     )
     parser = argparse.ArgumentParser(description="Dump onbruikbare data uit directory.")
     parser.add_argument(
-        "--env",
+        "-env",
         choices=["production", "staging"],
         default="production",
         help="Environment: 'production' or 'staging' (default: production)",

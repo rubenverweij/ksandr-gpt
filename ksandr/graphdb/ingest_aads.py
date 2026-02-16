@@ -8,9 +8,11 @@ the Ksandr platform and processes component, dossier, and failure mode (faalvorm
 from neo4j import GraphDatabase
 import json
 import os
+import argparse
 from bs4 import BeautifulSoup
 import re
 from ksandr.settings.config import COMPONENTS, SECRETS
+from ksandr.graphdb.config import VALID_PERMISSIONS
 
 driver = GraphDatabase.driver(
     "bolt://localhost:7687",
@@ -715,13 +717,26 @@ def ingest_dossier(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Ingest AAD dossiers into Neo4j with optional environment selection."
+    )
+    parser.add_argument(
+        "-env",
+        type=str,
+        required=False,
+        default="production",
+        choices=["production", "staging"],
+        help="Select the environment to run against (production or staging).",
+    )
+    args = parser.parse_args()
+    env = args.env
+
     with driver.session() as session:
         session.run("MATCH (n) DETACH DELETE n")
-
     print("Database deleted.")
 
     with driver.session() as session:
-        permissions = ["cat-1", "cat-2"]
+        permissions = VALID_PERMISSIONS
         for permission in permissions:
             create_permission_nodes(driver, permission)
         create_permission_constraint(driver)

@@ -16,12 +16,14 @@ Intended for configuration/code sharing in ingestion pipelines and retrieval sys
 
 import argparse
 from ksandr.embeddings.embeddings import get_embedding_function
+from ksandr.graphdb.config import CHROMA_DB_PATH, running_inside_docker
 from typing import List, Dict
 from pathlib import Path
 import json
 import shutil
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
+import logging
 
 BASE_DOSSIER_QUERY_BASIC = """
 WITH $aad_ids AS dossier_ids, $netbeheerders AS nbs, $permissions AS permissions
@@ -577,6 +579,9 @@ def ingest_cypher_queries(chroma_path, queries: List[Dict]):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-queries_file",
@@ -585,15 +590,12 @@ if __name__ == "__main__":
         default=None,
         help="Path to the JSON file containing generated queries",
     )
-    parser.add_argument(
-        "-chroma", type=str, required=True, help="Path to Chroma vectorstore"
-    )
     args = parser.parse_args()
-    chroma_path = Path(args.chroma)
+    chroma_path = Path(CHROMA_DB_PATH.get(args.env).get(running_inside_docker()))
 
     if chroma_path.exists():
         shutil.rmtree(chroma_path)
-        print("🗑️ Database verwijderd.")
+        logging.info(f"Database {chroma_path.as_posix()} verwijderd.")
 
     if args.queries_file:
         source_file = Path(args.queries_file)
@@ -606,5 +608,5 @@ if __name__ == "__main__":
         with open(source_file, "r", encoding="utf-8") as f:
             queries_data = json.load(f)
 
-    print(f"Loaded {len(queries_data)} queries from JSON.")
+    logging.info(f"Loaded {len(queries_data)} queries from JSON.")
     ingest_cypher_queries(chroma_path=chroma_path, queries=queries_data)
