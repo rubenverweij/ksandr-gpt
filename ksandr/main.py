@@ -73,7 +73,7 @@ logger = logging.getLogger(__name__)
 
 
 GRAPH = Neo4jGraph(
-    url="bolt://localhost:7687",
+    url="bolt://neo4j-staging:7687",
     username=SECRETS.get("username"),
     password=SECRETS.get("password"),
 )
