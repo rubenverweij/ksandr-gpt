@@ -10,7 +10,6 @@ used throughout the Ksandr LLM API infrastructure.
 import re
 from langchain_huggingface import HuggingFaceEmbeddings
 import torch
-import pickle
 import json
 import os
 from typing import Dict, Optional, Union, List, Any, Set
@@ -20,7 +19,6 @@ import spacy
 from ksandr.settings.config import (
     COMPONENTS,
     LIJST_SPECIFIEKE_COMPONENTEN,
-    LEMMA_EXCLUDE,
     NETBEHEERDERS,
     LOCATION_QUESTIONS,
     WEBLOCATION_TEMPLATE,
@@ -76,12 +74,11 @@ FREQUENCY_THRESHOLD_MAX = 5e5
 MIN_WORDS = 3  # <--- minimale aantal woorden voor een zin
 SENTENCE_END_RE = re.compile(r"[.!?]")
 
-# Load saved data
-with open("/root/onprem_data/keywords/lemma_counter.pkl", "rb") as f:
-    LEMMA_COUNTS = pickle.load(f)
-
-with open("/root/onprem_data/keywords/lemmas.pkl", "rb") as f:
-    LEMMA_TO_VARIANTS = pickle.load(f)
+# Load saved data TODO deprecated
+# with open("/root/onprem_data/keywords/lemma_counter.pkl", "rb") as f:
+#     LEMMA_COUNTS = pickle.load(f)
+# with open("/root/onprem_data/keywords/lemmas.pkl", "rb") as f:
+#     LEMMA_TO_VARIANTS = pickle.load(f)
 
 
 def is_valid_sentence(sentence: str, min_words: int = MIN_WORDS) -> bool:
@@ -501,31 +498,32 @@ def create_chroma_filter(question, include_nouns) -> dict | None:
                   netbeheerder (grid operator) variants, and years found in the question,
                   or None if no relevant attributes are present.
     """
-    noun_variants = set()
+    # noun_variants = set()
     filters = []
     netbeheerder_variants = set()
     # Voeg netbeheerder-varianten toe als ze voorkomen in de vraag
     netbeheerder_variants.update(extract_dso_variants(question, NETBEHEERDERS))
     # Verwerk zelfstandige naamwoorden als include_nouns True is
     if include_nouns:
-        for token in extract_nouns(question):
-            surface = token.text.strip(string.punctuation)
-            lemma = token.lemma_.lower()
-            count = LEMMA_COUNTS.get(lemma, 0)
-            if (
-                count >= FREQUENCY_THRESHOLD
-                and count < FREQUENCY_THRESHOLD_MAX
-                and lemma not in LEMMA_EXCLUDE
-            ):
-                variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
-                noun_variants.update(variants)
-        if noun_variants:
-            if len(noun_variants) == 1:
-                filters.append({"$contains": noun_variants[0]})
-            else:
-                filters.append(
-                    {"$or": [{"$contains": variant} for variant in noun_variants]}
-                )
+        pass
+        # for token in extract_nouns(question):
+        #     surface = token.text.strip(string.punctuation)
+        #     lemma = token.lemma_.lower()
+        #     count = LEMMA_COUNTS.get(lemma, 0)
+        #     if (
+        #         count >= FREQUENCY_THRESHOLD
+        #         and count < FREQUENCY_THRESHOLD_MAX
+        #         and lemma not in LEMMA_EXCLUDE
+        #     ):
+        #         variants = LEMMA_TO_VARIANTS.get(lemma, {surface})
+        #         noun_variants.update(variants)
+        # if noun_variants:
+        #     if len(noun_variants) == 1:
+        #         filters.append({"$contains": noun_variants[0]})
+        #     else:
+        #         filters.append(
+        #             {"$or": [{"$contains": variant} for variant in noun_variants]}
+        #         )
     # Extract jaartallen
     years = re.findall(r"\b(?:19|20)\d{2}\b", question)
     # Bouw Chroma-filter
