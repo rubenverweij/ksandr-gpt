@@ -196,12 +196,13 @@ def load_documents(env: str) -> List[Document]:
     return documenten
 
 
-def add_to_chroma(chunks: List[Document]) -> None:
+def add_to_chroma(chunks: List[Document], env: str) -> None:
     """
     Add a list of Document chunks to the Chroma vector store.
 
     Args:
         chunks (List[Document]): The list of Document objects (text chunks + metadata) to add.
+        env: environment to fill
 
     This function creates (or loads) a Chroma vector database at the specified persist directory,
     and adds the provided Document objects to it in batches for efficiency. Each batch is processed
@@ -211,7 +212,7 @@ def add_to_chroma(chunks: List[Document]) -> None:
     """
     batch_size = 4000
     db = Chroma(
-        persist_directory=str(CHROMA_DB_PATH),
+        persist_directory=Path(CHROMA_DB_PATH.get(env).get(running_inside_docker())),
         embedding_function=get_embedding_function(),
     )
     if chunks:
@@ -245,6 +246,8 @@ def clear_database(env: str) -> None:
     if path_to_database.exists():
         shutil.rmtree(path_to_database)
         logging.info(f"Database {path_to_database.as_posix()} removed.")
+    else:
+        logging.info(f"Database does not yet exist at {path_to_database.as_posix()}.")
 
 
 if __name__ == "__main__":
@@ -290,4 +293,4 @@ if __name__ == "__main__":
     if not chunks:
         logging.warning("⚠️ Geen documenten gevonden. Stoppen.")
     else:
-        add_to_chroma(chunks)
+        add_to_chroma(chunks, env)
