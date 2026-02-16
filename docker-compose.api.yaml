@@ -27,6 +27,6 @@ services:
       - /home/ubuntu/da_data/huggingface:/root/huggingface
       - /home/ubuntu/da_data:/root/da_data
       - /home/ubuntu/ksandr_files_staging:/root/ksandr_files_staging
-    command: ["fastapi", "run", "main.py", "--port", "8080"]
+    command: ["fastapi", "run", "ksandr/main.py", "--port", "8080"]
     stdin_open: true
     tty: true
