@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  ksandr-gpt-debug:
+    image: ksandr-gpt-langchain:0.55
+    container_name: ksandr-gpt-debug
+
+    gpus: all
+    cap_add:
+      - SYS_RESOURCE
+
+    environment:
+      USE_MLOCK: "0"
+      TEMPERATURE: "0.7"
+      INCLUDE_FILTER: "1"
+      SCORE_THRESHOLD: "0.90"
+      MAX_TOKENS: "400"
+      SOURCE_MAX: "5"
+      MAX_CTX: "4096"
+      CHROMA_PATH_CYPHER: "/root/da_data/staging/chroma_cypher"
+      CHROMA_PATH: "/root/da_data/staging/chroma"
+
+    volumes:
+      - /home/ubuntu/da_data/config/creds.json:/ksandr-gpt/ksandr/creds.json:ro
+      - /home/ubuntu/da_data/nltk_data:/root/nltk_data
+      - /home/ubuntu/da_data/huggingface:/root/huggingface
+      - /home/ubuntu/da_data:/root/da_data
+      - /home/ubuntu/ksandr_files_staging:/root/ksandr_files_staging
+
+    command: [ "/bin/bash" ]
+
+    stdin_open: true
+    tty: true
