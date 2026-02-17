@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   ksandr-gpt:
-    image: ksandr-gpt-langchain:0.57
+    image: ksandr-gpt-langchain:0.55
     gpus: all
     cap_add:
       - SYS_RESOURCE
