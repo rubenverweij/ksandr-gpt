@@ -129,7 +129,7 @@ LLM_MANAGER = LLMManager(
     top_p=0.9,
 )
 LLM_MANAGER.load_llm(n_ctx=CONFIG["MAX_CTX"])
-LLM_MANAGER.get_llm()("Hello world", max_tokens=1)
+LLM_MANAGER.get_llm().client.tokenize("Starting message".encode("utf-8"))
 
 embedding_function = get_embedding_function()
 db = Chroma(
