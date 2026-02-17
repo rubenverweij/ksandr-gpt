@@ -80,7 +80,7 @@ GRAPH = Neo4jGraph(
 
 # Configuratie voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
-semaphore = asyncio.Semaphore(5)
+semaphore = asyncio.Semaphore(1)
 app = FastAPI()
 request_responses = {}
 
