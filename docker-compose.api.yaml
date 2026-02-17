@@ -18,8 +18,8 @@ services:
       IMAGE_NAME: "ksandr-gpt-langchain:0.57"
       CHROMA_PATH_CYPHER: "/root/da_data/staging/chroma_cypher"
       CHROMA_PATH: "/root/da_data/staging/chroma"
-      NVIDIA_VISIBLE_DEVICES: all
-      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      # NVIDIA_VISIBLE_DEVICES: all
+      # NVIDIA_DRIVER_CAPABILITIES: compute,utility
 
     volumes:
       - /home/ubuntu/da_data/config/creds.json:/ksandr-gpt/ksandr/creds.json:ro
