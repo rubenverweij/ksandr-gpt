@@ -36,20 +36,30 @@ ENV PYTHONWARNINGS="ignore::UserWarning"
 # Python dependencies: upgrade pip, wheel, setuptools, spaCy, etc.
 # Install all pip packages and spaCy model in a single layer for efficiency
 # ------------------------------------------------------------------------------
-RUN python3 -m pip install --upgrade pip wheel setuptools spacy && \
-    python3 -m spacy download nl_core_news_sm && \
-    # PyTorch with CUDA wheels
-    python3 -m pip install torch torchvision torchaudio \
-      --index-url https://download.pytorch.org/whl/cu128 && \
-    # llama-cpp-python with CUDA support
-    CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python && \
-    # Core langchain and plugin dependencies
-    python3 -m pip install "langchain>=0.2.14" "langchain-neo4j>=0.1.4" "langchain-community>=0.2.14" && \
-    # Other libraries, vector DBs, text processing
-    python3 -m pip install PyPDF2 bs4 chromadb langchain_chroma sentence-transformers langchain-huggingface \
-        fastapi[standard] neo4j langchain-text-splitters Levenshtein
 
-# ------------------------------------------------------------------------------
+# RUN python3 -m pip install --upgrade pip wheel setuptools spacy && \
+#     python3 -m spacy download nl_core_news_sm && \
+#     # PyTorch with CUDA wheels
+#     python3 -m pip install torch torchvision torchaudio \
+#       --index-url https://download.pytorch.org/whl/cu128 && \
+#     # llama-cpp-python with CUDA support
+#     CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python && \
+#     # Core langchain and plugin dependencies
+#     python3 -m pip install "langchain>=0.2.14" "langchain-neo4j>=0.1.4" "langchain-community>=0.2.14" && \
+#     # Other libraries, vector DBs, text processing
+#     python3 -m pip install PyPDF2 bs4 chromadb langchain_chroma sentence-transformers langchain-huggingface \
+#         fastapi[standard] neo4j langchain-text-splitters Levenshtein
+
+# -------RUN python3 -m pip install --upgrade pip wheel setuptools spacy
+RUN python3 -m spacy download nl_core_news_sm
+RUN python3 -m pip install torch torchvision torchaudio \
+  --index-url https://download.pytorch.org/whl/cu128
+
+# Installeer llama-cpp-python (met cuda)
+RUN CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python
+RUN python3 -m pip install "langchain>=0.2.14" "langchain-neo4j>=0.1.4" "langchain-community>=0.2.14"
+RUN python3 -m pip install PyPDF2 bs4 chromadb langchain_chroma sentence-transformers langchain-huggingface fastapi[standard] neo4j langchain-text-splitters Levenshtein
+
 # Set working directory and copy application code
 # ------------------------------------------------------------------------------
 WORKDIR /ksandr-gpt
