@@ -25,6 +25,7 @@ from ksandr.settings.templates import (
     SYSTEM_PROMPT,
     dynamische_prompt_elementen,
 )
+from ksandr.embeddings.embeddings import get_embedding_function
 from ksandr.support.llm import LLMManager, RecursiveSummarizer
 from ksandr.settings.refs import replace_patterns
 from ksandr.support.graph import build_cypher_query, check_for_nbs, match_query_by_tags
@@ -32,7 +33,6 @@ from ksandr.settings.config import SECRETS
 from ksandr.support.helpers import (
     create_metadata_filter,
     COMPONENTS,
-    get_embedding_function,
     find_relevant_sources,
     create_chroma_filter,
     trim_context_to_fit,
@@ -129,7 +129,6 @@ LLM_MANAGER = LLMManager(
     top_p=0.9,
 )
 LLM_MANAGER.load_llm(n_ctx=CONFIG["MAX_CTX"])
-LLM_MANAGER.get_llm().client.tokenize("Starting message".encode("utf-8"))
 
 embedding_function = get_embedding_function()
 db = Chroma(

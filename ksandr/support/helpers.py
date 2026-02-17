@@ -8,7 +8,6 @@ used throughout the Ksandr LLM API infrastructure.
 """
 
 import re
-from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 import json
 import os
@@ -317,26 +316,26 @@ def clean_llm_answer(text) -> str:
     return clean_answer_when_unknown(remove_unfinished_sentences(text))
 
 
-def get_embedding_function() -> HuggingFaceEmbeddings:
-    """
-    Returns a HuggingFaceEmbeddings object configured for Dutch sentence embeddings.
+# def get_embedding_function() -> HuggingFaceEmbeddings:
+#     """
+#     Returns a HuggingFaceEmbeddings object configured for Dutch sentence embeddings.
 
-    This function initializes the HuggingFaceEmbeddings using the
-    "NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers" model,
-    with normalization of embeddings enabled and computation set to run on CUDA-enabled GPU.
+#     This function initializes the HuggingFaceEmbeddings using the
+#     "NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers" model,
+#     with normalization of embeddings enabled and computation set to run on CUDA-enabled GPU.
 
-    Returns:
-        HuggingFaceEmbeddings: Embeddings function for use in vector stores or other NLP tasks.
-    """
-    embedding_encode_kwargs: dict = {"normalize_embeddings": True}
-    device = torch.device("cuda")
-    embedding_model_kwargs = {"device": device}
-    embeddings = HuggingFaceEmbeddings(
-        model_name="NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers",
-        model_kwargs=embedding_model_kwargs,
-        encode_kwargs=embedding_encode_kwargs,
-    )
-    return embeddings
+#     Returns:
+#         HuggingFaceEmbeddings: Embeddings function for use in vector stores or other NLP tasks.
+#     """
+#     embedding_encode_kwargs: dict = {"normalize_embeddings": True}
+#     device = torch.device("cuda")
+#     embedding_model_kwargs = {"device": device}
+#     embeddings = HuggingFaceEmbeddings(
+#         model_name="NetherlandsForensicInstitute/robbert-2022-dutch-sentence-transformers",
+#         model_kwargs=embedding_model_kwargs,
+#         encode_kwargs=embedding_encode_kwargs,
+#     )
+#     return embeddings
 
 
 def build_permission_filter_vector_store(
