@@ -28,7 +28,7 @@ services:
       - /home/ubuntu/da_data:/root/da_data
       - /home/ubuntu/ksandr_files_staging:/root/ksandr_files_staging
 
-    command: ["fastapi", "run", "ksandr/main.py", "--host", "0.0.0.0", "--port", "8080"]
+    command: ["uvicorn", "ksandr.main:app", "--host", "0.0.0.0", "--port", "8080"]
 
     ports:
       - "8080:8080"
