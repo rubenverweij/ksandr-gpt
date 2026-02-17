@@ -37,7 +37,7 @@ ENV PYTHONWARNINGS="ignore::UserWarning"
 RUN python3 -m pip install --upgrade pip wheel setuptools spacy
 RUN python3 -m spacy download nl_core_news_sm
 RUN python3 -m pip install torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cu133
+    --index-url https://download.pytorch.org/whl/cu130
 
 # ------------------------------------------------------------------------------
 # llama-cpp-python with CUDA enabled
