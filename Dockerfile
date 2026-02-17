@@ -47,6 +47,7 @@ RUN FORCE_CMAKE=1 CMAKE_ARGS="-DGGML_CUDA=on" pip install --no-cache-dir llama-c
 # ------------------------------------------------------------------------------
 # Other Python packages
 # ------------------------------------------------------------------------------
+RUN python3 -m pip install "langchain>=0.2.14" "langchain-neo4j>=0.1.4" "langchain-community>=0.2.14"
 RUN python3 -m pip install PyPDF2 bs4 chromadb langchain_chroma sentence-transformers langchain-huggingface fastapi[standard] neo4j langchain-text-splitters Levenshtein
 
 # Set working directory and copy application code
