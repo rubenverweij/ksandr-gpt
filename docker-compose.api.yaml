@@ -8,13 +8,13 @@ services:
       - SYS_RESOURCE
 
     environment:
-      USE_MLOCK: "0"
-      TEMPERATURE: "0.7"
-      INCLUDE_FILTER: "1"
-      SCORE_THRESHOLD: "0.90"
-      MAX_TOKENS: "400"
-      SOURCE_MAX: "5"
-      MAX_CTX: "4096"
+      USE_MLOCK: 0
+      TEMPERATURE: 0.7
+      INCLUDE_FILTER: 1
+      SCORE_THRESHOLD: 0.90
+      MAX_TOKENS: 400
+      SOURCE_MAX: 5
+      MAX_CTX: 4096
       CHROMA_PATH_CYPHER: "/root/da_data/staging/chroma_cypher"
       CHROMA_PATH: "/root/da_data/staging/chroma"
 
