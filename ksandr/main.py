@@ -80,7 +80,7 @@ GRAPH = Neo4jGraph(
 
 # Configuratie voor gelijktijdige verwerking van verzoeken
 request_queue = asyncio.Queue()
-semaphore = asyncio.Semaphore(1)
+semaphore = asyncio.Semaphore(5)
 app = FastAPI()
 request_responses = {}
 
@@ -367,7 +367,7 @@ def process_summarize(request: FileRequest) -> dict:
     }
 
 
-async def request_worker():
+async def request_worker_deprecated():
     """
     Background worker that processes incoming requests from the queue asynchronously.
 
@@ -387,6 +387,38 @@ async def request_worker():
                     response = await asyncio.to_thread(process_ask, request)
                 elif request.type == "summarize":
                     response = await asyncio.to_thread(process_summarize, request)
+        finally:
+            request_queue.task_done()
+
+        end_time = time.time()
+        duration = end_time - request_responses[request.id]["start_time"]
+        request_responses[request.id].update(
+            {
+                "status": "completed",
+                "response": response,
+                "end_time": end_time,
+                "time_duration": duration,
+            }
+        )
+
+
+async def request_worker():
+    """
+    Background worker that processes incoming requests sequentially from the queue.
+
+    Each request is processed synchronously to avoid CUDA thread issues.
+    """
+    while True:
+        request = await request_queue.get()
+        try:
+            if request.type == "ask":
+                response = process_ask(request)  # run directly in worker
+            elif request.type == "summarize":
+                response = process_summarize(request)
+            else:
+                response = None
+        except Exception as e:
+            response = {"error": str(e)}
         finally:
             request_queue.task_done()
 
