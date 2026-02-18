@@ -1,3 +1,9 @@
+# ================================
+# DEPRECATED DOCKERFILE
+# This Dockerfile is no longer maintained and may not build or function as expected.
+# Please use the updated containerization approach for ksandr.
+# ================================
+
 # NVIDIA cuda als basis image
 ARG CUDA_IMAGE
 FROM nvidia/cuda:12.9.0-devel-ubuntu22.04
