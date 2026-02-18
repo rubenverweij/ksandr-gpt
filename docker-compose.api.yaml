@@ -2,28 +2,20 @@ version: "3.9"
 
 services:
   ksandr-gpt:
-    image: ksandr-gpt-langchain:0.56
+    image: ${IMAGE_NAME}
     gpus: all
     cap_add:
       - SYS_RESOURCE
 
-    environment:
-      USE_MLOCK: 0
-      TEMPERATURE: 0.7
-      INCLUDE_FILTER: 1
-      SCORE_THRESHOLD: 0.90
-      MAX_TOKENS: 400
-      SOURCE_MAX: 5
-      MAX_CTX: 4096
-      CHROMA_PATH_CYPHER: "/root/da_data/staging/chroma_cypher"
-      CHROMA_PATH: "/root/da_data/staging/chroma"
+    env_file:
+      - ${ENV_FILE}
 
     volumes:
-      - /home/ubuntu/da_data/config/creds.json:/ksandr-gpt/ksandr/creds.json:ro
-      - /home/ubuntu/da_data/nltk_data:/root/nltk_data
-      - /home/ubuntu/da_data/huggingface:/root/huggingface
-      - /home/ubuntu/da_data:/root/da_data
-      - /home/ubuntu/ksandr_files_staging:/root/ksandr_files_staging
+      - ${CREDS_PATH}:/ksandr-gpt/ksandr/creds.json:ro
+      - ${NLTK_DATA}:/root/nltk_data
+      - ${HF_DIR}:/root/huggingface
+      - ${DA_DATA}:/root/da_data
+      - ${DATA_DIR}:/root/ksandr_files_${APP_ENV}
 
     command: [ "uvicorn", "ksandr.main:app", "--host", "0.0.0.0", "--port", "8080" ]
 
