@@ -746,7 +746,7 @@ if __name__ == "__main__":
         session.run("MATCH (n) DETACH DELETE n")
         logger.info(f"Database {env} deleted.")
 
-    AAD_PATH = AAD_DATA_PATH.get("env").get(running_inside_docker())
+    AAD_PATH = AAD_DATA_PATH.get(env).get(running_inside_docker())
 
     with driver.session() as session:
         permissions = VALID_PERMISSIONS
