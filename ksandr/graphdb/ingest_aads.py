@@ -9,10 +9,22 @@ from neo4j import GraphDatabase
 import json
 import os
 import argparse
+import logging
 from bs4 import BeautifulSoup
 import re
 from ksandr.settings.config import COMPONENTS, SECRETS
-from ksandr.graphdb.config import VALID_PERMISSIONS, NEO4J_CONTAINERS
+from ksandr.graphdb.config import (
+    VALID_PERMISSIONS,
+    NEO4J_CONTAINERS,
+    running_inside_docker,
+    AAD_DATA_PATH,
+)
+
+# Configure logging
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s:%(name)s: %(message)s", level=logging.INFO
+)
+logger = logging.getLogger("ingest_aads")
 
 
 def clean_html(value):
@@ -666,7 +678,6 @@ def ingest_dossier(
                 netbeheerder = nb.get("Netbeheerder", "Onbekend")
                 inspectie_punten = nb.get("Inspectiepunten", [])
                 for inspectie_punt in inspectie_punten:
-                    print(f"Netbeheerder {netbeheerder}, beleid {inspectie_punt}")
                     if not inspectie_punt:
                         continue
                     inspectie_id = f"inspectie_{abs(hash(str(inspectie_punt)))}"
@@ -733,7 +744,9 @@ if __name__ == "__main__":
 
     with driver.session() as session:
         session.run("MATCH (n) DETACH DELETE n")
-        print(f"Database {env} deleted.")
+        logger.info(f"Database {env} deleted.")
+
+    AAD_PATH = AAD_DATA_PATH.get("env").get(running_inside_docker())
 
     with driver.session() as session:
         permissions = VALID_PERMISSIONS
@@ -741,10 +754,9 @@ if __name__ == "__main__":
             create_permission_nodes(driver, permission)
         create_permission_constraint(driver)
         for aad_id, component_id in COMPONENTS.items():
+            logger.info(f"Processing {aad_id}... for component {component_id}")
             for permission in permissions:
-                json_folder = (
-                    f"/home/ubuntu/ksandr_files/aads/{aad_id}/{permission}/fail-types/"
-                )
+                json_folder = f"{AAD_PATH}/{aad_id}/{permission}/fail-types/"
                 # process faalvormen
                 for root, dirs, files in os.walk(json_folder):
                     for filename in files:
@@ -754,9 +766,6 @@ if __name__ == "__main__":
                                 data = json.load(f)
                                 faalvorm_data = data.get("Beschrijving")
                             if faalvorm_data:
-                                print(
-                                    f"Processing {file_path}... for component {component_id}"
-                                )
                                 create_component_faalvorm(
                                     session,
                                     aad_id,
@@ -766,10 +775,8 @@ if __name__ == "__main__":
                                     permission,
                                 )
                 # Process ageing asset dossier
-                json_file = (
-                    f"/home/ubuntu/ksandr_files/aads/{aad_id}/{permission}/main.json"
-                )
-                print(f"Ingesting: {json_file}")
+                json_file = f"{AAD_PATH}/{aad_id}/{permission}/main.json"
+                logger.info(f"Ingesting: {json_file}")
                 with open(json_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     data = clean_html(data)
