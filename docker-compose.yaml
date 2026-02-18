@@ -1,32 +1,27 @@
-version: "3.9"
+# Test container
+version: "3.9"  # Compose file format version
 
 services:
-  ksandr-gpt-debug:
-    image: ksandr-gpt-langchain:0.56
-    container_name: ksandr-gpt-debug
-    gpus: all
+  ksandr-gpt:
+    image: ${IMAGE_NAME}  # The Docker image to use (set with environment variable)
+    gpus: all  # Expose all available GPUs to this container
     cap_add:
-      - SYS_RESOURCE
+      - SYS_RESOURCE      # Grant additional system resource capabilities to the container
 
-    environment:
-      USE_MLOCK: "0"
-      TEMPERATURE: "0.7"
-      INCLUDE_FILTER: "1"
-      SCORE_THRESHOLD: "0.90"
-      MAX_TOKENS: "400"
-      SOURCE_MAX: "5"
-      MAX_CTX: "4096"
-      CHROMA_PATH_CYPHER: "/root/da_data/staging/chroma_cypher"
-      CHROMA_PATH: "/root/da_data/staging/chroma"
+    env_file:
+      - ${ENV_FILE}       # Externalize environment variables via .env file
 
     volumes:
-      - /home/ubuntu/da_data/config/creds.json:/ksandr-gpt/ksandr/creds.json:ro
-      - /home/ubuntu/da_data/nltk_data:/root/nltk_data
-      - /home/ubuntu/da_data/huggingface:/root/huggingface
-      - /home/ubuntu/da_data:/root/da_data
-      - /home/ubuntu/ksandr_files_staging:/root/ksandr_files_staging
+      - ${CREDS_PATH}:/ksandr-gpt/ksandr/creds.json:ro   # Mount credentials as read-only
+      - ${NLTK_DATA}:/root/nltk_data                     # Mount NLTK data
+      - ${HF_DIR}:/root/huggingface                      # Mount HuggingFace data/cache
+      - ${DA_DATA}:/root/da_data                         # Mount data directory
+      - ${DATA_DIR}:/root/ksandr_files_${APP_ENV}        # Mount environment-specific files
 
     command: [ "/bin/bash" ]
 
-    stdin_open: true
-    tty: true
+    ports:
+      - "8080:8080"       # Map host port 8080 to container port 8080
+
+    stdin_open: true      # Keep STDIN open (interactive)
+    tty: true             # Allocate a TTY for the container (for interactive shells)

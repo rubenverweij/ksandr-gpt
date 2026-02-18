@@ -1,22 +1,22 @@
 services:
   populate:
-    image: ${IMAGE_NAME}
-    command: ./workflow.sh
+    image: ${IMAGE_NAME}                     # Docker image to use for the populate job
+    command: ./workflow.sh                   # Script to execute on container start
 
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
+            - capabilities: [gpu]            # Reserve a GPU for this container
 
     cap_add:
-      - SYS_RESOURCE
+      - SYS_RESOURCE                         # Add additional system resource capabilities
 
     env_file:
-      - ${ENV_FILE}
+      - ${ENV_FILE}                          # Externalize environment variables from .env file
 
     volumes:
-      - ${DA_DATA}:/root/da_data 
-      - ${DATA_DIR}:/root/ksandr_files_${APP_ENV}
-      - ${HF_DIR}:/root/huggingface
-      - ${CREDS_PATH}:/ksandr-gpt/ksandr/creds.json:ro
+      - ${DA_DATA}:/root/da_data                         # Mount main data directory
+      - ${DATA_DIR}:/root/ksandr_files_${APP_ENV}        # Mount environment-specific files directory
+      - ${HF_DIR}:/root/huggingface                      # Mount HuggingFace cache/data
+      - ${CREDS_PATH}:/ksandr-gpt/ksandr/creds.json:ro   # Mount credentials file (read-only)

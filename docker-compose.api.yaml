@@ -1,26 +1,26 @@
-version: "3.9"
+version: "3.9"  # Compose file format version
 
 services:
   ksandr-gpt:
-    image: ${IMAGE_NAME}
-    gpus: all
+    image: ${IMAGE_NAME}  # The Docker image to use (set with environment variable)
+    gpus: all  # Expose all available GPUs to this container
     cap_add:
-      - SYS_RESOURCE
+      - SYS_RESOURCE      # Grant additional system resource capabilities to the container
 
     env_file:
-      - ${ENV_FILE}
+      - ${ENV_FILE}       # Externalize environment variables via .env file
 
     volumes:
-      - ${CREDS_PATH}:/ksandr-gpt/ksandr/creds.json:ro
-      - ${NLTK_DATA}:/root/nltk_data
-      - ${HF_DIR}:/root/huggingface
-      - ${DA_DATA}:/root/da_data
-      - ${DATA_DIR}:/root/ksandr_files_${APP_ENV}
+      - ${CREDS_PATH}:/ksandr-gpt/ksandr/creds.json:ro   # Mount credentials as read-only
+      - ${NLTK_DATA}:/root/nltk_data                     # Mount NLTK data
+      - ${HF_DIR}:/root/huggingface                      # Mount HuggingFace data/cache
+      - ${DA_DATA}:/root/da_data                         # Mount data directory
+      - ${DATA_DIR}:/root/ksandr_files_${APP_ENV}        # Mount environment-specific files
 
-    command: [ "uvicorn", "ksandr.main:app", "--host", "0.0.0.0", "--port", "8080" ]
+    command: [ "uvicorn", "ksandr.main:app", "--host", "0.0.0.0", "--port", "8080" ]  # Launch API server on port 8080
 
     ports:
-      - "8080:8080"
+      - "8080:8080"       # Map host port 8080 to container port 8080
 
-    stdin_open: true
-    tty: true
+    stdin_open: true      # Keep STDIN open (interactive)
+    tty: true             # Allocate a TTY for the container (for interactive shells)
