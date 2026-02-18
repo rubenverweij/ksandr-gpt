@@ -2,7 +2,6 @@ services:
   populate:
     image: ${IMAGE_NAME}
     command: ./workflow.sh
-    network_mode: host
 
     deploy:
       resources:
