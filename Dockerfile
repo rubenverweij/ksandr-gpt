@@ -2,7 +2,7 @@
 # Base image: NVIDIA CUDA 13.0 for A30 GPU, Ubuntu 22.04
 # ================================
 ARG CUDA_IMAGE
-FROM nvidia/cuda:13.1.1-base-ubuntu22.04
+FROM nvidia/cuda:13.1.1-devel-ubuntu22.04
 
 RUN apt-get update && apt-get upgrade -y \
   && apt-get install -y git build-essential \
