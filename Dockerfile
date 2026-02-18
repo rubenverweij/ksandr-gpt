@@ -2,15 +2,15 @@
 # Base image: NVIDIA CUDA 13.0 for A30 GPU, Ubuntu 22.04
 # ================================
 ARG CUDA_IMAGE
-FROM nvidia/cuda:12.9.0-devel-ubuntu22.04
+FROM nvidia/cuda:13.1.1-base-ubuntu22.04
 
 RUN apt-get update && apt-get upgrade -y \
-    && apt-get install -y git build-essential \
-    python3 python3-pip gcc wget \
-    ocl-icd-opencl-dev opencl-headers clinfo \
-    libclblast-dev libopenblas-dev \
-    && mkdir -p /etc/OpenCL/vendors \
-    && echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
+  && apt-get install -y git build-essential \
+  python3 python3-pip gcc wget \
+  ocl-icd-opencl-dev opencl-headers clinfo \
+  libclblast-dev libopenblas-dev \
+  && mkdir -p /etc/OpenCL/vendors \
+  && echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
 
 # Omgevingsvariabelen
 ENV CUDA_DOCKER_ARCH=all
@@ -22,8 +22,8 @@ RUN python3 -m pip install torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/cu128
 
 # Installeer llama-cpp-python (met cuda)
-RUN CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install llama-cpp-python
-RUN python3 -m pip install "langchain>=0.2.14" "langchain-neo4j>=0.1.4" "langchain-community>=0.2.14"
+RUN CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install --upgrade --force-reinstall --no-cache-dir llama-cpp-python
+RUN python3 -m pip install langchain langchain-neo4j langchain-community
 RUN python3 -m pip install PyPDF2 bs4 chromadb langchain_chroma sentence-transformers langchain-huggingface fastapi[standard] neo4j langchain-text-splitters Levenshtein
 
 # ================================
@@ -31,3 +31,4 @@ RUN python3 -m pip install PyPDF2 bs4 chromadb langchain_chroma sentence-transfo
 # ================================
 WORKDIR /ksandr-gpt
 COPY ./ /ksandr-gpt
+
