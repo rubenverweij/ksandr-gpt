@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   ksandr-gpt-debug:
-    image: ksandr-gpt-langchain-test:0.55
+    image: ksandr-gpt-langchain:0.55
     container_name: ksandr-gpt-debug
     gpus: all
     cap_add:

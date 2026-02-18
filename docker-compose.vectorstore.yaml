@@ -1,7 +1,6 @@
 services:
   populate:
     image: ${IMAGE_NAME}
-    # command: python3 -m ksandr.vectorstore.populate_database -env ${APP_ENV}
     command: ./workflow.sh
     network_mode: host
 
