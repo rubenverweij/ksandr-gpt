@@ -349,6 +349,12 @@ PROMPT_ELEMENTEN = {
     """,
 }
 
+STANDARD_RESPONSE_NO_SOURCE = """Er is geen informatie gevonden die gebruikt kan worden bij de beantwoording.
+                        
+            Mogelijk heeft u geen toegang tot de gewenste informatie of is deze informatie niet beschikbaar.
+            
+            Het kan helpen om de vraag anders te stellen en meer specifieke context mee te geven."""
+
 
 def dynamische_prompt_elementen(question: str):
     """Return instructions based on question"""
