@@ -44,6 +44,54 @@ from ksandr.vectorstore.config import (
 )
 
 
+# Compile patterns once (efficient)
+PATTERNS = [
+    # /root/ksandr_files/aads/{id}/cat-x/documents/{doc}.txt
+    (
+        re.compile(
+            r"^/root/ksandr_files/aads/(?P<aad_id>\d+)/cat-\d+/documents/(?P<doc_id>\d+)\.txt$"
+        ),
+        lambda m: f"/aad/{m.group('aad_id')}/document/{m.group('doc_id')}",
+    ),
+    # /root/ksandr_files/aads/{id}/cat-x/main.json
+    (
+        re.compile(r"^/root/ksandr_files/aads/(?P<aad_id>\d+)/cat-\d+/main\.json$"),
+        lambda m: f"/aad/{m.group('aad_id')}/dossier",
+    ),
+    # /root/ksandr_files/documents/{id}/{id}.txt
+    (
+        re.compile(r"^/root/ksandr_files/documents/(?P<doc_id>\d+)/\d+\.txt$"),
+        lambda m: f"/private-document/{m.group('doc_id')}",
+    ),
+    # /root/ksandr_files/expert-group/{group}/documents/{doc}.txt
+    (
+        re.compile(
+            r"^/root/ksandr_files/expert-group/(?P<group_id>\d+)/documents/(?P<doc_id>\d+)\.txt$"
+        ),
+        lambda m: f"/expert-group/{m.group('group_id')}/document/{m.group('doc_id')}",
+    ),
+    # /root/ksandr_files/project-group/{group}/documents/{doc}.txt
+    (
+        re.compile(
+            r"^/root/ksandr_files/project-group/(?P<group_id>\d+)/documents/(?P<doc_id>\d+)\.txt$"
+        ),
+        lambda m: f"/project-group/{m.group('group_id')}/document/{m.group('doc_id')}",
+    ),
+]
+
+
+def convert_filepath(path: str) -> str | None:
+    """
+    Convert internal filepath to public URL structure.
+    Returns None if no pattern matches.
+    """
+    for pattern, transformer in PATTERNS:
+        match = pattern.match(path)
+        if match:
+            return transformer(match)
+    return None
+
+
 def load_terms(terms: list, file_path: Path):
     """
     Convert question-answer pairs from a terms.json file into Document objects for vectorstore ingestion.
@@ -80,6 +128,94 @@ def load_terms(terms: list, file_path: Path):
     return terms_list
 
 
+def load_users(users: list, file_path: Path):
+    """
+    Convert user records from a users.json file into Document objects for vectorstore ingestion.
+
+    Args:
+        users (list): List of dicts, each representing a user with attributes such as "Naam", "E-mail", "Bedrijf", and others.
+        file_path (Path): Path to the JSON file for metadata.
+
+    Returns:
+        List[Document]: LangChain Document objects where each document represents a user and associated metadata.
+    """
+
+    terms_list = []
+    for idx, user in enumerate(users):
+        if len(user.get("Naam", "")) == 0:
+            continue
+        tekst = f"Wie is {user.get('Naam', '')}?. Beschikbare gegevens over KSANDR deelnemer {user.get('Naam', '')}: {user}"
+        metadata = {
+            "file_path": file_path.as_posix(),
+            "chunk": idx,
+            "char_length": len(str(tekst)),
+            "useful": 1,
+            "source": file_path.as_posix(),
+            "source_search": file_path.as_posix(),
+            "key": "users",
+            "extension": "json",
+        }
+        metadata.update(extract_file_data(file_path.as_posix()))
+        terms_list.append(
+            Document(
+                page_content=tekst,
+                metadata=metadata,
+            )
+        )
+    return terms_list
+
+
+def change_patterns_file_path(filepath: Path) -> str:
+    """
+    Convert a given file path (string or Path) to a standardized/documentation-ready format used for linking/grouping.
+
+    - If the path is within a group directory (containing "groups"), it replaces "groups" with a specific group type
+      such as "project-group" or "expert-group", determined from the group's main.json metadata.
+    - The returned path always uses the converted format via convert_filepath().
+
+    Args:
+        filepath (Union[str, Path]): The file path to be reformatted (can be str or pathlib.Path).
+
+    Returns:
+        str: The converted file path in the new format.
+    """
+
+    # Ensure input is a Path object (in docstring, Union[str, Path], but function signature uses Path, so clarify)
+    if not isinstance(filepath, Path):
+        filepath = Path(filepath)
+
+    group_link = None
+    # "groups" is always checked as substring of str(filepath) below, but then filepath is mutated later...
+    # Consistency: always work with string for replacements, and only convert back to Path if necessary.
+    filepath_str = str(filepath)
+
+    if "groups" in filepath_str:
+        try:
+            group_dir = filepath.parents[2]  # points to /root/ksandr_files/groups/832/
+            main_json_path = group_dir / "main.json"
+            with main_json_path.open("r", encoding="utf-8") as f:
+                group_info = json.load(f)
+                group_type = group_info.get("type", None)
+            if group_type == "Projectgroep":
+                group_link = "project-group"
+            elif group_type == "Expertgroep":
+                group_link = "expert-group"
+            else:
+                group_link = group_type if group_type else "groups"
+        except Exception:
+            # Defensive: fallback to "groups" if anything goes wrong
+            group_link = "groups"
+
+        # Consistency: Only replace "groups" with group_link if group_link is set and non-empty
+        if group_link:
+            filepath_str = filepath_str.replace(
+                "groups", group_link, 1
+            )  # only replace first occurrence
+
+    # Always use convert_filepath on the path string
+    return convert_filepath(filepath_str)
+
+
 def load_documents(env: str) -> List[Document]:
     """
     Load and process all JSON documents for a given environment, splitting them into meaningful, metadata-rich chunks for vectorstore ingestion.
@@ -105,6 +241,7 @@ def load_documents(env: str) -> List[Document]:
         logging.error(f"Directory does not exist: {directory}")
 
     for file_path in directory.rglob("*.json"):
+        link = change_patterns_file_path(file_path)
         try:
             with file_path.open("r", encoding="utf-8") as f:
                 content = json.load(f)
@@ -112,6 +249,9 @@ def load_documents(env: str) -> List[Document]:
                 if file_path.name == "terms.json":
                     logging.info("Ingesting terms")
                     documenten = documenten + load_terms(content, file_path)
+                if file_path.name == "users.json":
+                    logging.info("Ingesting users")
+                    documenten = documenten + load_users(content, file_path)
                 else:
                     splitter = RecursiveJsonSplitter(min_chunk_size=MIN_CHUNK_SIZE_JSON)
                     chunks = splitter.split_text(json_data=content, convert_lists=True)
@@ -132,12 +272,16 @@ def load_documents(env: str) -> List[Document]:
                         chunk_cleaned = chunk_cleaned.replace("\\'", "'")
                         chunk_cleaned = chunk_cleaned.replace('"', "")
                         chunk_cleaned = re.sub(r'[{}"\[\]]', "", chunk_cleaned)
+                        logging.info(
+                            f"Ingesting json {file_path.as_posix()} with link {link}"
+                        )
                         metadata = {
                             "file_path": file_path.as_posix(),
                             "chunk": idx,
                             "char_length": len(str(chunk_cleaned)),
                             "useful": 0 if len(chunk_cleaned) < 150 else 1,
                             "source": file_path.as_posix(),
+                            "link": link,
                             "source_search": file_path.as_posix(),
                             "key": main_key,
                             "extension": "json",
@@ -160,6 +304,7 @@ def load_documents(env: str) -> List[Document]:
             chunk_overlap=100,
         )
         for file_path in directory.rglob("*.txt"):
+            link = change_patterns_file_path(file_path)
             try:
                 with file_path.open("r", encoding="utf-8") as f:
                     content = f.read()
@@ -172,6 +317,9 @@ def load_documents(env: str) -> List[Document]:
                         chunk_cleaned = chunk_cleaned.replace("'", '"')
                         chunk_cleaned = chunk_cleaned.replace("\\'", "'")
                         chunk_cleaned = re.sub(r'[{}"\[\]]', "", chunk_cleaned)
+                        logging.info(
+                            f"Ingesting file {file_path.as_posix()} with link {link}"
+                        )
                         metadata = {
                             "file_path": file_path.as_posix(),
                             "chunk": idx,
@@ -179,6 +327,7 @@ def load_documents(env: str) -> List[Document]:
                             "useful": 0 if len(chunk_cleaned) < 150 else 1,
                             "source": file_path.as_posix(),
                             "source_search": file_path.as_posix(),
+                            "link": link,
                             "key": "na",
                             "extension": ".txt",
                         }
