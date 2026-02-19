@@ -349,11 +349,36 @@ PROMPT_ELEMENTEN = {
     """,
 }
 
+STANDARD_CONTEXT_NO_SOURCE = (
+    "Er is geen informatie gevonden die gebruikt kan worden bij de beantwoording."
+)
+
 STANDARD_RESPONSE_NO_SOURCE = """Er is geen informatie gevonden die gebruikt kan worden bij de beantwoording.
                         
             Mogelijk heeft u geen toegang tot de gewenste informatie of is deze informatie niet beschikbaar.
             
             Het kan helpen om de vraag anders te stellen en meer specifieke context mee te geven."""
+
+STANDARD_RESPONSE_SUMMARY_NOT_POSSIBLE = """#### Samenvatting maken is helaas niet mogelijk
+
+        Er kan geen samenvatting worden gemaakt omdat de tekst extractie uit de PDF van onvoldoende kwaliteit is.
+
+        Misschien oogt het document van voldoende kwaliteit, maar de kans is aanzienlijk dat de onderliggende structuur van de PDF beschadigd is of dat er vervormde karakters in de tekst staan.
+
+        U kunt proberen een nieuwe PDF van het document te maken via bijvoorbeeld **Microsoft Word** en deze opnieuw te uploaden.
+        
+        #### Tips
+        - Open het originele bestand in Microsoft Word
+        - Kies een gangbaar lettertype zoals Arial, Calibri of Times New Roman
+        - Ga naar Bestand → Opslaan als
+        - Kies bij Opslaan als type: PDF (*.pdf)
+        - Klik op Opties…
+            Kies:
+            ✅ Standaard (publicatie online en afdrukken) → beste kwaliteit
+            ❌ Niet Minimale grootte
+        - Opslaan 
+        
+        """
 
 
 def dynamische_prompt_elementen(question: str):

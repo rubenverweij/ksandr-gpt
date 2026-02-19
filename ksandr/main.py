@@ -26,6 +26,7 @@ from ksandr.settings.templates import (
     dynamische_prompt_elementen,
     STANDARD_RESPONSE_NO_SOURCE,
     STANDARD_RESPONSE_SUMMARY_NOT_POSSIBLE,
+    STANDARD_CONTEXT_NO_SOURCE,
 )
 from ksandr.embeddings.embeddings import get_embedding_function
 from ksandr.support.llm import LLMManager, RecursiveSummarizer
@@ -459,7 +460,7 @@ def retrieve_answer_from_vector_store(
         max_tokens=CONFIG["MAX_TOKENS"],
     )
     if len(trimmed_context_text) < 10:
-        trimmed_context_text = "Er is geen informatie gevonden die gebruikt kan worden bij de beantwoording."
+        trimmed_context_text = STANDARD_CONTEXT_NO_SOURCE
 
     time_reranker_trimming = time.time()
     prompt_with_template = DEFAULT_QA_PROMPT.format(
