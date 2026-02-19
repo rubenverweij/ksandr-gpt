@@ -129,8 +129,7 @@ LLM_MANAGER = LLMManager(
     top_p=0.9,
 )
 LLM_MANAGER.load_llm(n_ctx=CONFIG["MAX_CTX"])
-starting_response = LLM_MANAGER.get_llm().invoke("Hello world")
-print(f"LLM started with response: {starting_response}")
+logger.info("LLM loaded")
 
 embedding_function = get_embedding_function()
 db = Chroma(
@@ -140,7 +139,7 @@ db_cypher = Chroma(
     persist_directory=CONFIG["CHROMA_PATH_CYPHER"],
     embedding_function=embedding_function,
 )
-print(f"Starting container with {CONFIG}")
+logger.info(f"Starting container with {CONFIG}")
 
 
 class StreamingResponseCallback(BaseCallbackHandler):
