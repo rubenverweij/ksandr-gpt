@@ -2,24 +2,26 @@ version: "3.9"
 
 services:
 
+  # Neo4j staging environment service
   neo4j-staging:
-    image: neo4j
-    container_name: neo4j-staging
+    image: neo4j  # Use the official Neo4j image
+    container_name: neo4j-staging  # Container name for easy reference
     environment:
-      - NEO4J_AUTH=none
-      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_AUTH=none  # Disable authentication for testing/staging (insecure, use with caution)
+      - NEO4J_PLUGINS=["apoc"]  # Include APOC plugin for additional procedures
     ports:
-      - "7688:7687"   # Bolt
+      - "7688:7687"   # Map local port 7688 to container's Bolt port 7687 (for connecting to staging)
     volumes:
-      - /home/ubuntu/da_data/staging/neo4j:/data
+      - /home/ubuntu/da_data/staging/neo4j:/data  # Persist Neo4j data to local filesystem for staging
 
+  # Neo4j production environment service
   neo4j-production:
-    image: neo4j
-    container_name: neo4j-production
+    image: neo4j  # Use the official Neo4j image
+    container_name: neo4j-production  # Container name for easy management
     environment:
-      - NEO4J_AUTH=none
-      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_AUTH=none  # Disable authentication (insecure, recommended to set in production)
+      - NEO4J_PLUGINS=["apoc"]  # Enable APOC plugin
     ports:
-      - "7687:7687"   # Bolt
+      - "7687:7687"   # Expose standard Bolt port (7687)
     volumes:
-      - /home/ubuntu/da_data/production/neo4j:/data
+      - /home/ubuntu/da_data/production/neo4j:/data  # Bind local production data directory for persistence

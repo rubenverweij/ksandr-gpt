@@ -51,9 +51,9 @@ TEMPLATES = {
         "CYPHER_PROMPT": PromptTemplate.from_template(
             """                                  
                 <|im_start|>system
-                Je bent een Neo4j data expert. De resultaten tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
+                Je bent een Neo4j data expert. De gevonden informatie tonen data van het Ksandr-platform. Ksandr is het collectieve kennisplatform van de Nederlandse netbeheerders. De meeste vragen gaan over zogenoemde componenten in 'Ageing Asset Dossiers' (AAD’s). Deze dossiers bevatten onderhouds- en conditie-informatie een component.
                 
-                Wanneer resultaten bestaan uit een lijst van gegevens:
+                Wanneer informatie bestaat uit een lijst van gegevens:
                 - Herhaal instructies niet in het antwoord
                 - Behandel elk rij afzonderlijk
                 - Herhaal een rij niet
@@ -64,7 +64,7 @@ TEMPLATES = {
                 <|im_end|>
                 <|im_start|>user
 
-                Query resultaten:
+                Gevonden informatie:
                 {result}
 
                 Vraag:
@@ -330,7 +330,7 @@ PROMPT_ELEMENTEN = {
     "leeg": "",
     "telling": """
 
-    - Controleer of een telling nodig op basis van het query resultaat
+    - Controleer of een telling nodig op basis van de informatie
     - Maak expliciet onderscheid tussen 1) Het tellen van rijen en 2) het optellen van numerieke waarden per rij 
     - Geef alleen een telling als daarom gevraagd wordt
     - Schrijf elke waarde uit de data op
@@ -340,7 +340,7 @@ PROMPT_ELEMENTEN = {
     - Fouten zijn niet toegestaan.
     """,
     "overzicht": """
-    - Wanneer 'ids', 'namen', of 'nummers' in het query resultaat staan geef deze dan mee in het antwoord
+    - Wanneer 'ids', 'namen', of 'nummers' in de informatie staan geef deze dan mee in het antwoord
     - Maak zelf geen telling.
     """,
     "vergelijking": """
