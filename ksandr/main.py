@@ -24,6 +24,8 @@ from ksandr.settings.templates import (
     TEMPLATES,
     SYSTEM_PROMPT,
     dynamische_prompt_elementen,
+    STANDARD_RESPONSE_NO_SOURCE,
+    STANDARD_RESPONSE_SUMMARY_NOT_POSSIBLE,
 )
 from ksandr.embeddings.embeddings import get_embedding_function
 from ksandr.support.llm import LLMManager, RecursiveSummarizer
@@ -263,11 +265,7 @@ def process_ask(request: AskRequest) -> dict:
     # In case there is no source
     if request.rag:
         if len(reference_docs) == 0:
-            final_answer = """Er is geen informatie gevonden die gebruikt kan worden bij de beantwoording.
-                        
-            Mogelijk heeft u geen toegang tot de gewenste informatie of is deze informatie niet beschikbaar.
-            
-            """
+            final_answer = STANDARD_RESPONSE_NO_SOURCE
 
     return {
         "question": request.prompt,
@@ -338,26 +336,7 @@ def process_summarize(request: FileRequest) -> dict:
         )
         summary = summarizer.summarize()
     else:
-        summary_cleaned = """#### Samenvatting maken is helaas niet mogelijk
-
-        Er kan geen samenvatting worden gemaakt omdat de tekst extractie uit de PDF van onvoldoende kwaliteit is.
-
-        Misschien oogt het document van voldoende kwaliteit, maar de kans is aanzienlijk dat de onderliggende structuur van de PDF beschadigd is of dat er vervormde karakters in de tekst staan.
-
-        U kunt proberen een nieuwe PDF van het document te maken via bijvoorbeeld **Microsoft Word** en deze opnieuw te uploaden.
-        
-        #### Tips
-        - Open het originele bestand in Microsoft Word
-        - Kies een gangbaar lettertype zoals Arial, Calibri of Times New Roman
-        - Ga naar Bestand → Opslaan als
-        - Kies bij Opslaan als type: PDF (*.pdf)
-        - Klik op Opties…
-            Kies:
-            ✅ Standaard (publicatie online en afdrukken) → beste kwaliteit
-            ❌ Niet Minimale grootte
-        - Opslaan 
-        
-        """
+        summary_cleaned = STANDARD_RESPONSE_SUMMARY_NOT_POSSIBLE
         summary = summary_cleaned
 
     return {
