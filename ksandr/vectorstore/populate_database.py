@@ -184,7 +184,7 @@ def change_patterns_file_path(filepath: Path) -> str | None:
 
     if "/groups/" in filepath_str:
         try:
-            group_dir = filepath.parents[2]
+            group_dir = filepath.parents[1]
             main_json_path = group_dir / "main.json"
 
             with main_json_path.open("r", encoding="utf-8") as f:
