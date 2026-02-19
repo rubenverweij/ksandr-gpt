@@ -46,50 +46,44 @@ from ksandr.vectorstore.config import (
 
 # Compile patterns once (efficient)
 PATTERNS = [
-    # /root/ksandr_files/aads/{id}/cat-x/documents/{doc}.txt
+    # AAD documents
     (
-        re.compile(
-            r"^/root/ksandr_files/aads/(?P<aad_id>\d+)/cat-\d+/documents/(?P<doc_id>\d+)\.txt$"
-        ),
+        re.compile(r"^aads/(?P<aad_id>\d+)/cat-\d+/documents/(?P<doc_id>\d+)\.txt$"),
         lambda m: f"/aad/{m.group('aad_id')}/document/{m.group('doc_id')}",
     ),
-    # /root/ksandr_files/aads/{id}/cat-x/main.json
+    # AAD dossier
     (
-        re.compile(r"^/root/ksandr_files/aads/(?P<aad_id>\d+)/cat-\d+/main\.json$"),
+        re.compile(r"^aads/(?P<aad_id>\d+)/cat-\d+/main\.json$"),
         lambda m: f"/aad/{m.group('aad_id')}/dossier",
     ),
-    # /root/ksandr_files/documents/{id}/{id}.txt
+    # AAD fail-types main.json (dynamic ID from json file)
     (
-        re.compile(r"^/root/ksandr_files/documents/(?P<doc_id>\d+)/\d+\.txt$"),
+        re.compile(
+            r"^aads/(?P<aad_id>\d+)/cat-\d+/fail-types/(?P<folder_id>\d+)/main\.json$"
+        ),
+        lambda m: f"/aad/{m.group('aad_id')}/fail-type/{m.group('folder_id')}",
+    ),
+    # Private documents
+    (
+        re.compile(r"^documents/(?P<doc_id>\d+)/\d+\.txt$"),
         lambda m: f"/private-document/{m.group('doc_id')}",
     ),
-    # /root/ksandr_files/expert-group/{group}/documents/{doc}.txt
+    # Expert group
     (
-        re.compile(
-            r"^/root/ksandr_files/expert-group/(?P<group_id>\d+)/documents/(?P<doc_id>\d+)\.txt$"
-        ),
+        re.compile(r"^expert-group/(?P<group_id>\d+)/documents/(?P<doc_id>\d+)\.txt$"),
         lambda m: f"/expert-group/{m.group('group_id')}/document/{m.group('doc_id')}",
     ),
-    # /root/ksandr_files/project-group/{group}/documents/{doc}.txt
+    # Project group
     (
-        re.compile(
-            r"^/root/ksandr_files/project-group/(?P<group_id>\d+)/documents/(?P<doc_id>\d+)\.txt$"
-        ),
+        re.compile(r"^project-group/(?P<group_id>\d+)/documents/(?P<doc_id>\d+)\.txt$"),
         lambda m: f"/project-group/{m.group('group_id')}/document/{m.group('doc_id')}",
     ),
+    # General site.json
+    (
+        re.compile(r"^general/site\.json$"),
+        lambda m: "/home",
+    ),
 ]
-
-
-def convert_filepath(path: str) -> str | None:
-    """
-    Convert internal filepath to public URL structure.
-    Returns None if no pattern matches.
-    """
-    for pattern, transformer in PATTERNS:
-        match = pattern.match(path)
-        if match:
-            return transformer(match)
-    return None
 
 
 def load_terms(terms: list, file_path: Path):
@@ -165,54 +159,51 @@ def load_users(users: list, file_path: Path):
     return terms_list
 
 
-def change_patterns_file_path(filepath: Path) -> str:
-    """
-    Convert a given file path (string or Path) to a standardized/documentation-ready format used for linking/grouping.
+def extract_relative_path(path: str) -> str | None:
+    path = path.replace("\\", "/")
+    match = re.search(r"/ksandr_files[^/]*/(.+)", path)
+    return match.group(1) if match else None
 
-    - If the path is within a group directory (containing "groups"), it replaces "groups" with a specific group type
-      such as "project-group" or "expert-group", determined from the group's main.json metadata.
-    - The returned path always uses the converted format via convert_filepath().
 
-    Args:
-        filepath (Union[str, Path]): The file path to be reformatted (can be str or pathlib.Path).
+def convert_filepath(path: str) -> str | None:
+    relative_path = extract_relative_path(path)
+    if not relative_path:
+        return None
 
-    Returns:
-        str: The converted file path in the new format.
-    """
+    for pattern, transformer in PATTERNS:
+        match = pattern.match(relative_path)
+        if not match:
+            continue
+        return transformer(match)
 
-    # Ensure input is a Path object (in docstring, Union[str, Path], but function signature uses Path, so clarify)
-    if not isinstance(filepath, Path):
-        filepath = Path(filepath)
+    return None
 
-    group_link = None
-    # "groups" is always checked as substring of str(filepath) below, but then filepath is mutated later...
-    # Consistency: always work with string for replacements, and only convert back to Path if necessary.
-    filepath_str = str(filepath)
 
-    if "groups" in filepath_str:
+def change_patterns_file_path(filepath: Path) -> str | None:
+    filepath_str = filepath.resolve().as_posix()
+
+    if "/groups/" in filepath_str:
         try:
-            group_dir = filepath.parents[2]  # points to /root/ksandr_files/groups/832/
+            group_dir = filepath.parents[2]
             main_json_path = group_dir / "main.json"
+
             with main_json_path.open("r", encoding="utf-8") as f:
                 group_info = json.load(f)
-                group_type = group_info.get("type", None)
+
+            group_type = group_info.get("type")
+
             if group_type == "Projectgroep":
                 group_link = "project-group"
             elif group_type == "Expertgroep":
                 group_link = "expert-group"
             else:
-                group_link = group_type if group_type else "groups"
+                group_link = "groups"
+
         except Exception:
-            # Defensive: fallback to "groups" if anything goes wrong
             group_link = "groups"
 
-        # Consistency: Only replace "groups" with group_link if group_link is set and non-empty
-        if group_link:
-            filepath_str = filepath_str.replace(
-                "groups", group_link, 1
-            )  # only replace first occurrence
+        filepath_str = filepath_str.replace("/groups/", f"/{group_link}/", 1)
 
-    # Always use convert_filepath on the path string
     return convert_filepath(filepath_str)
 
 
