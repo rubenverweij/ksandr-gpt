@@ -34,13 +34,25 @@ REFS = {
     "capitole": "[link to='/aad/1558/dossier']Capitole[/link]",
 }
 
+DOCUMENT_PATTERN = re.compile(r"/aad/(\d+)/document/(\d+)", re.IGNORECASE)
+
 
 def replace_patterns(text: str) -> str:
+    # 1️⃣ Replace static keyword references
     for pattern, replacement in REFS.items():
         text = re.sub(
-            re.escape(pattern),  # literal match
+            re.escape(pattern),
             replacement,
             text,
-            flags=re.IGNORECASE,  # hoofdletterongevoelig
+            flags=re.IGNORECASE,
         )
+
+    def replace_document(match):
+        aad_id = match.group(1)
+        document_id = match.group(2)
+        url = f"/aad/{aad_id}/document/{document_id}"
+        return f"[link to='{url}']{url}[/link]"
+
+    text = DOCUMENT_PATTERN.sub(replace_document, text)
+
     return text
