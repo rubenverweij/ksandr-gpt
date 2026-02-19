@@ -10,7 +10,6 @@ used throughout the Ksandr LLM API infrastructure.
 import re
 import torch
 import json
-import os
 from typing import Dict, Optional, Union, List, Any, Set
 import string
 import time
@@ -676,7 +675,7 @@ def find_relevant_sources(
     time_reranker = time.time()
     context_text = "\n".join(
         [
-            f"Het ID van deze bron is: {os.path.splitext(os.path.basename(doc.metadata.get('source', '')))[0]} en betreft component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
+            f"Locatie van dit document: {doc.metadata.get('source', '')} en gaat over component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
             for doc, _ in results
         ]
     )
