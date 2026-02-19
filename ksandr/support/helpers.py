@@ -676,7 +676,7 @@ def find_relevant_sources(
 
     context_text = "\n".join(
         [
-            f"Locatie van dit document: /aad/{doc.metadata.get('type_id', '')}/document/{doc.metadata.get('filename', '')} en gaat over component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
+            f"Locatie van dit document: {doc.metadata.get('link', '')} en gaat over component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
             for doc, _ in results
         ]
     )
