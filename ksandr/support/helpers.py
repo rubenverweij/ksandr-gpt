@@ -673,9 +673,10 @@ def find_relevant_sources(
         results = rerank_candidates(prompt, results, top_m=source_max_reranker)
     # Filter by score
     time_reranker = time.time()
+
     context_text = "\n".join(
         [
-            f"Locatie van dit document: {doc.metadata.get('source', '')} en gaat over component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
+            f"Locatie van dit document: /aad/{doc.metadata.get('type_id', '')}/document/{doc.metadata.get('filename', '')} en gaat over component: {COMPONENTS.get(doc.metadata.get('type_id', ''), '')}. {doc.page_content}"
             for doc, _ in results
         ]
     )
