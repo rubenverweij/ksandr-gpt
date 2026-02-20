@@ -113,10 +113,22 @@ COLUMN_MAPPING_FAALVORM = {
     "oorzaken": ["f.OorzaakGeneriek:oorzaak_generiek"],
     "component": ["c.component_id:naam_component"],
     "repareer": ["c.niet_repareerbaar:niet_repareerbaar"],
-    "incidenten": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
-    "komt vaak voor": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
-    "komt meest voor": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
-    "meest voorkomende": ["f.GemiddeldAantalIncidenten:aantal_incidenten"],
+    "incidenten": [
+        "f.GemiddeldAantalIncidenten:aantal_incidenten",
+        "f.AantalIncidenten:aantal_incidenten_volgorde",
+    ],
+    "komt vaak voor": [
+        "f.GemiddeldAantalIncidenten:aantal_incidenten",
+        "f.AantalIncidenten:aantal_incidenten_volgorde",
+    ],
+    "komt meest voor": [
+        "f.GemiddeldAantalIncidenten:aantal_incidenten",
+        "f.AantalIncidenten:aantal_incidenten_volgorde",
+    ],
+    "meest voorkomende": [
+        "f.GemiddeldAantalIncidenten:aantal_incidenten",
+        "f.AantalIncidenten:aantal_incidenten_volgorde",
+    ],
     "asset": ["c.component_id:naam_component"],
     "gevolg": ["f.MogelijkGevolg:mogelijk_gevolg"],
     "faalindicator": ["f.Faalindicatoren:faalindicator"],

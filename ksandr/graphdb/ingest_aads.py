@@ -146,6 +146,7 @@ def create_component_faalvorm(
                     f.Faalcurve = $faalcurve,
                     f.Faaltempo = $faaltempo,
                     f.GemiddeldAantalIncidenten = $gemiddeld_aantal_incidenten,
+                    f.AantalIncidenten = $aantal_incidenten,
                     f.Bestandspad = $bestandspad
     
     MERGE (p:permission {category: $permission})
@@ -178,6 +179,10 @@ def create_component_faalvorm(
             "faaltempo": faalvorm_data.get("Faaltempo"),
             "gemiddeld_aantal_incidenten": faalvorm_data.get(
                 "Gemiddeld aantal incidenten", faalvorm_data.get("Aantal incidenten")
+            ),
+            "aantal_incidenten": faalvorm_data.get(
+                "Gemiddeld aantal incidenten nummer",
+                faalvorm_data.get("Aantal incidenten"),
             ),
             "bestandspad": file_path,
         },
