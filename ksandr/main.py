@@ -425,30 +425,27 @@ def retrieve_answer_from_vector_store(
         question=prompt, include_nouns=CONFIG["INCLUDE_KEYWORDS"]
     )
     time_doc_search = time.time()
-    neo_context_text = None
     time_stages = {}
-    if not neo_context_text:
-        context_text, results, time_stages = find_relevant_sources(
-            prompt=prompt,
-            filter_chroma=chroma_filter,
-            db=db,
-            source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
-            source_max_dense=CONFIG["SOURCE_MAX"],
-            score_threshold=CONFIG["SCORE_THRESHOLD"],
-            where_document=document_search,
-        )
-        results_new_schema = []
-        for doc, score in results:
-            doc_dict = {
-                "id": doc.id,
-                "page_content": doc.page_content,
-                "metadata": doc.metadata,
-                "type": doc.type,
-            }
-            doc_dict["metadata"]["score"] = score
-            results_new_schema.append(doc_dict)
-    else:
-        context_text = neo_context_text
+    context_text, results, time_stages = find_relevant_sources(
+        prompt=prompt,
+        filter_chroma=chroma_filter,
+        db=db,
+        source_max_reranker=CONFIG["SOURCE_MAX_RERANKER"],
+        source_max_dense=CONFIG["SOURCE_MAX"],
+        score_threshold=CONFIG["SCORE_THRESHOLD"],
+        where_document=document_search,
+    )
+    results_new_schema = []
+    for doc, score in results:
+        doc_dict = {
+            "id": doc.id,
+            "page_content": doc.page_content,
+            "metadata": doc.metadata,
+            "type": doc.type,
+        }
+        doc_dict["metadata"]["score"] = score
+        results_new_schema.append(doc_dict)
+
     logging.info("Done building context")
     time_build_context = time.time()
     _, trimmed_context_text = trim_context_to_fit(
