@@ -146,7 +146,7 @@ def build_cypher_query(request: str) -> str:
     if wants_quantity:
         query += "\nORDER BY aantalFaalvorm DESC"
     elif "AantalIncidenten" in selected_fields:
-        query += "\nORDER BY aantal_incidenten DESC"
+        query += "\nORDER BY f.AantalIncidenten DESC"
     else:
         query += "\nORDER BY index"
     return query.strip()
