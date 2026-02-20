@@ -1,5 +1,5 @@
 services:
-  populate:
+  ingest:
     image: ${IMAGE_NAME}                     # Docker image to use for the populate job
     command: ./workflow.sh                   # Script to execute on container start
 
