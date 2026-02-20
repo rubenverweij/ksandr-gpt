@@ -182,7 +182,7 @@ def create_component_faalvorm(
             ),
             "aantal_incidenten": faalvorm_data.get(
                 "Gemiddeld aantal incidenten nummer",
-                faalvorm_data.get("Aantal incidenten"),
+                0,
             ),
             "bestandspad": file_path,
         },
