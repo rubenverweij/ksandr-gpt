@@ -347,6 +347,9 @@ PROMPT_ELEMENTEN = {
     - Maak een nauwkeurige vergelijking tussen beschrijvingen van beleid of faalvormen
     - Vergelijk geen nummers, indexen of id's
     """,
+    "incidenten": """
+    - aantal_incidenten is een ordinale categorie met volgende rangorde (hoog → laag): Veelvuldig > Zeer regelmatig > Regelmatig > Incidenteel > Eenmalig > Onbekend.
+    """,
 }
 
 STANDARD_CONTEXT_NO_SOURCE = (
@@ -381,7 +384,7 @@ STANDARD_RESPONSE_SUMMARY_NOT_POSSIBLE = """#### Samenvatting maken is helaas ni
         """
 
 
-def dynamische_prompt_elementen(question: str):
+def dynamische_prompt_elementen(question: str, trimmed_neo4j_result: str):
     """Return instructions based on question"""
     wants_quantity = any(term in question.lower() for term in COUNT_TERMS)
     wants_comparison = any(term in question.lower() for term in COMPARISON_TERMS)
@@ -390,5 +393,7 @@ def dynamische_prompt_elementen(question: str):
         return PROMPT_ELEMENTEN["telling"]
     elif wants_comparison:
         return PROMPT_ELEMENTEN["vergelijking"]
+    elif "aantal_incidenten" in trimmed_neo4j_result:
+        return PROMPT_ELEMENTEN["incidenten"]
     else:
         return PROMPT_ELEMENTEN["overzicht"]
