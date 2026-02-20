@@ -40,6 +40,20 @@ def hash_doc(text: str) -> str:
     return hashlib.md5(text.strip().encode("utf-8")).hexdigest()
 
 
+def get_db_doc_count(db: Chroma) -> int:
+    """Utility to return the number of documents in the Chroma database."""
+    # Chroma.get(limit=0) returns a dict with "ids", but empty. So use limit=None.
+    # But better is to just get count via len(db.get()['ids'])
+    # Careful: Chroma as of langchain 0.1.0+ supports a count() method but not always.
+    # Safest is to fetch all ids and count (for logging).
+    try:
+        # If db supports count(), use it
+        return db.count()
+    except Exception:
+        results = db.get(include=[])
+        return len(results.get("ids", []))
+
+
 def dedup_docs_in_chroma(chroma_path: str, output_json_path: str):
     """
     Scan a Chroma vectorstore and remove duplicate documents based on their normalized text hash (MD5).
@@ -57,6 +71,13 @@ def dedup_docs_in_chroma(chroma_path: str, output_json_path: str):
     embedding_function = get_embedding_function()
     db = Chroma(persist_directory=chroma_path, embedding_function=embedding_function)
 
+    # Log the document count at the start
+    try:
+        initial_count = get_db_doc_count(db)
+        logging.info(f"Document count at start: {initial_count}")
+    except Exception as e:
+        logging.warning(f"Could not determine the initial document count: {e}")
+
     seen_hashes = {}
     duplicates_metadata = {}
     to_delete_batch = []
@@ -67,6 +88,7 @@ def dedup_docs_in_chroma(chroma_path: str, output_json_path: str):
     offset = 0
     total_checked = 0
     total_duplicates = 0
+    total_deleted_chunks = 0  # Track actual number of deleted chunks
 
     logging.info("Starting deduplication process...")
 
@@ -110,14 +132,22 @@ def dedup_docs_in_chroma(chroma_path: str, output_json_path: str):
 
         # Delete duplicate documents in batches to avoid oversized SQL queries
         if len(to_delete_batch) >= DELETE_BATCH_SIZE:
+            logging.info(
+                f"Deleting {len(to_delete_batch)} duplicate document chunks from vectorstore..."
+            )
             db.delete(ids=to_delete_batch)
+            total_deleted_chunks += len(to_delete_batch)
             to_delete_batch.clear()
 
         offset += BATCH_SIZE
 
     # Final deletion for any remaining documents in the batch
     if to_delete_batch:
+        logging.info(
+            f"Deleting remaining {len(to_delete_batch)} duplicate document chunks from vectorstore..."
+        )
         db.delete(ids=to_delete_batch)
+        total_deleted_chunks += len(to_delete_batch)
 
     # Only retain entries where at least two documents were found (i.e., actual duplicates)
     duplicates_metadata = {k: v for k, v in duplicates_metadata.items() if len(v) >= 2}
@@ -131,6 +161,16 @@ def dedup_docs_in_chroma(chroma_path: str, output_json_path: str):
         f"✅ Deduplication complete. Checked {total_checked} docs. "
         f"Removed {total_duplicates} duplicates."
     )
+    logging.info(
+        f"Total document chunks deleted from vectorstore: {total_deleted_chunks}"
+    )
+
+    # Log the document count after all duplicate removal
+    try:
+        final_count = get_db_doc_count(db)
+        logging.info(f"Document count after deduplication: {final_count}")
+    except Exception as e:
+        logging.warning(f"Could not determine the final document count: {e}")
 
 
 if __name__ == "__main__":
