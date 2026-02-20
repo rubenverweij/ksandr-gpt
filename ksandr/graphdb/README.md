@@ -4,13 +4,25 @@ We gebruiken [Neo4j](https://neo4j.com/) als een graph database.
 Gebruik het volgende commando voor het starten van de container:
 
 ```shell
+# staging container
 docker run \
     --network host \
     -d \
     --env=NEO4J_AUTH=none \
     -e NEO4J_PLUGINS='["apoc"]' \
-    --volume=/home/ubuntu/neo4j:/data \
+    --volume=/home/ubuntu/da_data/staging/neo4j:/data \
     neo4j
+
+# production container
+docker run \
+    --network host \
+    -d \
+    --env=NEO4J_AUTH=none \
+    -e NEO4J_PLUGINS='["apoc"]' \
+    --volume=/home/ubuntu/da_data/production/neo4j:/data \
+    neo4j
+
+docker compose -f docker-compose.neo4j.yaml up
 ```
 
 Voor het ingesten van de neo4j data:

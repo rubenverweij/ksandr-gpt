@@ -36,7 +36,7 @@ MAX_CTX = int(os.getenv("MAX_CTX", 4096))  # standaard 4096
 Om de container te starten (laat de parameters wat ze zijn):
 
 ```shell
-image="ksandr-gpt-langchain:0.55"
+image="ksandr-gpt-langchain:0.57"
 
 docker run --network host -d --gpus=all --cap-add SYS_RESOURCE \
 -e USE_MLOCK=0 \
@@ -53,6 +53,7 @@ docker run --network host -d --gpus=all --cap-add SYS_RESOURCE \
 -v /home/ubuntu/da_data:/root/da_data \
 -v /home/ubuntu/onprem_data:/root/onprem_data \
 -v /home/ubuntu/ksandr_files:/root/ksandr_files \
+-v /home/ubuntu/ksandr_files_staging:/root/ksandr_files_staging \
 $image
 
 ```
@@ -60,6 +61,14 @@ $image
 ## Updaten van de Chroma vectorstore
 
 Documenten in de vectorstore vernieuwen:
+
+```shell
+docker compose -f docker-compose.vectorstore.yaml --env-file .env.staging up
+docker compose -f docker-compose.vectorstore.yaml --env-file .env.production up
+
+
+0 15 * * 0 docker compose -f docker-compose.vectorstore.yml --env-file /path/to/.env.staging run --rm populate >> /var/log/ksandr_populate_vectorstore.log 2>&1
+```
 
 ```shell
 # Start een terminal in de draaiende LLM container. 
@@ -112,4 +121,3 @@ De volgende configuratiebestanden moeten beheerd worden:
 
 1. langchain/refs.py
 2. langchain/config.py
-3. 
