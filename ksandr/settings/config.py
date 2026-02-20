@@ -122,6 +122,21 @@ COLUMN_MAPPING_FAALVORM = {
     "komt het meest voor": [
         "f.GemiddeldAantalIncidenten:aantal_incidenten",
     ],
+    "komt veel voor": [
+        "f.GemiddeldAantalIncidenten:aantal_incidenten",
+    ],
+    "komt veelvuldig voor": [
+        "f.GemiddeldAantalIncidenten:aantal_incidenten",
+    ],
+    "komt regelmatig voor": [
+        "f.GemiddeldAantalIncidenten:aantal_incidenten",
+    ],
+    "komt soms voor": [
+        "f.GemiddeldAantalIncidenten:aantal_incidenten",
+    ],
+    "minst voorkomende": [
+        "f.GemiddeldAantalIncidenten:aantal_incidenten",
+    ],
     "meest voorkomende": [
         "f.GemiddeldAantalIncidenten:aantal_incidenten",
     ],
